@@ -145,6 +145,26 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器/在�
 
 ---
 
+## 构建
+
+```bash
+# 克隆仓库
+git clone https://github.com/lll114514lll1919810lll/mcai_mod.git
+cd mcai_mod
+
+# 构建 MC 1.21.11（默认）
+.\gradlew.bat build
+# 产物: build/libs/mcai-1.0.0.jar
+
+# 构建 MC 26.1.2
+.\build-version.bat 26.1.2
+# 产物: final_jars/mcai-26.1.2.jar
+```
+
+需要安装 [Java](https://www.java.com/) 25（MC 26.1.2）或 Java 21+（MC 1.21.11）。
+
+---
+
 ## 常见问题
 
 **Q: AI 会不会乱执行命令搞坏服务器？**

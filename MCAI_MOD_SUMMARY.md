@@ -41,44 +41,47 @@ MCAI 是一个 Fabric 服务端模组，接入 OpenAI 兼容 API（DeepSeek）�
 
 ---
 
-## 2. 分支与版本矩阵
+## 2. 仓库结构（单分支 + 版本目录）
 
-### 最终分支结构
-
-```
-mc-26.1.2-server  ← 26.1.2 服务端（基准，全功能）
-└── 26.1.2-client  ← 去审查 + Mod Menu
-
-1.21.11-server  ← 1.21.11 服务端（从 26.1.2 移植，Yarn API）
-└── 1.21.11-client  ← 去审查 + Mod Menu
-
-1.21.1-server  ← 1.21/1.21.1 服务端（从 1.21.11-server 移植）
-└── 1.21.1-client  ← 去审查 + Mod Menu
-```
-
-### 致命错误：分支创建顺序错了
-
-**教训：永远从最新的全功能分支派生，而不是从旧分支。**
+### 当前结构
 
 ```
-❌ 错误的做法：
-   1.21.11-server (旧，无 pendingFutures)
-   └── 1.21.1-server (继承旧代码，缺失功能)
-
-✅ 正确的做法：
-   26.1.2-server (新，全功能)
-   ├── 1.21.11-server (移植全功能后再派生)
-   │   └── 1.21.1-server (来自 1.21.11-server，不是来自旧版本)
+main (唯一分支)
+├── src/                    ← 主源码 (MC 1.21.11, Yarn 映射)
+├── versions/
+│   └── mc-26.1.2/         ← MC 26.1.2 版本特定文件
+│       ├── build.gradle
+│       ├── gradle.properties
+│       ├── fabric.mod.json
+│       └── src/            ← 26.1.2 的 Java 源码 (Mojang 映射)
+├── build-version.bat       ← 多版本构建脚本
+├── build.gradle            ← 主构建配置 (1.21.11)
+└── gradle.properties       ← 主版本属性 (1.21.11)
 ```
 
-### JAR 管理致命错误
+### 构建命令
 
-**`build/libs/` 被所有分支共享，`clean` 会清空它！**
+```bash
+# 构建 MC 1.21.11（默认，直接用当前源码）
+.\gradlew.bat build
 
+# 构建 MC 26.1.2（脚本自动替换文件再构建）
+.\build-version.bat 26.1.2
 ```
-❌ Copy-Item "build/libs/mcai-1.0.0.jar" "build/libs/mcai-1.21.11-server.jar"
-✅ Copy-Item "build/libs/mcai-1.0.0.jar" "C:\somewhere\safe\mcai-1.21.11-server.jar"
-```
+
+### 版本差异
+
+| 差异项 | MC 1.21.11 (main) | MC 26.1.2 (versions/) |
+|--------|-------------------|----------------------|
+| 映射类型 | Yarn v2 | Mojang (deobfuscated) |
+| Java | 21+ | 25 |
+| Loom | 1.15.5 | 1.14.1 |
+| 玩家类 | `ServerPlayerEntity` | `ServerPlayer` |
+| 命令源 | `ServerCommandSource` | `CommandSourceStack` |
+| 文本 API | `Text.literal()` | `Component.literal()` |
+| TPS | 不支持 | `getCurrentSmoothedTickTime()` |
+| F3 信息 | 不支持 | 完整实现 |
+| 游戏规则 | 不支持 | 完整实现 |
 
 ---
 

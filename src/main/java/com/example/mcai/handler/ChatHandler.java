@@ -199,7 +199,37 @@ public class ChatHandler {
     public void registerChatInterceptor() {
         if (!mod.getConfig().isEnableChatInterception()) return;
         try {
-            ServerMessageEvents.ALLOW_CHAT_MESSAGE.register(this::onChatMessage);
+            // CHAT_MESSAGE: 记录所有消息（内容始终可用，包括未签名消息）
+            ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
+                if (sender != null) {
+                    String text = message.decoratedContent() != null
+                            ? message.decoratedContent().getString()
+                            : "";
+                    addToChatLog(sender.getScoreboardName(), text);
+                }
+            });
+            // ALLOW_CHAT_MESSAGE: 仅用于拦截 !ai 前缀触发
+            ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> {
+                if (sender == null) return true;
+                String text = message.decoratedContent() != null
+                        ? message.decoratedContent().getString()
+                        : (message.signedContent() != null ? message.signedContent() : "");
+                String prefix = mod.getConfig().getTriggerPrefix();
+                if (text.startsWith(prefix)) {
+                    String query = text.substring(prefix.length()).trim();
+                    if (!query.isEmpty()) {
+                        var server = mod.getServer();
+                        if (server != null) {
+                            server.getPlayerList().broadcastSystemMessage(
+                                    Component.literal("§7[§f" + sender.getScoreboardName()
+                                            + "§7]对AI说：§f" + query), false);
+                        }
+                        handleAIQuery(sender, query);
+                    }
+                    return false;
+                }
+                return true;
+            });
             ServerMessageEvents.GAME_MESSAGE.register((srv, msg, overlay) ->
                     addToChatLog("系统", msg.getString()));
             MCAIMod.LOGGER.info("Chat interception enabled");
@@ -212,30 +242,6 @@ public class ChatHandler {
         UUID id = player.getUUID();
         history.remove(id);
         pendingCommands.remove(id);
-    }
-
-    private boolean onChatMessage(PlayerChatMessage message, ServerPlayer sender,
-                                   ChatType.Bound params) {
-        if (sender == null) return true;
-        String text = message.signedContent();
-        String prefix = mod.getConfig().getTriggerPrefix();
-
-        addToChatLog(sender.getScoreboardName(), text);
-
-        if (text.startsWith(prefix)) {
-            String query = text.substring(prefix.length()).trim();
-            if (!query.isEmpty()) {
-                var server = mod.getServer();
-                if (server != null) {
-                    server.getPlayerList().broadcastSystemMessage(
-                            Component.literal("§7[§f" + sender.getScoreboardName()
-                                    + "§7]对AI说：§f" + query), false);
-                }
-                handleAIQuery(sender, query);
-            }
-            return false;
-        }
-        return true;
     }
 
     private int approveCommand(ServerPlayer player, int num, CommandSourceStack src) {

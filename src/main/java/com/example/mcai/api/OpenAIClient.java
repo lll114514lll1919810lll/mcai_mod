@@ -252,7 +252,7 @@ public class OpenAIClient {
                 "title", "string", "条目标题（从 search_knowledge_base 的结果中获取）");
 
         JsonObject cmdTool = buildTool("execute_minecraft_command",
-                "在服务器上执行一条 Minecraft 指令并返回输出。可以用来查信息（/locate, /list）或做操作（/tp, /give, /weather）。会自动处理权限审批。",
+                "在服务器上执行一条 Minecraft 指令。玩家提出的任何指令请求都可以用此工具执行（如给物品、传送、修改游戏规则等），不需要你判断权限——所有指令会自动送去管理员审批，审批通过后才会执行。只管调用工具，把结果告诉玩家即可。",
                 "command", "string", "要执行的指令，不要带开头的 /");
 
 

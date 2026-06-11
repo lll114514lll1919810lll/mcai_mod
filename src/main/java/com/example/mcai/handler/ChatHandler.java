@@ -612,33 +612,51 @@ public class ChatHandler {
             regionalDifficulty = -1;
         }
 
-        // 注视方块
+        // 注视方块和实体
         String lookingAt;
         try {
-            var hit = player.pick(20.0, 0.0f, false);
+            var hit = player.pick(50.0, 0.0f, false);
             if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
                 var blockHit = (net.minecraft.world.phys.BlockHitResult) hit;
                 var blockState = level.getBlockState(blockHit.getBlockPos());
-                var block = blockState.getBlock();
-                lookingAt = block.toString() + " @ " + blockHit.getBlockPos().toShortString();
+                lookingAt = "方块: " + blockState.getBlock().toString()
+                        + " @ " + blockHit.getBlockPos().toShortString();
             } else if (hit.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
                 var entityHit = (net.minecraft.world.phys.EntityHitResult) hit;
                 var entity = entityHit.getEntity();
                 String name = entity.getDisplayName().getString();
-                String type = entity.getType().toString();
                 String category = entity.getType().getCategory().getName();
                 StringBuilder info = new StringBuilder();
-                info.append(name).append(" (").append(category).append(")");
+                info.append("实体: ").append(name).append(" (").append(category).append(")");
                 if (entity instanceof net.minecraft.world.entity.LivingEntity le) {
-                    info.append(" | HP: ").append(String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth()));
+                    info.append(" HP:").append(String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth()));
                 }
-                info.append(" | 位置: ").append(entity.blockPosition().toShortString());
+                info.append(" @ ").append(entity.blockPosition().toShortString());
                 lookingAt = info.toString();
             } else {
-                lookingAt = "无";
+                // 目视方向无目标，尝试前后方 5 格内扫描
+                var look = player.getLookAngle();
+                var eye = player.getEyePosition();
+                var nearEntity = level.getEntities(player,
+                        new net.minecraft.world.phys.AABB(
+                                eye.x - 5, eye.y - 5, eye.z - 5,
+                                eye.x + 5, eye.y + 5, eye.z + 5),
+                        e -> e != player && e.isAlive());
+                if (!nearEntity.isEmpty()) {
+                    var nearest = nearEntity.getFirst();
+                    String n = nearest.getDisplayName().getString();
+                    String c = nearest.getType().getCategory().getName();
+                    lookingAt = "最近实体: " + n + " (" + c + ")"
+                            + " @ " + nearest.blockPosition().toShortString();
+                    if (nearest instanceof net.minecraft.world.entity.LivingEntity le) {
+                        lookingAt += " HP:" + String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth());
+                    }
+                } else {
+                    lookingAt = "无目标";
+                }
             }
         } catch (Exception e) {
-            lookingAt = "N/A";
+            lookingAt = "N/A (" + e.getClass().getSimpleName() + ")";
         }
 
         // 注视流体

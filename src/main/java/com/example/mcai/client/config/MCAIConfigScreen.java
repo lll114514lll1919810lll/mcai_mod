@@ -7,10 +7,9 @@ import com.google.gson.JsonObject;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -25,7 +24,6 @@ import java.util.stream.Collectors;
 
 @Environment(EnvType.CLIENT)
 public class MCAIConfigScreen extends Screen {
-    private static final int LABEL_W = 120;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private final Screen parent;
@@ -39,10 +37,7 @@ public class MCAIConfigScreen extends Screen {
 
     private String status = "";
     private int statusTimer = 0;
-
-    private static final int WHITE = 0xffffff;
-    private static final int YELLOW = 0xffffaa;
-    private static final int LABEL_COLOR = 0xa0a0a0;
+    private StringWidget statusWidget;
 
     public MCAIConfigScreen(Screen parent) {
         super(Component.literal("MCAI 设置"));
@@ -74,13 +69,12 @@ public class MCAIConfigScreen extends Screen {
         return cfg.has(key) ? cfg.get(key).getAsBoolean() : def;
     }
 
-    private record Label(int x, int y, String text) {}
-    private final java.util.List<Label> labels = new java.util.ArrayList<>();
-
     @Override
     protected void init() {
-        labels.clear();
         int cx = width / 2;
+        addRenderableWidget(new StringWidget(Math.max(cx - 50, 0), 12, 100, 20,
+                Component.literal("MCAI 设置"), font));
+
         int leftX = Math.max(cx - 200, 5);
         int inX = cx + 5;
         int fieldW = Math.min(180, width - inX - 10);
@@ -99,24 +93,27 @@ public class MCAIConfigScreen extends Screen {
         thinkingField  = mkNumField(inX, sy + rowH * 7, getInt("thinkingLevel", 0), "思考等级");
         toolCallsField = mkNumField(inX, sy + rowH * 8, getInt("maxToolCalls", 5), "工具调用上限");
 
-        labels.add(new Label(leftX, sy + rowH * 0, "API 地址"));
-        labels.add(new Label(leftX, sy + rowH * 1, "API 密钥"));
-        labels.add(new Label(leftX, sy + rowH * 2, "模型名称"));
-        labels.add(new Label(leftX, sy + rowH * 3, "触发前缀"));
-        labels.add(new Label(leftX, sy + rowH * 4, "最大令牌"));
-        labels.add(new Label(leftX, sy + rowH * 5, "温度 (%)"));
-        labels.add(new Label(leftX, sy + rowH * 6, "上下文字符上限"));
-        labels.add(new Label(leftX, sy + rowH * 7, "思考等级 0-3"));
-        labels.add(new Label(leftX, sy + rowH * 8, "工具调用上限"));
+        addLabel(leftX, sy + rowH * 0, 120, "API 地址");
+        addLabel(leftX, sy + rowH * 1, 120, "API 密钥");
+        addLabel(leftX, sy + rowH * 2, 120, "模型名称");
+        addLabel(leftX, sy + rowH * 3, 120, "触发前缀");
+        addLabel(leftX, sy + rowH * 4, 120, "最大令牌");
+        addLabel(leftX, sy + rowH * 5, 120, "温度 (%)");
+        addLabel(leftX, sy + rowH * 6, 120, "上下文字符上限");
+        addLabel(leftX, sy + rowH * 7, 120, "思考等级 0-3");
+        addLabel(leftX, sy + rowH * 8, 120, "工具调用上限");
 
-        labels.add(new Label(leftX, sy + rowH * 9, "聊天监听"));
+        addLabel(leftX, sy + rowH * 9, 120, "聊天监听");
         chatBtn = mkToggle(inX + fieldW + 5, sy + rowH * 9, getBool("enableChatInterception", true));
 
-        labels.add(new Label(leftX, sy + rowH * 10, "指令执行"));
+        addLabel(leftX, sy + rowH * 10, 120, "指令执行");
         cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
 
-        labels.add(new Label(leftX, sy + rowH * 11, "严格模式"));
+        addLabel(leftX, sy + rowH * 11, 120, "严格模式");
         strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 11, getBool("strictMode", false));
+
+        statusWidget = new StringWidget(0, height - 20, width, 20, Component.literal(""), font);
+        addRenderableWidget(statusWidget);
 
         int by = sy + rowH * 12 + 15;
         var saveBtn = Button.builder(Component.literal("§a保存并关闭"), b -> save())
@@ -125,6 +122,10 @@ public class MCAIConfigScreen extends Screen {
         addRenderableWidget(saveBtn);
         addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
                 .bounds(cx + 5, by, 100, 20).build());
+    }
+
+    private void addLabel(int x, int y, int w, String text) {
+        addRenderableWidget(new StringWidget(x, y, w, 20, Component.literal(text), font));
     }
 
     private EditBox mkField(int x, int y, int w, String val, String tooltip) {
@@ -186,11 +187,11 @@ public class MCAIConfigScreen extends Screen {
             try (Writer w = Files.newBufferedWriter(configPath)) {
                 GSON.toJson(o, w);
             }
-            status = "§a✓ 已保存";
+            if (statusWidget != null) statusWidget.setMessage(Component.literal("§a✓ 已保存"));
             statusTimer = 100;
             minecraft.setScreen(parent);
         } catch (IOException e) {
-            status = "§c保存失败: " + e.getMessage();
+            if (statusWidget != null) statusWidget.setMessage(Component.literal("§c保存失败: " + e.getMessage()));
             statusTimer = 200;
         }
     }
@@ -202,18 +203,6 @@ public class MCAIConfigScreen extends Screen {
     @Override
     public void tick() {
         if (statusTimer > 0) statusTimer--;
-    }
-
-    @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mx, int my, float delta) {
-        super.extractRenderState(graphics, mx, my, delta);
-        graphics.centeredText(font, title, width / 2, 12, WHITE);
-        for (Label l : labels) {
-            graphics.text(font, l.text, l.x, l.y + 5, LABEL_COLOR);
-        }
-        if (statusTimer > 0) {
-            graphics.centeredText(font, Component.literal(status), width / 2, height - 20, YELLOW);
-        }
     }
 
     @Override

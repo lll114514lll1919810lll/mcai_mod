@@ -86,39 +86,64 @@ public class WikiSearchClient {
 
     /**
      * 在线获取 Wiki 页面的完整文本内容。
-     * 失败时返回 null。
+     * 使用 action=parse 获取全文，失败时回退到 extracts 摘要，再失败返回 null。
      */
     public String fetchPage(String title) {
         try {
+            // 1. 使用 action=parse 获取完整页面
             String encoded = URLEncoder.encode(title, StandardCharsets.UTF_8);
-            String url = API_URL + "?action=query&titles=" + encoded
-                    + "&prop=extracts&explaintext&exsectionformat=plain&format=json";
+            String url = API_URL + "?action=parse&page=" + encoded
+                    + "&prop=text&format=json&contentmodel=wikitext";
 
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("User-Agent", "MCAI/2.0")
-                    .timeout(Duration.ofSeconds(12))
+                    .timeout(Duration.ofSeconds(15))
                     .GET()
                     .build();
 
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 200) {
-                LOGGER.warn("Wiki API HTTP {} for page '{}'", resp.statusCode(), title);
-                return null;
+            if (resp.statusCode() == 200) {
+                JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
+                if (json.has("parse")) {
+                    JsonObject parse = json.getAsJsonObject("parse");
+                    if (parse.has("text")) {
+                        String html = parse.getAsJsonObject("text").get("*").getAsString();
+                        String text = stripHtml(html);
+                        if (text.length() > 50) {
+                            if (text.length() > 15000) {
+                                text = text.substring(0, 15000) + "\n\n... (内容过长，已截断)";
+                            }
+                            return text;
+                        }
+                    }
+                }
             }
 
-            JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
-            JsonObject pages = json.getAsJsonObject("query").getAsJsonObject("pages");
-            for (String key : pages.keySet()) {
-                if (key.equals("-1")) continue;
-                JsonObject page = pages.getAsJsonObject(key);
-                if (page.has("extract")) {
-                    String text = page.get("extract").getAsString();
-                    // 截断过长内容
-                    if (text.length() > 12000) {
-                        text = text.substring(0, 12000) + "\n\n... (内容过长，已截断)";
+            // 2. 回退：action=query extracts（只返回摘要，但至少能用）
+            LOGGER.debug("parse failed for '{}', falling back to extracts", title);
+            String extUrl = API_URL + "?action=query&titles=" + encoded
+                    + "&prop=extracts&explaintext&exsectionformat=plain&format=json";
+            req = HttpRequest.newBuilder()
+                    .uri(URI.create(extUrl))
+                    .header("User-Agent", "MCAI/2.0")
+                    .timeout(Duration.ofSeconds(10))
+                    .GET()
+                    .build();
+            resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() == 200) {
+                JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
+                JsonObject pages = json.getAsJsonObject("query").getAsJsonObject("pages");
+                for (String key : pages.keySet()) {
+                    if (key.equals("-1")) continue;
+                    JsonObject page = pages.getAsJsonObject(key);
+                    if (page.has("extract")) {
+                        String text = page.get("extract").getAsString();
+                        if (text.length() > 8000) {
+                            text = text.substring(0, 8000) + "\n\n... (已截断)";
+                        }
+                        return text;
                     }
-                    return text;
                 }
             }
             return null;
@@ -126,5 +151,25 @@ public class WikiSearchClient {
             LOGGER.warn("Wiki API fetchPage '{}' failed: {}", title, e.getMessage());
             return null;
         }
+    }
+
+    /** 去掉 HTML 标签，保留纯文本 */
+    private static String stripHtml(String html) {
+        return html
+                .replaceAll("<li>", "\n- ")
+                .replaceAll("<br\\s*/?>", "\n")
+                .replaceAll("</?p[^>]*>", "\n\n")
+                .replaceAll("<h[1-6][^>]*>", "\n\n")
+                .replaceAll("</h[1-6]>", "\n")
+                .replaceAll("<[^>]+>", "")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replaceAll("\\{\\{[^}]+\\}\\}", "")  // 去掉 wiki 模板
+                .replaceAll("\\[\\[[^]]+\\]\\]", "")   // 去掉 wiki 链接残留
+                .replaceAll("\n{3,}", "\n\n")
+                .trim();
     }
 }

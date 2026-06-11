@@ -16,12 +16,13 @@ import com.example.mcai.behavior.PlayerBehaviorTracker;
 import com.example.mcai.behavior.ChatReviewSystem;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 
@@ -39,6 +40,17 @@ public class MCAIMod implements ModInitializer {
     private PlayerBehaviorTracker behaviorTracker;
     private ChatReviewSystem chatReviewSystem;
     private volatile MinecraftServer server;
+    private CommandDispatcher<net.minecraft.commands.CommandSourceStack> commandDispatcher;
+
+    private final SuggestionProvider<net.minecraft.commands.CommandSourceStack> PLAYER_NAME_SUGGESTIONS = (ctx, builder) -> {
+        var srv = server;
+        if (srv != null) {
+            for (var p : srv.getPlayerList().getPlayers()) {
+                builder.suggest(p.getScoreboardName());
+            }
+        }
+        return builder.buildFuture();
+    };
 
     @Override
     public void onInitialize() {
@@ -46,12 +58,13 @@ public class MCAIMod implements ModInitializer {
         config = ModConfig.load();
         knowledgeBase = new KnowledgeBase();
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
-                .getConfigDir().resolve("mcai_kb"));
+                .getConfigDir().resolve("mcai/kb"));
         aiClient = new OpenAIClient(config);
         chatHandler = new ChatHandler(this);
         behaviorTracker = new PlayerBehaviorTracker(config);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> {
+            this.commandDispatcher = dispatcher;
             dispatcher.register(chatHandler.createAICommand());
             dispatcher.register(chatHandler.createWikiCommand());
             dispatcher.register(chatHandler.createQueryCommand());
@@ -59,10 +72,7 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(chatHandler.createRejectCommand());
             dispatcher.register(chatHandler.createClearCommand());
             dispatcher.register(chatHandler.createReloadCommand());
-            // Behavior review system
-            if (chatReviewSystem != null) {
-                dispatcher.register(chatReviewSystem.createAiCheckCommand());
-            }
+            dispatcher.register(chatHandler.createScoreCommand());
             // Test commands
             dispatcher.register(createTestCommand());
         });
@@ -74,6 +84,10 @@ public class MCAIMod implements ModInitializer {
             this.server = s;
             // Initialize review system after server is ready
             chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
+            // Register /aicheck commands now that chatReviewSystem is ready
+            if (commandDispatcher != null) {
+                commandDispatcher.register(chatReviewSystem.createAiCheckCommand());
+            }
             if (config.isEnableAutoReview()) {
                 chatReviewSystem.start();
                 LOGGER.info("Auto behavior review enabled");
@@ -83,6 +97,9 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
             if (chatReviewSystem != null) {
                 chatReviewSystem.stop();
+            }
+            if (behaviorTracker != null) {
+                behaviorTracker.save();
             }
         });
 
@@ -100,18 +117,23 @@ public class MCAIMod implements ModInitializer {
     public MinecraftServer getServer() { return server; }
     public ChatHandler getChatHandler() { return chatHandler; }
     public ChatReviewSystem getChatReviewSystem() { return chatReviewSystem; }
+    public PlayerBehaviorTracker getBehaviorTracker() { return behaviorTracker; }
 
     public void reloadConfig() {
         config = ModConfig.load();
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
-                .getConfigDir().resolve("mcai_kb"));
+                .getConfigDir().resolve("mcai/kb"));
         // Restart review system with new config
         if (chatReviewSystem != null) {
             chatReviewSystem.stop();
         }
         behaviorTracker = new PlayerBehaviorTracker(config);
         chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
+        // Re-register /aicheck to point to the new chatReviewSystem instance
+        if (commandDispatcher != null) {
+            commandDispatcher.register(chatReviewSystem.createAiCheckCommand());
+        }
         if (config.isEnableAutoReview()) {
             chatReviewSystem.start();
         }
@@ -130,6 +152,7 @@ public class MCAIMod implements ModInitializer {
                 })
                 .then(Commands.literal("score")
                         .then(Commands.argument("player", StringArgumentType.word())
+                                .suggests(PLAYER_NAME_SUGGESTIONS)
                                 .executes(ctx -> {
                                     String name = StringArgumentType.getString(ctx, "player");
                                     UUID id = lookupPlayer(name);
@@ -144,6 +167,7 @@ public class MCAIMod implements ModInitializer {
                                 })))
                 .then(Commands.literal("penalty")
                         .then(Commands.argument("player", StringArgumentType.word())
+                                .suggests(PLAYER_NAME_SUGGESTIONS)
                                 .then(Commands.argument("points", IntegerArgumentType.integer(-100, -1))
                                         .executes(ctx -> {
                                             String name = StringArgumentType.getString(ctx, "player");
@@ -161,6 +185,7 @@ public class MCAIMod implements ModInitializer {
                                         }))))
                 .then(Commands.literal("reset")
                         .then(Commands.argument("player", StringArgumentType.word())
+                                .suggests(PLAYER_NAME_SUGGESTIONS)
                                 .executes(ctx -> {
                                     String name = StringArgumentType.getString(ctx, "player");
                                     UUID id = lookupPlayer(name);
@@ -173,12 +198,29 @@ public class MCAIMod implements ModInitializer {
                                             () -> Component.literal("§a[测试] 已重置玩家 " + name + " 行为分"), false);
                                     return Command.SINGLE_SUCCESS;
                                 })))
+                .then(Commands.literal("set")
+                        .then(Commands.argument("player", StringArgumentType.word())
+                                .suggests(PLAYER_NAME_SUGGESTIONS)
+                                .then(Commands.argument("score", IntegerArgumentType.integer(-100, 0))
+                                        .executes(ctx -> {
+                                            String name = StringArgumentType.getString(ctx, "player");
+                                            UUID id = lookupPlayer(name);
+                                            if (id == null) {
+                                                ctx.getSource().sendFailure(Component.literal("§c玩家不在线: " + name));
+                                                return 0;
+                                            }
+                                            int score = IntegerArgumentType.getInteger(ctx, "score");
+                                            behaviorTracker.setScore(id, score);
+                                            ctx.getSource().sendSuccess(
+                                                    () -> Component.literal("§e[测试] 已设置玩家 " + name
+                                                            + " 行为分为: " + score), false);
+                                            return Command.SINGLE_SUCCESS;
+                                        }))))
                 .then(Commands.literal("review")
                         .executes(ctx -> {
                             if (chatReviewSystem != null) {
-                                chatReviewSystem.triggerManualReview();
-                                ctx.getSource().sendSuccess(
-                                        () -> Component.literal(chatReviewSystem.getLastReviewStatus()), false);
+                                ServerPlayer p = ctx.getSource().getPlayer();
+                                chatReviewSystem.triggerManualReview(p);
                             } else {
                                 ctx.getSource().sendFailure(Component.literal("§c审查系统未就绪"));
                             }
@@ -201,6 +243,7 @@ public class MCAIMod implements ModInitializer {
                     ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest score <玩家> §f- 查询行为分"), false);
                     ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest penalty <玩家> <分数> §f- 模拟扣分"), false);
                     ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest reset <玩家> §f- 重置行为分"), false);
+                    ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest set <玩家> <分数> §f- 设置行为分(-100~0)"), false);
                     ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest review §f- 手动触发审查"), false);
                     ctx.getSource().sendSuccess(() -> Component.literal("§7/aitest chatlog §f- 查看聊天记录"), false);
                     return Command.SINGLE_SUCCESS;

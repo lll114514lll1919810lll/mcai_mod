@@ -223,20 +223,86 @@ public class OpenAIClient {
             return Optional.of(content);
         }
 
+        // Tool call limit reached — make one final call without tools for text-only response
+        JsonObject body = new JsonObject();
+        body.addProperty("model", config.getModel());
+        body.addProperty("max_tokens", config.getMaxTokens());
+        body.addProperty("temperature", config.getTemperature());
+        JsonArray msgArray = new JsonArray();
+        for (ChatMessage msg : messages) {
+            msgArray.add(msg.toJson());
+        }
+        body.add("messages", msgArray);
+        // Intentionally omit tools — AI can only reply with text
+
+        try {
+            HttpResponse<String> response = httpClient.send(
+                    HttpRequest.newBuilder()
+                            .uri(URI.create(endpoint))
+                            .header("Content-Type", "application/json")
+                            .timeout(Duration.ofSeconds(60))
+                            .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
+                JsonArray choices = json.getAsJsonArray("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    JsonObject msg = choices.get(0).getAsJsonObject().getAsJsonObject("message");
+                    String content = msg.has("content") && !msg.get("content").isJsonNull()
+                            ? msg.get("content").getAsString() : "";
+                    if (!content.isEmpty()) return Optional.of(content);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Final text-only call failed: {}", e.getMessage());
+        }
         return Optional.of("[工具调用超限] 超过 " + maxTurns + " 轮工具调用");
+    }
+
+    /**
+     * Result of a simple chat call, containing content and optional reasoning content.
+     */
+    public static class ChatSimpleResult {
+        public final String content;
+        public final String reasoningContent;
+
+        public ChatSimpleResult(String content, String reasoningContent) {
+            this.content = content;
+            this.reasoningContent = reasoningContent;
+        }
     }
 
     /**
      * Simple chat call without tool definitions and single-turn.
      * Used for behavior review where no tool execution is needed.
+     * Supports thinking mode if configured.
      */
     public Optional<String> chatSimple(List<ChatMessage> messages) {
+        var result = chatSimpleFull(messages);
+        return result.map(r -> r.content);
+    }
+
+    /**
+     * Like chatSimple but returns both content and reasoning_content.
+     */
+    public Optional<ChatSimpleResult> chatSimpleFull(List<ChatMessage> messages) {
         String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";
 
         JsonObject body = new JsonObject();
         body.addProperty("model", config.getModel());
         body.addProperty("max_tokens", config.getMaxTokens());
         body.addProperty("temperature", config.getTemperature());
+
+        int tl = config.getThinkingLevel();
+        if (tl >= 1) {
+            JsonObject t = new JsonObject();
+            t.addProperty("type", "enabled");
+            body.add("thinking", t);
+            if (tl >= 3) {
+                body.addProperty("reasoning_effort", "max");
+            }
+        }
 
         JsonArray msgArray = new JsonArray();
         for (ChatMessage msg : messages) {
@@ -262,7 +328,7 @@ public class OpenAIClient {
             response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
         } catch (Exception e) {
             LOGGER.error("HTTP request failed: {}", e.getMessage());
-            return Optional.of("[API连接失败] " + e.getMessage());
+            return Optional.of(new ChatSimpleResult("[API连接失败] " + e.getMessage(), null));
         }
 
         if (response.statusCode() != 200) {
@@ -272,12 +338,12 @@ public class OpenAIClient {
                 if (err.has("error")) {
                     String msg = err.getAsJsonObject("error").get("message").getAsString();
                     LOGGER.error("API error {}: {}", response.statusCode(), msg);
-                    return Optional.of("[API错误] " + msg);
+                    return Optional.of(new ChatSimpleResult("[API错误] " + msg, null));
                 }
             } catch (Exception ignored) {}
             LOGGER.error("API error {} (no JSON error): {}", response.statusCode(),
                     resp.length() > 200 ? resp.substring(0, 200) + "..." : resp);
-            return Optional.of("[API错误] HTTP " + response.statusCode());
+            return Optional.of(new ChatSimpleResult("[API错误] HTTP " + response.statusCode(), null));
         }
 
         JsonObject json;
@@ -285,21 +351,24 @@ public class OpenAIClient {
             json = GSON.fromJson(response.body(), JsonObject.class);
         } catch (Exception e) {
             LOGGER.error("Failed to parse API response: {}", e.getMessage());
-            return Optional.of("[响应解析失败] 请检查 API 是否兼容");
+            return Optional.of(new ChatSimpleResult("[响应解析失败] 请检查 API 是否兼容", null));
         }
 
         JsonArray choices = json.getAsJsonArray("choices");
         if (choices == null || choices.isEmpty()) {
-            return Optional.of("[API异常] 响应中无 choices");
+            return Optional.of(new ChatSimpleResult("[API异常] 响应中无 choices", null));
         }
 
         JsonObject choice = choices.get(0).getAsJsonObject();
         JsonObject msg = choice.getAsJsonObject("message");
 
+        String reasoningContent = msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull()
+                ? msg.get("reasoning_content").getAsString() : null;
+
         String content = msg.has("content") && !msg.get("content").isJsonNull()
                 ? msg.get("content").getAsString() : "";
-        if (content.isEmpty()) return Optional.of("[API异常] 响应内容为空");
-        return Optional.of(content);
+        if (content.isEmpty()) return Optional.of(new ChatSimpleResult("[API异常] 响应内容为空", reasoningContent));
+        return Optional.of(new ChatSimpleResult(content, reasoningContent));
     }
 
     private List<ToolCall> parseToolCalls(JsonObject msg) {
@@ -328,7 +397,7 @@ public class OpenAIClient {
                 "title", "string", "条目标题（从 search_knowledge_base 的结果中获取）");
 
         JsonObject cmdTool = buildTool("execute_minecraft_command",
-                "在服务器上执行一条 Minecraft 指令并返回输出。可以用来查信息（/locate, /list）或做操作（/tp, /give, /weather）。会自动处理权限审批。",
+                "在服务器上执行一条 Minecraft 指令。玩家提出的任何指令请求都可以用此工具执行（如给物品、传送、修改游戏规则等），不需要你判断权限——所有指令会自动送去管理员审批，审批通过后才会执行。只管调用工具，把结果告诉玩家即可。",
                 "command", "string", "要执行的指令，不要带开头的 /");
 
 

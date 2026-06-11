@@ -27,7 +27,7 @@ public class ModConfig {
                 }
                 public boolean shouldSkipClass(Class<?> c) { return false; }
             }).create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mcai.json");
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mcai/config.json");
 
     private String apiEndpoint = "https://api.deepseek.com";
     private String apiKey = "";
@@ -40,6 +40,8 @@ public class ModConfig {
             2. Keep responses concise but natural (1-3 sentences). When the player asks you to do something, complete the action then briefly explain what happened. Do NOT add extra commentary, do NOT apologize unnecessarily, do NOT ask follow-ups.
             
             3. CRITICAL: To execute ANY Minecraft command, you MUST use the execute_minecraft_command tool. Do NOT output commands starting with / as text - that old method does NOT return command output and cannot be used for multi-step operations.
+
+            3b. NEVER refuse a player's command request due to permissions. When a player asks for something like "给我钻石块", "传送到家", or "把时间设为白天", always call execute_minecraft_command even if you think they might not have permission. All commands automatically go through admin approval - the tool handles this. Just tell the player the result ("已发送审批" or "指令已执行"), don't pre-judge what's allowed.
             
             4. Use exact, valid Minecraft item/block names (e.g. diamond_sword, diamond_axe, not "钻石剑" or "钻石斧"). Check the wiki tool if unsure about an item ID.
             
@@ -77,14 +79,14 @@ public class ModConfig {
 
              12. NEVER use commands unless the player EXPLICITLY asks you to. Destructive/world-modifying commands (give, fill, clone, setblock, summon, kill, tp, weather, time set, etc.) are strictly prohibited unless the player directly and clearly requests them. Read-only information commands (locate, time query, list, effect list, etc.) are allowed when needed to answer a question. When in doubt, just explain the answer without executing any command.
             """;
-    private int maxTokens = 1024;
-    private double temperature = 0.7;
-    private int thinkingLevel = 0;
+    private int maxTokens = 2048;
+    private double temperature = 0.75;
+    private int thinkingLevel = 1;
     private boolean enableChatInterception = true;
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
-    private int maxToolCalls = 5;
-    private boolean strictMode = false;
+    private int maxToolCalls = 15;
+    private boolean strictMode = true;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
             "kick", "stop", "whitelist", "save-all", "reload"
@@ -93,27 +95,19 @@ public class ModConfig {
     private int reviewIntervalMinutes = 30;
     private int yellowCardThreshold = -30;
     private int redCardThreshold = -60;
-    private int scoreRecoveryPerInterval = 1;
+    private int scoreRecoveryPerInterval = 5;
     private int approvalTimeoutMinutes = 10;
     private boolean enableAutoReview = true;
 
-    /** 严格模式下额外需要审批的破坏性命令 */
-    private static final List<String> STRICT_COMMANDS = List.of(
-            "give", "item", "clear", "enchant",
-            "tp", "teleport", "summon", "kill",
-            "fill", "clone", "setblock", "place",
-            "weather", "time", "difficulty",
-            "gamemode", "defaultgamemode", "gamerule",
-            "effect", "xp", "experience",
-            "data", "execute", "attribute",
-            "scoreboard", "team", "tag", "bossbar",
-            "loot", "recipe",
-            "playsound", "stopsound", "title",
-            "particle", "schedule",
-            "worldborder", "forceload", "spreadplayers",
-            "damage", "ride", "return",
-            "transfer", "spectate", "random"
-    );
+    /** 严格模式下免审批的绝对安全命令（只读，无副作用） */
+    private List<String> safeCommands = new ArrayList<>(List.of(
+            "locate", "seed", "list", "help",
+            "say", "title", "tell", "msg", "w",
+            "fetchprofile", "scoreboard", "version",
+            "data get"
+    ));
+
+    private int maxReviewCycles = 4;
 
     public static ModConfig load() {
         ModConfig config;
@@ -159,7 +153,8 @@ public class ModConfig {
     public int getMaxToolCalls() { return maxToolCalls; }
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
-    public List<String> getStrictCommands() { return STRICT_COMMANDS; }
+    public List<String> getSafeCommands() { return safeCommands; }
+    public int getMaxReviewCycles() { return maxReviewCycles; }
     public int getReviewIntervalMinutes() { return reviewIntervalMinutes; }
     public int getYellowCardThreshold() { return yellowCardThreshold; }
     public int getRedCardThreshold() { return redCardThreshold; }

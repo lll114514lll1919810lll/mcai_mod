@@ -1,41 +1,6 @@
-# MCAI 模组开发总结
+# MCAI 模组
 
-## 概述
-
-MCAI 是一个 Minecraft Fabric 服务端模组，接入 OpenAI 兼容 API（默认 DeepSeek），让 AI 能够：
-- 读取玩家聊天和服务器广播
-- 执行 Minecraft 指令（需审批的自动走审批流程）
-- 搜索本地 Wiki 知识库
-- 跨重启持久记忆
-
----
-
-## 技术架构
-
-```
-客户端                                   服务端
-─────────────────────────────────────────────────
-Mod Menu ──→ MCAIConfigScreen          MCAIMod (ModInitializer)
-(配置界面)                               ├── OpenAIClient (API 调用)
-                                         ├── ChatHandler (核心逻辑)
-                                         ├── KnowledgeBase (本地 Wiki)
-                                         ├── MemoryFile (持久记忆)
-                                         └── ModConfig (JSON 配置)
-```
-
-### 核心文件
-
-| 文件 | 作用 | 行数 |
-|------|------|------|
-| `MCAIMod.java` | 主入口、初始化、线程安全 server 引用 | ~80 |
-| `ChatHandler.java` | 聊天拦截、AI 查询、指令审批、玩家上下文 | ~520 |
-| `OpenAIClient.java` | OpenAI API 调用、工具调用循环、thinking 模式 | ~300 |
-| `ModConfig.java` | 配置加载/保存、自动更新提示词 | ~135 |
-| `MCAIConfigScreen.java` | Mod Menu 配置界面 | ~240 |
-| `KnowledgeBase.java` | 本地知识库搜索与读取 | ~115 |
-| `MemoryFile.java` | 跨重启持久记忆 | ~100 |
-| `ModMenuIntegration.java` | Mod Menu 接入 | ~20 |
-| `download_zh_wiki.py` | 中文 Wiki 下载脚本 | ~170 |
+一个 Minecraft Fabric 服务端模组，接入 OpenAI 兼容 API（默认 DeepSeek），为服务器提供 AI 助手和自动行为审查。
 
 ---
 
@@ -43,122 +8,145 @@ Mod Menu ──→ MCAIConfigScreen          MCAIMod (ModInitializer)
 
 ### AI 对话
 - `/ai <消息>` 或 `!ai` 前缀触发
-- 多轮对话上下文记忆（按字符数截断，默认 20000 字）
-- 捕获全部聊天记录 + 服务器广播（进度、死亡、加入/离开）
-- 同步异步：独立线程池 `aiExecutor`，避免 Java 25 ForkJoinPool 问题
+- 多轮对话上下文记忆（按字符数截断，可配置）
+- 聊天日志自动注入上下文，AI 了解当前氛围
+- 所有玩家可查自己行为分：`/aiscore`
 
 ### 工具调用（Function Calling）
 | 工具 | 说明 |
 |------|------|
-| `search_knowledge_base` | 搜索本地中文 Wiki 知识库 |
+| `search_knowledge_base` | 搜索中文 Wiki 知识库 |
 | `read_knowledge_base` | 读取条目完整内容 |
-| `execute_minecraft_command` | 执行指令（全服广播结果） |
-| `recall` | 读取持久记忆 |
-| `remember` | 存储持久记忆 |
+| `execute_minecraft_command` | 执行指令（需审批的自动挂起等待） |
+| `get_server_status` | 获取服务器实时状态（时间、天气、TPS 等） |
+| `get_game_rules` | 获取游戏规则状态 |
+| `get_debug_info` | 获取 F3 调试信息 |
 
-### 审批系统
-- 危险指令（op、ban、kick 等）自动进入审批队列
-- `/aiquery` 查看待审批列表
-- `/aiaccept <编号>` 批准执行
-- `/aireject <编号>` 拒绝移除
-- 每个玩家独立审批列表
+### 指令审批
+- 危险指令（op、ban、kick、stop 等）自动进入审批队列
+- 可配置的审批指令列表
+- **AI 线程挂起等待**：AI 执行需审批的指令时，AI 线程阻塞等待管理员审批结果，最长 3 分钟超时自动取消
+- 管理员收到通知，可直接用 `/aiaccept` / `/aireject` 处理
+- 超时和拒绝时 AI 获得对应反馈信息
+
+### 严格模式安全命令白名单
+- 开启后只有白名单内的只读命令可免审批
+- 支持多词匹配（如 `data get` 只放行查看，不放行修改）
+- 可配置命令列表
+- 所有 AI 执行的命令自动写入审查日志
+
+### 行为审查系统
+- 周期性 AI 审查所有聊天记录（可配置间隔）
+- 三级处罚：
+  - **扣分**（severity -10）：仅扣分，无公屏警告
+  - **黄牌**（severity -20 或分数 ≤ 阈值）：公屏警告
+  - **红牌**（severity -30 或分数 ≤ 阈值）：踢出 + 管理员审批
+- 管理员发言带 `[管理员]` 标记，审查 AI 信任管理员声明
+- 每周期分数恢复（可配置恢复量，上限恢复至 0）
+- 处罚记录跨轮次保留（可配置最大轮次），共享给对话 AI 和审查 AI
+- 手动审查：`/aicheck`
+
+### 审批队列（踢出审批）
+- 红牌踢出需要管理员批准（`/aicheck approve <id>`）
+- 10 分钟超时自动批准
+- `/aicheck last` 查看上次审查原始输出和推理过程
 
 ### 知识库
-- 内置 2.1MB 中文 Wiki 数据（JAR 内部 `assets/mcai/kb/zh_wiki.json`）
+- 内置中文 Wiki 数据（JAR 内部 `assets/mcai/kb/zh_wiki.json`）
 - 双层检索：搜索返回摘要，读取返回全文
-- 约 300+ 中文页面（工具、方块、生物、附魔、指令等）
 - 可通过 Python 脚本扩充
 
-### 持久记忆
-- 文件 `config/mcai_memory.json`，跨重启保留
-- AI 自动在对话开始时读取记忆
-- 可通过 `remember`/`recall` 工具管理
+### 持久化存储
+所有配置文件统一存放在 `config/mcai/` 目录下：
+| 文件 | 内容 |
+|------|------|
+| `config/mcai/config.json` | 主配置 |
+| `config/mcai/scores.json` | 玩家行为分（每次变更即时写盘） |
+| `config/mcai/penalties.json` | 处罚记录（跨重启保留） |
+| `config/mcai/memory.json` | AI 持久记忆 |
+| `config/mcai/kb/` | 知识库数据 |
+| `config/mcai/review_last_response.txt` | 上次审查 AI 原始输出 |
+| `config/mcai/review_last_reasoning.txt` | 上次审查 AI 推理过程 |
 
-### 配置 (`config/mcai.json`)
-- 自动更新提示词（系统提示词只保留在代码中，不保存到 JSON）
-- 支持通过 Mod Menu 可视化编辑
-- 命令行 `/aireload` 重载
+### 安全措施
+- 聊天记录用 `=== CHAT LOG START/END ===` 定界符包裹，防注入
+- 审查输出严格校验：玩家名正则、severity 钳位、action 白名单
+- 每玩家每轮累计扣分上限 -60
+- AI 禁止执行模组内部指令（ai、aiaccept、aireload 等）
+- 系统提示词自动覆盖，不保存到 JSON，确保更新后生效
 
-### DeepSeek 专有支持
-- `thinking` 模式（0=关闭, 1=开启, 3=max effort）
-- `reasoning_content` 回传（思考模式下 tool_calls 必须回传思维链）
-- `enable_search` 联网搜索（需 DeepSeek 账户开通）
-
----
-
-## 版本兼容性
-
-### 已支持版本
-
-| MC 版本 | JAR 文件名 | 构建配置 |
-|---------|-----------|---------|
-| 1.21/1.21.1 | `mcai-1.21.jar` | `gradle-1.21.properties` |
-| 1.21.11 | `mcai-1.21.11.jar` | `gradle-1.21.11.properties` |
-
-### 1.21 vs 1.21.11 Yarn API 差异
-
-| 项目 | 1.21 Yarn | 1.21.11 Yarn |
-|------|----------|-------------|
-| 客户端发送指令 | `sendCommand()` | `sendChatCommand()` |
-| 执行指令 | `executeWithPrefix()` | `getDispatcher().execute()` + catch CommandSyntaxException |
-| 权限参数类型 | `int` (数字) | `Predicate<ServerCommandSource>` (lambda) |
-| Entity 获取世界 | `getWorld()` | `getEntityWorld()` |
-| GameMode 名称 | `getName()` | `asString()` |
-| 线程池 | `CompletableFuture.runAsync()` → ForkJoinPool | `aiExecutor.execute()` → cached thread pool |
-
-### 26.1.2
-
-Yarn 映射 **未发布**。`class_2561`（Text 类的中继名）在 26.1.2 中不存在，无法构建。需等 Fabric Yarn 发布。
-26.1 开始取消了混淆映射表，可能需要重新考虑。
+### 测试指令（OP 专用）
+- `/aitest score <玩家>` — 查询行为分
+- `/aitest penalty <玩家> <分数>` — 模拟扣分
+- `/aitest reset <玩家>` — 重置行为分
+- `/aitest set <玩家> <分数>` — 设置行为分
+- `/aitest review` — 手动触发审查
+- `/aitest chatlog` — 查看聊天日志
 
 ---
 
-## 关键问题解决记录
+## 配置项 (`config/mcai.json`)
 
-### 1. `hasPermissionLevel` 崩溃（1.21.11）
-- 症状：`NoSuchMethodError: method_9259`
-- 原因：1.21.11 移除了 `ServerCommandSource.hasPermissionLevel(int)`
-- 修复：移除所有 `.requires(s -> s.hasPermissionLevel(...))` 调用
-
-### 2. `reasoning_content` 未回传
-- 症状：`The 'reasoning_content' in the thinking mode must be passed back to the API`
-- 原因：DeepSeek 思考模式下，tool_calls 消息必须回传 `reasoning_content`
-- 修复：捕获响应中的 `reasoning_content`，附加到 assistant 消息
-
-### 3. tool_calls 格式错误
-- 症状：`Messages with role 'tool' must be a response to a preceding message with 'tool_calls'`
-- 原因：tool_calls 消息的 `content` 字段设为 `""` 而非不传
-- 修复：tool_calls 消息不包含 `content` 字段
-
-### 4. ForkJoinPool 静默失败（Java 25）
-- 症状：只显示"思考中"，没有后续响应
-- 原因：`CompletableFuture.runAsync()` 使用 ForkJoinPool，Java 25 下线程可能被阻塞
-- 修复：独立 `ExecutorService` + `volatile` 确保线程可见性
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `apiEndpoint` | `https://api.deepseek.com` | API 地址 |
+| `apiKey` | `""` | API 密钥 |
+| `model` | `deepseek-v4-flash` | 模型名 |
+| `triggerPrefix` | `!ai` | 聊天触发前缀 |
+| `maxTokens` | 2048 | 最大 token 数 |
+| `temperature` | 0.75 | 温度 |
+| `thinkingLevel` | 1 | DeepSeek 思考模式（0/1/3） |
+| `maxToolCalls` | 15 | 最大工具调用轮次 |
+| `strictMode` | true | 严格模式（仅白名单免审批） |
+| `safeCommands` | `["locate","seed","list","help","say","title","tell","msg","w","fetchprofile","scoreboard","version","data get"]` | 严格模式白名单 |
+| `requireApprovalCommands` | `["op","deop","ban","ban-ip","pardon","pardon-ip","kick","stop","whitelist","save-all","reload"]` | 需审批指令 |
+| `reviewIntervalMinutes` | 30 | 审查间隔（分钟） |
+| `yellowCardThreshold` | -30 | 黄牌阈值 |
+| `redCardThreshold` | -60 | 红牌阈值 |
+| `scoreRecoveryPerInterval` | 5 | 每周期恢复分数 |
+| `approvalTimeoutMinutes` | 10 | 踢出审批超时（分钟） |
+| `enableAutoReview` | true | 启用自动审查 |
+| `maxReviewCycles` | 4 | 处罚记录保留轮次 |
 
 ---
 
 ## 构建方法
 
 ```bash
-# 1. 选择版本
+# 选择版本
 copy gradle-1.21.properties gradle.properties        # 1.21
 copy gradle-1.21.11.properties gradle.properties      # 1.21.11
 
-# 2. 编译
-.\gradlew.bat remapJar --no-daemon
-
-# 3. 产物
-# build/libs/mcai-1.0.0.jar
+# 当前分支 mc-26.1.2 (26.1.2，直接使用 gradle.properties)
+.\gradlew.bat jar
+# 产物: build/libs/mcai-1.0.0.jar
 ```
 
-需预装：JDK 21（1.21）或 JDK 25（1.21.11）、Git、Python 3（知识库下载）
+需预装：JDK 21（1.21）或 JDK 25（1.21.11+）、Git
 
 ---
 
-## 开发者备注
+## 版本兼容性
 
-- 系统提示词（system prompt）保存在 `ModConfig.java` 中，不存储到 `mcai.json`
-- 每次 `load()` 会覆盖为代码中的最新版本，确保更新后提示词自动生效
-- 知识库 JSON 文件嵌入 JAR 内部，路径 `assets/mcai/kb/`
-- 线程安全：`aiExecutor` 使用独立线程池 + `volatile` server 字段
-- 配置文件不保存 `systemPrompt`，使用 `ExclusionStrategy` 序列化跳过
+| MC 版本 | JAR 文件名 | 构建配置 |
+|---------|-----------|---------|
+| 1.21/1.21.1 | `mcai-1.21.jar` | `gradle-1.21.properties` |
+| 1.21.11 | `mcai-1.21.11.jar` | `gradle-1.21.11.properties` |
+| 26.1.2 | `mcai-26.1.2.jar` | `gradle.properties`（当前分支） |
+
+---
+
+## 架构
+
+```
+MCAIMod (ModInitializer)
+├── OpenAIClient (API 调用、工具循环)
+├── ChatHandler (AI 对话、指令审批、聊天拦截、审查日志注入)
+├── ChatReviewSystem (行为审查、周期调度、处罚记录)
+│   ├── AdminApprovalQueue (踢出审批队列)
+│   └── PlayerBehaviorTracker (行为分追踪、持久化)
+├── KnowledgeBase (本地 Wiki 搜索与读取)
+├── MemoryFile (AI 持久记忆)
+├── ModConfig (JSON 配置)
+└── MCAIConfigScreen (Mod Menu 配置界面)
+```

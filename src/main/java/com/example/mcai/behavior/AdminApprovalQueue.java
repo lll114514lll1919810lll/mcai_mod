@@ -86,6 +86,18 @@ public class AdminApprovalQueue {
         return items.get(id);
     }
 
+    /** Collect IDs of all unresolved items (for tab completion). */
+    public java.util.List<Integer> getUnresolvedIds() {
+        java.util.List<Integer> ids = new java.util.ArrayList<>();
+        for (var entry : items.entrySet()) {
+            if (!entry.getValue().isResolved()) {
+                ids.add(entry.getKey());
+            }
+        }
+        java.util.Collections.sort(ids);
+        return ids;
+    }
+
     private boolean tryResolve(ApprovalItem item, boolean approved) {
         synchronized (item) {
             if (item.resolved) return false;

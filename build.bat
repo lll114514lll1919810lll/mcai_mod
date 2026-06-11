@@ -11,9 +11,9 @@ setlocal enabledelayedexpansion
 
 if "%1"=="" (
     echo Usage: build.bat ^<version^>
-    echo   build.bat 1.21    - Minecraft 1.21     ^(master branch^)
-    echo   build.bat 1.21.11 - Minecraft 1.21.11  ^(mc-1.21.11 branch^)
-    echo   build.bat 26.1.2  - Minecraft 26.1.2   ^(mc-26.1.2 branch^)
+    echo   build.bat 1.21    - Minecraft 1.21 (master branch)
+    echo   build.bat 1.21.11 - Minecraft 1.21.11 (master branch)
+    echo   build.bat 26.1.2  - Minecraft 26.1.2 (mc-26.1.2 branch)
     echo   build.bat all     - Build all three versions
     exit /b 1
 )
@@ -51,6 +51,12 @@ if "%VERSION%"=="26.1.2" (
     set JAVA_HOME_DIR=D:\Program Files\Microsoft\jdk-25.0.2.10-hotspot
     set TASK=jar
     set JAR_NAME=mcai-26.1.2.jar
+) else if "%VERSION%"=="1.21.11" (
+    set BRANCH=mc-1.21.11
+    set JAVA_HOME_DIR=C:\tools\jdk21\jdk-21.0.7+6
+    set TASK=remapJar
+    set JAR_NAME=mcai-1.21.11.jar
+    set GRADLE_WRAPPER=gradle-wrapper-9.5.1.properties
 ) else (
     set BRANCH=master
     set JAVA_HOME_DIR=C:\tools\jdk21\jdk-21.0.7+6
@@ -63,8 +69,7 @@ echo JDK: !JAVA_HOME_DIR!
 
 REM Switch branch
 echo Switching to branch !BRANCH!...
-git checkout -- . 2>nul
-git checkout !BRANCH! 2>nul
+git checkout -f !BRANCH! 2>nul
 if !ERRORLEVEL! NEQ 0 (
     echo Error: Failed to switch to branch !BRANCH!
     exit /b 1
@@ -77,6 +82,12 @@ if not exist "gradle-%VERSION%.properties" (
 )
 copy /Y "gradle-%VERSION%.properties" "gradle.properties" > nul
 echo Properties: gradle-%VERSION%.properties
+
+REM Switch Gradle wrapper if needed
+if defined GRADLE_WRAPPER (
+    copy /Y "gradle\wrapper\!GRADLE_WRAPPER!" "gradle\wrapper\gradle-wrapper.properties" > nul
+    echo Gradle: !GRADLE_WRAPPER!
+)
 
 REM Build
 echo Running gradlew !TASK!...

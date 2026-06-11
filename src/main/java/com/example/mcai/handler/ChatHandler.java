@@ -163,6 +163,7 @@ public class ChatHandler {
 
     public LiteralArgumentBuilder<ServerCommandSource> createReloadCommand() {
         return CommandManager.literal("aireload")
+                .requires(ChatHandler::isAdminOrConsole)
                 .executes(ctx -> {
                     mod.reloadConfig();
                     history.clear();

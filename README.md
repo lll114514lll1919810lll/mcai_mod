@@ -60,7 +60,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器/在�
 - 一个 [DeepSeek API Key](https://platform.deepseek.com)
 
 ### 安装步骤
-1. 下载最新版 `mcai-x.x.x.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面，提供客户端与服务端双版本）
+1. 下载最新版 `mcai-x.x.x-x.x.x.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面，客户端与服务端双版本统一）
 2. 把 JAR 文件放到客户端/服务器的 `mods/` 文件夹里
 3. 启动客户端/服务器，会自动生成配置文件
 4. 打开 `config/mcai/config.json`，填入你的 API Key：
@@ -177,7 +177,7 @@ cd mcai_mod
 能。修改 `apiEndpoint` 为任何 OpenAI 兼容接口（OpenAI、通义千问、GLM 等）。
 
 **Q: 费用高吗？**
-DeepSeek 非常便宜，日常使用每月几块钱。审查 30 分钟才调用一次也可以修改频率。
+DeepSeek 非常便宜，日常使用每月几块钱。审查 30 分钟才调用一次，也可以修改频率。
 
 ---
 

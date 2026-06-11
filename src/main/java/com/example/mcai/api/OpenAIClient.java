@@ -275,13 +275,31 @@ public class OpenAIClient {
         statusFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
         statusTool.add("function", statusFn);
 
+        JsonObject rulesTool = new JsonObject();
+        rulesTool.addProperty("type", "function");
+        JsonObject rulesFn = new JsonObject();
+        rulesFn.addProperty("name", "get_game_rules");
+        rulesFn.addProperty("description", "获取服务器游戏规则状态，包括昼夜循环、火焰蔓延、生物破坏、死亡不掉落、生物生成、天气循环、命令方块输出等关键规则。无需参数。");
+        rulesFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        rulesTool.add("function", rulesFn);
+
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
         tools.add(readTool);
         tools.add(cmdTool);
         tools.add(recallTool);
         tools.add(rememberTool);
+        JsonObject debugTool = new JsonObject();
+        debugTool.addProperty("type", "function");
+        JsonObject debugFn = new JsonObject();
+        debugFn.addProperty("name", "get_debug_info");
+        debugFn.addProperty("description", "获取玩家当前位置的F3调试信息：光照等级（方块光/天空光）、所在区块坐标、注视的方块或实体、区域难度。无需参数。");
+        debugFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        debugTool.add("function", debugFn);
+
         tools.add(statusTool);
+        tools.add(rulesTool);
+        tools.add(debugTool);
         return tools;
     }
 

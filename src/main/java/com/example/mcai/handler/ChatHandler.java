@@ -333,6 +333,10 @@ public class ChatHandler {
                             results.add(mem.isEmpty() ? "暂无记忆" : mem);
                         } else if ("get_server_status".equals(tc.name)) {
                             results.add(getServerStatus(player));
+                        } else if ("get_game_rules".equals(tc.name)) {
+                            results.add(getGameRules(player));
+                        } else if ("get_debug_info".equals(tc.name)) {
+                            results.add(getDebugInfo(player));
                         } else {
                             results.add("未知工具: " + tc.name);
                         }
@@ -484,6 +488,14 @@ public class ChatHandler {
         else if (hour == 12) { displayHour = 12; period = "PM"; }
         else { displayHour = hour - 12; period = "PM"; }
         return String.format("第%d天 %d:%02d %s (tick=%d)", day, displayHour, minute, period, ticks);
+    }
+
+    private String getGameRules(ServerPlayerEntity player) {
+        return "仅 MC 26.1.2 支持游戏规则查询。当前版本请使用 execute_minecraft_command(\"gamerule <规则名>\") 查看。";
+    }
+
+    private String getDebugInfo(ServerPlayerEntity player) {
+        return "仅 MC 26.1.2 支持 F3 调试信息查询。可使用 get_server_status 查看基础状态。";
     }
 
     private String buildPlayerContext(ServerPlayerEntity player) {

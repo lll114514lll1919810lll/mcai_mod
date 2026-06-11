@@ -52,7 +52,7 @@ if "%VERSION%"=="26.1.2" (
     set TASK=jar
     set JAR_NAME=mcai-26.1.2.jar
 ) else if "%VERSION%"=="1.21.11" (
-    set BRANCH=master
+    set BRANCH=mc-1.21.11
     set JAVA_HOME_DIR=C:\tools\jdk21\jdk-21.0.7+6
     set TASK=remapJar
     set JAR_NAME=mcai-1.21.11.jar

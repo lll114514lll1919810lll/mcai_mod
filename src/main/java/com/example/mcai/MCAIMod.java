@@ -55,7 +55,7 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             this.server = s;
             chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-            if (config.isEnableAutoReview()) {
+            if (config.isEnableAutoReview() && s.isDedicatedServer()) {
                 chatReviewSystem.start();
                 LOGGER.info("Auto behavior review enabled");
             }

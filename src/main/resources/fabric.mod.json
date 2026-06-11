@@ -12,9 +12,6 @@
   "entrypoints": {
     "main": [
       "com.example.mcai.MCAIMod"
-    ],
-    "modmenu": [
-      "com.example.mcai.client.ModMenuIntegration"
     ]
   },
   "depends": {
@@ -23,7 +20,5 @@
     "java": ">=25",
     "fabric-api": "*"
   },
-  "suggests": {
-    "modmenu": "*"
-  }
+  "suggests": {}
 }

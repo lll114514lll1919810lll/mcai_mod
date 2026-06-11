@@ -7,13 +7,12 @@ import com.google.gson.JsonObject;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -32,16 +31,16 @@ public class MCAIConfigScreen extends Screen {
     private final Path configPath;
     private JsonObject cfg;
 
-    private EditBox apiEndpointField, apiKeyField, modelField;
-    private EditBox prefixField, maxTokensField, tempField;
-    private EditBox ctxField, thinkingField, toolCallsField, approvalField;
-    private Button chatBtn, cmdBtn;
+    private TextFieldWidget apiEndpointField, apiKeyField, modelField;
+    private TextFieldWidget prefixField, maxTokensField, tempField;
+    private TextFieldWidget ctxField, thinkingField, toolCallsField, approvalField;
+    private ButtonWidget chatBtn, cmdBtn;
 
     private String status = "";
     private int statusTimer = 0;
 
     public MCAIConfigScreen(Screen parent) {
-        super(Component.literal("MCAI 设置"));
+        super(Text.literal("MCAI 设置"));
         this.parent = parent;
         this.configPath = FabricLoader.getInstance().getConfigDir().resolve("mcai.json");
         this.cfg = loadConfig();
@@ -108,54 +107,55 @@ public class MCAIConfigScreen extends Screen {
         cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
 
         drawLabel(leftX, sy + rowH * 11, "需审批指令");
-        approvalField = new EditBox(font, inX, sy + rowH * 11, fieldW, 20, Component.literal(""));
+        approvalField = new TextFieldWidget(textRenderer, inX, sy + rowH * 11, fieldW, 20, Text.literal(""));
         if (cfg.has("requireApprovalCommands")) {
             JsonArray arr = cfg.getAsJsonArray("requireApprovalCommands");
             String val = arr.asList().stream()
                     .map(e -> e.getAsString()).collect(Collectors.joining(", "));
-            approvalField.setValue(val);
+            approvalField.setText(val);
         }
-        approvalField.setTooltip(Tooltip.create(Component.literal("逗号分隔的命令列表")));
-        addRenderableWidget(approvalField);
+        approvalField.setTooltip(Tooltip.of(Text.literal("逗号分隔的命令列表")));
+        addDrawableChild(approvalField);
 
         int by = sy + rowH * 12 + 15;
-        addRenderableWidget(Button.builder(Component.literal("§a保存并重载"), b -> save())
-                .pos(cx - 105, by).size(100, 20).build());
-        addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
-                .pos(cx + 5, by).size(100, 20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("§a保存并重载"), b -> save())
+                .dimensions(cx - 105, by, 100, 20).build());
+        addDrawableChild(ButtonWidget.builder(Text.literal("§7取消"), b -> close())
+                .dimensions(cx + 5, by, 100, 20).build());
     }
 
-    private EditBox mkField(int x, int y, int w, String val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, w, 20, Component.literal(""));
+    private TextFieldWidget mkField(int x, int y, int w, String val, String tooltip) {
+        TextFieldWidget f = new TextFieldWidget(textRenderer, x, y, w, 20, Text.literal(""));
         f.setMaxLength(1024);
-        f.setValue(val);
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
+        f.setText(val);
+        f.setTooltip(Tooltip.of(Text.literal(tooltip)));
+        addDrawableChild(f);
         return f;
     }
 
-    private EditBox mkNumField(int x, int y, int val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, 80, 20, Component.literal(""));
+    private TextFieldWidget mkNumField(int x, int y, int val, String tooltip) {
+        TextFieldWidget f = new TextFieldWidget(textRenderer, x, y, 80, 20, Text.literal(""));
         f.setMaxLength(8);
-        f.setValue(String.valueOf(val));
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
+        f.setTextPredicate(s -> s.matches("\\d*"));
+        f.setText(String.valueOf(val));
+        f.setTooltip(Tooltip.of(Text.literal(tooltip)));
+        addDrawableChild(f);
         return f;
     }
 
     private void drawLabel(int x, int y, String text) {
-        addRenderableWidget(new StringWidget(x, y, LABEL_W, 20,
-                Component.literal(text), font));
+        addDrawableChild(new net.minecraft.client.gui.widget.TextWidget(x, y, LABEL_W, 20,
+                Text.literal(text), textRenderer));
     }
 
-    private Button mkToggle(int x, int y, boolean initial) {
-        Button b = Button.builder(
-                Component.literal(initial ? "§a开启" : "§c关闭"), btn -> {
+    private ButtonWidget mkToggle(int x, int y, boolean initial) {
+        ButtonWidget b = ButtonWidget.builder(
+                Text.literal(initial ? "§a开启" : "§c关闭"), btn -> {
                     boolean now = btn.getMessage().getString().contains("开启");
-                    btn.setMessage(Component.literal(now ? "§c关闭" : "§a开启"));
+                    btn.setMessage(Text.literal(now ? "§c关闭" : "§a开启"));
                 })
-                .pos(x, y).size(60, 20).build();
-        addRenderableWidget(b);
+                .dimensions(x, y, 60, 20).build();
+        addDrawableChild(b);
         return b;
     }
 
@@ -173,20 +173,20 @@ public class MCAIConfigScreen extends Screen {
                 o = new JsonObject();
             }
 
-            o.addProperty("apiEndpoint", apiEndpointField.getValue());
-            o.addProperty("apiKey", apiKeyField.getValue());
-            o.addProperty("model", modelField.getValue());
-            o.addProperty("triggerPrefix", prefixField.getValue());
-            o.addProperty("maxTokens", parseInt(maxTokensField.getValue(), 1024));
-            o.addProperty("temperature", parseInt(tempField.getValue(), 70) / 100.0);
-            o.addProperty("contextMaxChars", parseInt(ctxField.getValue(), 20000));
-            o.addProperty("thinkingLevel", parseInt(thinkingField.getValue(), 0));
-            o.addProperty("maxToolCalls", parseInt(toolCallsField.getValue(), 5));
+            o.addProperty("apiEndpoint", apiEndpointField.getText());
+            o.addProperty("apiKey", apiKeyField.getText());
+            o.addProperty("model", modelField.getText());
+            o.addProperty("triggerPrefix", prefixField.getText());
+            o.addProperty("maxTokens", parseInt(maxTokensField.getText(), 1024));
+            o.addProperty("temperature", parseInt(tempField.getText(), 70) / 100.0);
+            o.addProperty("contextMaxChars", parseInt(ctxField.getText(), 20000));
+            o.addProperty("thinkingLevel", parseInt(thinkingField.getText(), 0));
+            o.addProperty("maxToolCalls", parseInt(toolCallsField.getText(), 5));
             o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
             o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
 
             JsonArray arr = new JsonArray();
-            Arrays.stream(approvalField.getValue().split(","))
+            Arrays.stream(approvalField.getText().split(","))
                     .map(String::trim).filter(s -> !s.isEmpty())
                     .forEach(arr::add);
             o.add("requireApprovalCommands", arr);
@@ -198,8 +198,8 @@ public class MCAIConfigScreen extends Screen {
             status = "§a✓ 已保存";
             statusTimer = 120;
 
-            if (minecraft != null && minecraft.player != null) {
-                minecraft.player.connection.sendCommand("aireload");
+            if (client != null && client.player != null) {
+                client.player.networkHandler.sendCommand("aireload");
             }
         } catch (IOException e) {
             status = "§c保存失败: " + e.getMessage();
@@ -217,17 +217,17 @@ public class MCAIConfigScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mx, int my, float delta) {
-        super.extractRenderState(graphics, mx, my, delta);
-        graphics.text(font, title, width / 2 - font.width(title) / 2, 12, 0xffffff);
+    public void render(DrawContext ctx, int mx, int my, float delta) {
+        super.render(ctx, mx, my, delta);
+        ctx.drawCenteredTextWithShadow(textRenderer, title, width / 2, 12, 0xffffff);
         if (statusTimer > 0) {
-            Component statusComp = Component.literal(status);
-            graphics.text(font, statusComp, width / 2 - font.width(statusComp) / 2, height - 20, 0xffffaa);
+            ctx.drawCenteredTextWithShadow(textRenderer,
+                    Text.literal(status), width / 2, height - 20, 0xffffaa);
         }
     }
 
     @Override
-    public void onClose() {
-        if (minecraft != null) minecraft.setScreen(parent);
+    public void close() {
+        if (client != null) client.setScreen(parent);
     }
 }

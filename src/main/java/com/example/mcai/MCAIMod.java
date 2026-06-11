@@ -38,7 +38,7 @@ public class MCAIMod implements ModInitializer {
         aiClient = new OpenAIClient(config);
         chatHandler = new ChatHandler(this);
 
-        CommandRegistrationCallback.EVENT.register((dispatcher, buildContext, selection) -> {
+        CommandRegistrationCallback.EVENT.register((dispatcher, registry, env) -> {
             dispatcher.register(chatHandler.createAICommand());
             dispatcher.register(chatHandler.createWikiCommand());
             dispatcher.register(chatHandler.createQueryCommand());

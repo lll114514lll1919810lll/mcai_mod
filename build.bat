@@ -69,7 +69,7 @@ echo JDK: !JAVA_HOME_DIR!
 
 REM Switch branch
 echo Switching to branch !BRANCH!...
-git checkout !BRANCH! 2>nul
+git checkout -f !BRANCH! 2>nul
 if !ERRORLEVEL! NEQ 0 (
     echo Error: Failed to switch to branch !BRANCH!
     exit /b 1

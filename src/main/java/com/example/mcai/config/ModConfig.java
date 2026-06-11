@@ -109,6 +109,15 @@ public class ModConfig {
             "transfer", "spectate", "random"
     );
 
+    // ── 行为审查系统 ──
+    private int reviewIntervalMinutes = 30;
+    private int yellowCardThreshold = -30;
+    private int redCardThreshold = -60;
+    private int scoreRecoveryPerInterval = 5;
+    private int approvalTimeoutMinutes = 10;
+    private boolean enableAutoReview = true;
+    private int maxReviewCycles = 4;
+
     public static ModConfig load() {
         ModConfig config;
         if (Files.exists(CONFIG_PATH)) {
@@ -154,4 +163,11 @@ public class ModConfig {
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
     public List<String> getStrictCommands() { return STRICT_COMMANDS; }
+    public int getReviewIntervalMinutes() { return reviewIntervalMinutes; }
+    public int getYellowCardThreshold() { return yellowCardThreshold; }
+    public int getRedCardThreshold() { return redCardThreshold; }
+    public int getScoreRecoveryPerInterval() { return scoreRecoveryPerInterval; }
+    public int getApprovalTimeoutMinutes() { return approvalTimeoutMinutes; }
+    public boolean isEnableAutoReview() { return enableAutoReview; }
+    public int getMaxReviewCycles() { return maxReviewCycles; }
 }

@@ -180,6 +180,18 @@ public class ChatHandler {
         }
     }
 
+    public String peekChatLog() {
+        synchronized (chatLog) {
+            return String.join("\n", chatLog);
+        }
+    }
+
+    public void clearChatLog() {
+        synchronized (chatLog) {
+            chatLog.clear();
+        }
+    }
+
     public void registerChatInterceptor() {
         if (!mod.getConfig().isEnableChatInterception()) return;
         try {

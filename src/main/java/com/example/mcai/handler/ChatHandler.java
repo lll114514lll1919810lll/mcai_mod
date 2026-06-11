@@ -521,7 +521,9 @@ public class ChatHandler {
     }
 
     private boolean needsApproval(String cmd) {
-        return mod.getConfig().getRequireApprovalCommands()
-                .contains(cmd.split("\\s+")[0].toLowerCase());
+        String root = cmd.split("\\s+")[0].toLowerCase();
+        if (mod.getConfig().getRequireApprovalCommands().contains(root)) return true;
+        if (mod.getConfig().isStrictMode() && mod.getConfig().getStrictCommands().contains(root)) return true;
+        return false;
     }
 }

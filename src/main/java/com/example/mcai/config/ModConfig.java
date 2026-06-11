@@ -91,13 +91,6 @@ public class ModConfig {
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
             "kick", "stop", "whitelist", "save-all", "reload"
     ));
-    // ── 行为审查系统 ──
-    private int reviewIntervalMinutes = 30;
-    private int yellowCardThreshold = -30;
-    private int redCardThreshold = -60;
-    private int scoreRecoveryPerInterval = 5;
-    private int approvalTimeoutMinutes = 10;
-    private boolean enableAutoReview = true;
 
     /** 严格模式下免审批的绝对安全命令（只读，无副作用） */
     private List<String> safeCommands = new ArrayList<>(List.of(
@@ -106,8 +99,6 @@ public class ModConfig {
             "fetchprofile", "scoreboard", "version",
             "data get"
     ));
-
-    private int maxReviewCycles = 4;
 
     public static ModConfig load() {
         ModConfig config;
@@ -154,11 +145,4 @@ public class ModConfig {
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
     public List<String> getSafeCommands() { return safeCommands; }
-    public int getMaxReviewCycles() { return maxReviewCycles; }
-    public int getReviewIntervalMinutes() { return reviewIntervalMinutes; }
-    public int getYellowCardThreshold() { return yellowCardThreshold; }
-    public int getRedCardThreshold() { return redCardThreshold; }
-    public int getScoreRecoveryPerInterval() { return scoreRecoveryPerInterval; }
-    public int getApprovalTimeoutMinutes() { return approvalTimeoutMinutes; }
-    public boolean isEnableAutoReview() { return enableAutoReview; }
 }

@@ -12,6 +12,9 @@
   "entrypoints": {
     "main": [
       "com.example.mcai.MCAIMod"
+    ],
+    "modmenu": [
+      "com.example.mcai.client.ModMenuIntegration"
     ]
   },
   "depends": {

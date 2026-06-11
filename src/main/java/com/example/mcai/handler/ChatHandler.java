@@ -227,40 +227,6 @@ public class ChatHandler {
     }
 
 
-    public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createScoreCommand() {
-        return Commands.literal("aiscore")
-                .executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayer();
-                    if (player == null) {
-                        ctx.getSource().sendSuccess(() -> Component.literal("§c控制台无行为分"), false);
-                        return 0;
-                    }
-                    var tracker = mod.getBehaviorTracker();
-                    var cfg = mod.getConfig();
-                    int score = tracker.getScore(player.getUUID());
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§e===== 你的行为评分 ====="), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§f当前评分: " + (score >= 0 ? "§a" : "§c") + score), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§7━━━━ 处罚规则 ━━━━"), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§7行为分初始为 §f0§7，违规扣分，良好表现可恢复"), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§e黄牌阈值: §f" + cfg.getYellowCardThreshold()
-                                    + " §7(公屏警告)"), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§c红牌阈值: §f" + cfg.getRedCardThreshold()
-                                    + " §7(踢出+管理员审批)"), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§a每周期自动恢复: §f+" + cfg.getScoreRecoveryPerInterval()
-                                    + " §7(上限恢复至0)"), false);
-                    ctx.getSource().sendSuccess(() -> Component.literal(
-                            "§7━━━━━━━━━━━━━━"), false);
-                    return Command.SINGLE_SUCCESS;
-                });
-    }
-
     public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createReloadCommand() {
         return Commands.literal("aireload")
                 .executes(ctx -> {
@@ -268,9 +234,6 @@ public class ChatHandler {
                     history.clear();
                     pendingCommands.clear();
                     synchronized (chatLog) { chatLog.clear(); }
-                    if (mod.getChatReviewSystem() != null) {
-                        mod.getChatReviewSystem().clearPenaltyEvents();
-                    }
                     ctx.getSource().sendSuccess(
                             () -> Component.literal("§a[AI] 已重载，所有状态已清空"), true);
                     return 1;
@@ -489,13 +452,6 @@ public class ChatHandler {
                 if (!recentChat.isEmpty()) {
                     messages.add(new OpenAIClient.ChatMessage("system",
                             "最近的聊天记录（了解当前氛围）:\n" + recentChat));
-                }
-
-                // Inject recent penalty records for AI awareness
-                String penaltySummary = mod.getChatReviewSystem() != null
-                        ? mod.getChatReviewSystem().getRecentPenaltySummary() : "";
-                if (!penaltySummary.isEmpty()) {
-                    messages.add(new OpenAIClient.ChatMessage("system", penaltySummary));
                 }
 
                 synchronized (playerHistory) {
@@ -899,26 +855,15 @@ public class ChatHandler {
 
         String gameTimeStr = formatGameTime(level.getGameTime());
 
-        // Behavior score context
-        String behaviorInfo = "";
-        try {
-            boolean isAdmin = server != null
-                    && server.getPlayerList().isOp(new NameAndId(player.getGameProfile()));
-            if (!isAdmin) {
-                int score = mod.getBehaviorTracker().getScore(player.getUUID());
-                behaviorInfo = " | 行为分: " + score;
-            }
-        } catch (Exception ignored) {}
-
         return String.format("""
                 版本: %s | 在线(%d/%d): [%s] | %s | 难度: %s
-                说话者: %s | 坐标: [%d %d %d] | 朝向: %s | 维度: %s | HP: %.1f | 饱食度: %d | 模式: %s | 等级: %d%s%s
+                说话者: %s | 坐标: [%d %d %d] | 朝向: %s | 维度: %s | HP: %.1f | 饱食度: %d | 模式: %s | 等级: %d%s
                 """, server.getServerModName(), server.getPlayerCount(), server.getMaxPlayers(),
                 playerList, gameTimeStr, level.getDifficulty().getDisplayName().getString(),
                 player.getScoreboardName(), pos.getX(), pos.getY(), pos.getZ(), facing,
                 level.dimension().identifier(), player.getHealth(),
                 player.getFoodData().getFoodLevel(), player.gameMode.getGameModeForPlayer().name(),
-                player.experienceLevel, advSummary, behaviorInfo);
+                player.experienceLevel, advSummary);
     }
 
     /**将 tick 数转为人类可读的游戏时间。0 tick = 第1天 6:00 AM */
@@ -1050,12 +995,6 @@ public class ChatHandler {
                 if (!recentChat.isEmpty()) {
                     messages.add(new OpenAIClient.ChatMessage("system",
                             "最近的聊天记录（了解当前氛围）:\n" + recentChat));
-                }
-                // Inject recent penalty records for AI awareness
-                String penaltySummary = mod.getChatReviewSystem() != null
-                        ? mod.getChatReviewSystem().getRecentPenaltySummary() : "";
-                if (!penaltySummary.isEmpty()) {
-                    messages.add(new OpenAIClient.ChatMessage("system", penaltySummary));
                 }
                 messages.add(new OpenAIClient.ChatMessage("user", userContent));
 

@@ -195,11 +195,20 @@ public class MCAIConfigScreen extends Screen {
                 GSON.toJson(o, w);
             }
 
-            status = "§a✓ 已保存";
-            statusTimer = 120;
-
-            if (minecraft != null && minecraft.player != null) {
+            // Reload: direct call for single player, command for dedicated server
+            if (minecraft != null && minecraft.getSingleplayerServer() != null) {
+                // Single player / integrated server: reload directly (bypasses cheat permission)
+                com.example.mcai.MCAIMod.getInstance().reloadConfig();
+                status = "§a✓ 配置已保存并重载";
+                statusTimer = 100;
+            } else if (minecraft != null && minecraft.player != null) {
+                // Dedicated server: send reload command (requires permission)
                 minecraft.player.connection.sendCommand("aireload");
+                status = "§a✓ 配置已保存，重载指令已发送";
+                statusTimer = 100;
+            } else {
+                status = "§a✓ 配置已保存 (§6请手动执行 /aireload)";
+                statusTimer = 150;
             }
         } catch (IOException e) {
             status = "§c保存失败: " + e.getMessage();

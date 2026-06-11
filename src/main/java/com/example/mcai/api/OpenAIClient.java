@@ -289,8 +289,17 @@ public class OpenAIClient {
         tools.add(cmdTool);
         tools.add(recallTool);
         tools.add(rememberTool);
+        JsonObject debugTool = new JsonObject();
+        debugTool.addProperty("type", "function");
+        JsonObject debugFn = new JsonObject();
+        debugFn.addProperty("name", "get_debug_info");
+        debugFn.addProperty("description", "获取玩家当前位置的F3调试信息：光照等级（方块光/天空光）、所在区块坐标、注视的方块或实体、区域难度。无需参数。");
+        debugFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        debugTool.add("function", debugFn);
+
         tools.add(statusTool);
         tools.add(rulesTool);
+        tools.add(debugTool);
         return tools;
     }
 

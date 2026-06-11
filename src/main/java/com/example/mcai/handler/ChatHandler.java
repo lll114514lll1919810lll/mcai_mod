@@ -384,6 +384,8 @@ public class ChatHandler {
                             results.add(getServerStatus(player));
                         } else if ("get_game_rules".equals(tc.name)) {
                             results.add(getGameRules(player));
+                        } else if ("get_debug_info".equals(tc.name)) {
+                            results.add(getDebugInfo(player));
                         } else {
                             results.add("未知工具: " + tc.name);
                         }
@@ -583,6 +585,84 @@ public class ChatHandler {
     }
 
     private static String yn(boolean b) { return b ? "§a是" : "§c否"; }
+
+    private String getDebugInfo(ServerPlayer player) {
+        var server = mod.getServer();
+        if (server == null) return "服务器未就绪";
+        var level = (ServerLevel) player.level();
+        var pos = player.blockPosition();
+
+        // 光照等级
+        int blockLight = level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos);
+        int skyLight = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
+        // 考虑天空变暗因子后的实际天空光
+        int skyDarken = level.getSkyDarken();
+        int actualSkyLight = Math.max(0, skyLight - skyDarken);
+
+        // 区块坐标
+        int chunkX = pos.getX() >> 4;
+        int chunkZ = pos.getZ() >> 4;
+        String chunkLoaded = level.isLoaded(pos) ? "是" : "否";
+
+        // 区域难度
+        float regionalDifficulty;
+        try {
+            regionalDifficulty = level.getCurrentDifficultyAt(pos).getEffectiveDifficulty();
+        } catch (Exception e) {
+            regionalDifficulty = -1;
+        }
+
+        // 注视方块
+        String lookingAt;
+        try {
+            var hit = player.pick(20.0, 0.0f, false);
+            if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                var blockHit = (net.minecraft.world.phys.BlockHitResult) hit;
+                var blockState = level.getBlockState(blockHit.getBlockPos());
+                var block = blockState.getBlock();
+                lookingAt = block.toString() + " @ " + blockHit.getBlockPos().toShortString();
+            } else if (hit.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                var entityHit = (net.minecraft.world.phys.EntityHitResult) hit;
+                var entity = entityHit.getEntity();
+                lookingAt = entity.getDisplayName().getString() + " @ " + entity.blockPosition().toShortString();
+            } else {
+                lookingAt = "无";
+            }
+        } catch (Exception e) {
+            lookingAt = "N/A";
+        }
+
+        // 注视流体
+        String fluidAtPos;
+        try {
+            var fluid = level.getFluidState(pos);
+            fluidAtPos = fluid.isEmpty() ? "无" : fluid.getType().toString();
+        } catch (Exception e) {
+            fluidAtPos = "N/A";
+        }
+
+        return String.format("""
+                F3 调试信息:
+                坐标: [%d %d %d] (区块 §e%d, %d§r)
+                朝向: %s
+                方块光: %d | 天空光: %d (原始%d, 暗化-%d) | 脚下流体: %s
+                区域难度: %.2f | 区块已加载: %s
+                注视目标: %s
+                """,
+                pos.getX(), pos.getY(), pos.getZ(), chunkX, chunkZ,
+                facingName(player.getYRot()),
+                blockLight, actualSkyLight, skyLight, skyDarken, fluidAtPos,
+                regionalDifficulty, chunkLoaded,
+                lookingAt
+        );
+    }
+
+    private static String facingName(float yRot) {
+        if (yRot >= -45 && yRot < 45) return "南 (+Z)";
+        if (yRot >= 45 && yRot < 135) return "西 (-X)";
+        if (yRot >= -135 && yRot < -45) return "东 (+X)";
+        return "北 (-Z)";
+    }
 
     private String buildPlayerContext(ServerPlayer player) {
         var server = mod.getServer();

@@ -123,8 +123,10 @@ public class MCAIConfigScreen extends Screen {
         strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 12, getBool("strictMode", false));
 
         int by = sy + rowH * 13 + 15;
-        addRenderableWidget(Button.builder(Component.literal("§a保存并重载"), b -> save())
-                .pos(cx - 105, by).size(100, 20).build());
+        var saveBtn = Button.builder(Component.literal("§a保存并关闭"), b -> save())
+                .pos(cx - 105, by).size(100, 20).build();
+        saveBtn.setTooltip(Tooltip.create(Component.literal("§7保存后需手动执行 /aireload 或重新进入游戏以应用配置")));
+        addRenderableWidget(saveBtn);
         addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
                 .pos(cx + 5, by).size(100, 20).build());
     }
@@ -199,35 +201,9 @@ public class MCAIConfigScreen extends Screen {
             try (Writer w = Files.newBufferedWriter(configPath)) {
                 GSON.toJson(o, w);
             }
-
+            status = "§a✓ 已保存";
             statusTimer = 100;
-            // 1. 同 JVM：直接调用 MCAIMod 重载（单机模式，绕过权限）
-            var instance = com.example.mcai.MCAIMod.getInstance();
-            if (instance != null) {
-                instance.reloadConfig();
-                status = "§a✓ 已保存并重载";
-                return;
-            }
-            // 2. 单机备用：直接在集成服务器上执行 /aireload
-            if (minecraft != null && minecraft.getSingleplayerServer() != null) {
-                try {
-                    var srv = minecraft.getSingleplayerServer();
-                    srv.getCommands().getDispatcher().execute("aireload", srv.createCommandSourceStack());
-                    status = "§a✓ 已保存并重载";
-                    return;
-                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
-                    status = "§c重载失败: " + e.getMessage();
-                    return;
-                }
-            }
-            // 3. 联机：发送指令到远程服务器
-            if (minecraft != null && minecraft.player != null) {
-                minecraft.player.connection.sendCommand("aireload");
-                status = "§a✓ 已保存，指令已发送";
-                return;
-            }
-            // 4. 主菜单等无连接场景
-            status = "§a✓ 已保存 (§6加入游戏后自动生效)";
+            minecraft.setScreen(parent);
         } catch (IOException e) {
             status = "§c保存失败: " + e.getMessage();
             statusTimer = 200;

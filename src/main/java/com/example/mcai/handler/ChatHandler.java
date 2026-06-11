@@ -157,25 +157,6 @@ public class ChatHandler {
                 });
     }
 
-    public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createMemoryCommand() {
-        return Commands.literal("aimemory")
-                .executes(ctx -> {
-                    String mem = mod.getMemory().getAll();
-                    if (mem.isEmpty()) {
-                        ctx.getSource().sendSuccess(
-                                () -> Component.literal("§7[AI] 暂无记忆"), false);
-                    } else {
-                        ctx.getSource().sendSuccess(
-                                () -> Component.literal("§e==== AI 持久记忆 (" + mod.getMemory().size() + " 条) ===="), false);
-                        for (String line : mem.split("\n")) {
-                            String display = line;
-                            ctx.getSource().sendSuccess(
-                                    () -> Component.literal("§7" + display), false);
-                        }
-                    }
-                    return 1;
-                });
-    }
 
     public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createReloadCommand() {
         return Commands.literal("aireload")
@@ -345,11 +326,6 @@ public class ChatHandler {
                             "最近的聊天记录（了解当前氛围）:\n" + recentChat));
                 }
 
-                String memoryContent = mod.getMemory().getAll();
-                if (!memoryContent.isEmpty()) {
-                    messages.add(new OpenAIClient.ChatMessage("system",
-                            "以下是之前记住的信息。你可以用 remember 工具追加新记忆，用 recall 重新读取：\n" + memoryContent));
-                }
 
                 synchronized (playerHistory) {
                     int totalChars = 0;
@@ -373,13 +349,6 @@ public class ChatHandler {
                                     parseArg(tc.arguments, "title")));
                         } else if ("execute_minecraft_command".equals(tc.name)) {
                             results.add(executeCommand(parseArg(tc.arguments, "command"), player));
-                        } else if ("remember".equals(tc.name)) {
-                            String content = parseArg(tc.arguments, "content");
-                            mod.getMemory().addEntry(content);
-                            results.add("已记住: " + content);
-                        } else if ("recall".equals(tc.name)) {
-                            String mem = mod.getMemory().getAll();
-                            results.add(mem.isEmpty() ? "暂无记忆" : mem);
                         } else if ("get_server_status".equals(tc.name)) {
                             results.add(getServerStatus(player));
                         } else if ("get_game_rules".equals(tc.name)) {

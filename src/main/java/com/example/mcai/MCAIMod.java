@@ -12,7 +12,6 @@ import com.example.mcai.config.ModConfig;
 import com.example.mcai.api.OpenAIClient;
 import com.example.mcai.handler.ChatHandler;
 import com.example.mcai.kb.KnowledgeBase;
-import com.example.mcai.memory.MemoryFile;
 
 public class MCAIMod implements ModInitializer {
     public static final String MOD_ID = "mcai";
@@ -23,15 +22,12 @@ public class MCAIMod implements ModInitializer {
     private OpenAIClient aiClient;
     private ChatHandler chatHandler;
     private KnowledgeBase knowledgeBase;
-    private MemoryFile memory;
     private volatile MinecraftServer server;
 
     @Override
     public void onInitialize() {
         instance = this;
         config = ModConfig.load();
-        memory = new MemoryFile();
-        memory.load();
         knowledgeBase = new KnowledgeBase();
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai_kb"));
@@ -45,7 +41,6 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(chatHandler.createAcceptCommand());
             dispatcher.register(chatHandler.createRejectCommand());
             dispatcher.register(chatHandler.createClearCommand());
-            dispatcher.register(chatHandler.createMemoryCommand());
             dispatcher.register(chatHandler.createReloadCommand());
         });
 
@@ -56,16 +51,15 @@ public class MCAIMod implements ModInitializer {
 
         chatHandler.registerChatInterceptor();
 
-        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, KB: {} chunks, memory: {} entries",
+        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, KB: {} chunks",
                 config.getTriggerPrefix(), config.getApiEndpoint(),
-                knowledgeBase.size(), memory.size());
+                knowledgeBase.size());
     }
 
     public static MCAIMod getInstance() { return instance; }
     public ModConfig getConfig() { return config; }
     public OpenAIClient getAiClient() { return aiClient; }
     public KnowledgeBase getKnowledgeBase() { return knowledgeBase; }
-    public MemoryFile getMemory() { return memory; }
     public MinecraftServer getServer() { return server; }
 
     public void reloadConfig() {
@@ -73,8 +67,7 @@ public class MCAIMod implements ModInitializer {
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai_kb"));
-        memory.load();
-        LOGGER.info("MCAI config reloaded, KB: {} chunks, memory: {} entries",
-                knowledgeBase.size(), memory.size());
+        LOGGER.info("MCAI config reloaded, KB: {} chunks",
+                knowledgeBase.size());
     }
 }

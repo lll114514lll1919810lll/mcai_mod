@@ -5,7 +5,12 @@ from collections import Counter
 
 API = "https://zh.minecraft.wiki/api.php"
 UA = "MCAIKB/2.0"
-OUT = "..\\src\\main\\resources\\assets\\mcai\\kb"
+# 自动检测输出路径：从 tools/ 或项目根目录运行均可
+_OUT_BASE = os.path.dirname(os.path.abspath(__file__))  # tools/
+if os.path.basename(_OUT_BASE) == "tools":
+    OUT = os.path.join(_OUT_BASE, "..", "src", "main", "resources", "assets", "mcai", "kb")
+else:
+    OUT = os.path.join(_OUT_BASE, "src", "main", "resources", "assets", "mcai", "kb")
 
 # ── 基础页面 (手工精选核心机制页面) ──
 CORE = [

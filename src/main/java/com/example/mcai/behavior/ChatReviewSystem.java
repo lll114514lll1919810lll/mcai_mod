@@ -12,10 +12,11 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.server.players.NameAndId;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -262,7 +263,7 @@ public class ChatReviewSystem {
         }
     }
 
-    private final SuggestionProvider<ServerCommandSource> APPROVAL_ID_SUGGESTIONS;
+    private final SuggestionProvider<CommandSourceStack> APPROVAL_ID_SUGGESTIONS;
 
     public ChatReviewSystem(MCAIMod mod, PlayerBehaviorTracker tracker) {
         this.mod = mod;
@@ -311,21 +312,21 @@ public class ChatReviewSystem {
     }
 
     /** Trigger a manual review. If player is non-null, sends completion message. */
-    public void triggerManualReview(ServerPlayerEntity notifier) {
+    public void triggerManualReview(ServerPlayer notifier) {
         if (reviewInProgress.get()) {
             lastReviewStatus = "§e审查正在进行中，请稍候...";
-            if (notifier != null) notifier.sendMessage(Text.literal(lastReviewStatus));
+            if (notifier != null) notifier.sendSystemMessage(Component.literal(lastReviewStatus));
             return;
         }
         lastReviewStatus = "§a审查已启动...";
-        if (notifier != null) notifier.sendMessage(Text.literal(lastReviewStatus));
+        if (notifier != null) notifier.sendSystemMessage(Component.literal(lastReviewStatus));
         reviewScheduler.execute(() -> {
             runReview();
             // Send completion message to the notifier on the server thread
             if (notifier != null) {
                 var srv = mod.getServer();
                 if (srv != null) {
-                    srv.execute(() -> notifier.sendMessage(Text.literal(getLastReviewStatus())));
+                    srv.execute(() -> notifier.sendSystemMessage(Component.literal(getLastReviewStatus())));
                 }
             }
         });
@@ -349,113 +350,113 @@ public class ChatReviewSystem {
 
     // ── Review Command ──
 
-    public com.mojang.brigadier.builder.LiteralArgumentBuilder<ServerCommandSource> createAiCheckCommand() {
-        return CommandManager.literal("aicheck")
+    public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createAiCheckCommand() {
+        return Commands.literal("aicheck")
                 .requires(src -> {
                     var p = src.getPlayer();
                     if (p == null || src.getServer() == null) return false;
                     return isOpByName(src.getServer(), p.getGameProfile());
                 })
-                .then(CommandManager.literal("approve")
-                        .then(CommandManager.argument("id", IntegerArgumentType.integer(1))
+                .then(Commands.literal("approve")
+                        .then(Commands.argument("id", IntegerArgumentType.integer(1))
                                 .suggests(APPROVAL_ID_SUGGESTIONS)
                                 .executes(ctx -> {
                                     int id = IntegerArgumentType.getInteger(ctx, "id");
                                     return handleApproval(ctx.getSource(), id, true);
                                 })))
-                .then(CommandManager.literal("reject")
-                        .then(CommandManager.argument("id", IntegerArgumentType.integer(1))
+                .then(Commands.literal("reject")
+                        .then(Commands.argument("id", IntegerArgumentType.integer(1))
                                 .suggests(APPROVAL_ID_SUGGESTIONS)
                                 .executes(ctx -> {
                                     int id = IntegerArgumentType.getInteger(ctx, "id");
                                     return handleApproval(ctx.getSource(), id, false);
                                 })))
-                .then(CommandManager.literal("last")
+                .then(Commands.literal("last")
                         .executes(ctx -> {
                             // /aicheck last - show last review raw response
-                            ServerPlayerEntity player = ctx.getSource().getPlayer();
+                            ServerPlayer player = ctx.getSource().getPlayer();
                             if (player == null) return 0;
                             String raw = lastRawResponse;
                             if (raw.isEmpty()) {
-                                player.sendMessage(Text.literal("§7[审查] 暂无上次审查记录"));
+                                player.sendSystemMessage(Component.literal("§7[审查] 暂无上次审查记录"));
                             } else {
                                 String reasoning = lastReasoning;
                                 if (!reasoning.isEmpty()) {
                                     String shortReasoning = reasoning.length() > 200
                                             ? reasoning.substring(0, 200) + "..." : reasoning;
-                                    player.sendMessage(Text.literal(
+                                    player.sendSystemMessage(Component.literal(
                                             "§7===== AI 推理过程(前200字符) =====\n§8" + shortReasoning));
                                     if (reasoning.length() > 200) {
-                                        player.sendMessage(Text.literal(
+                                        player.sendSystemMessage(Component.literal(
                                                 "§7完整推理见: §econfig/mcai/review_last_reasoning.txt"));
                                     }
                                 }
                                 String shortRaw = raw.length() > 500
                                         ? raw.substring(0, 500) + "..." : raw;
-                                player.sendMessage(Text.literal(
+                                player.sendSystemMessage(Component.literal(
                                         "§7===== AI 原始输出 =====\n§f" + shortRaw));
                                 if (raw.length() > 500) {
-                                    player.sendMessage(Text.literal(
+                                    player.sendSystemMessage(Component.literal(
                                             "§7完整输出见: §econfig/mcai/review_last_response.txt"));
                                 }
                             }
                             return Command.SINGLE_SUCCESS;
                         })
-                        .then(CommandManager.literal("reasoning")
+                        .then(Commands.literal("reasoning")
                                 .executes(ctx -> {
-                                    ServerPlayerEntity player = ctx.getSource().getPlayer();
+                                    ServerPlayer player = ctx.getSource().getPlayer();
                                     if (player == null) return 0;
                                     String reasoning = lastReasoning;
                                     if (reasoning.isEmpty()) {
-                                        player.sendMessage(Text.literal("§7[审查] 无推理过程记录"));
+                                        player.sendSystemMessage(Component.literal("§7[审查] 无推理过程记录"));
                                     } else if (reasoning.length() <= 2000) {
-                                        player.sendMessage(Text.literal(
+                                        player.sendSystemMessage(Component.literal(
                                                 "§7===== AI 推理过程(完整) =====\n§8" + reasoning));
                                     } else {
                                         String head = reasoning.substring(0, 600);
                                         String tail = reasoning.substring(reasoning.length() - 400);
-                                        player.sendMessage(Text.literal(
+                                        player.sendSystemMessage(Component.literal(
                                                 "§7===== AI 推理过程(截断) =====\n" +
                                                 "§7完整内容请查看 §econfig/mcai/review_last_reasoning.txt"));
-                                        player.sendMessage(Text.literal(
+                                        player.sendSystemMessage(Component.literal(
                                                 "§8--- 开头 ---\n" + head));
-                                        player.sendMessage(Text.literal(
+                                        player.sendSystemMessage(Component.literal(
                                                 "§8--- 结尾 ---\n" + tail));
                                     }
                                     return Command.SINGLE_SUCCESS;
                                 })))
                 .executes(ctx -> {
                     // /aicheck (no args) - trigger manual review
-                    ServerPlayerEntity player = ctx.getSource().getPlayer();
+                    ServerPlayer player = ctx.getSource().getPlayer();
                     if (player == null) return 0;
                     triggerManualReview(player);
                     return Command.SINGLE_SUCCESS;
                 });
     }
 
-    private int handleApproval(ServerCommandSource src, int id, boolean approve) {
-        ServerPlayerEntity admin = src.getPlayer();
+    private int handleApproval(CommandSourceStack src, int id, boolean approve) {
+        ServerPlayer admin = src.getPlayer();
         if (admin == null) return 0;
 
         if (approve) {
             AdminApprovalQueue.ApprovalItem item = approvalQueue.tryApprove(id);
             if (item != null) {
-                src.sendFeedback(() -> Text.literal(
+                src.sendSuccess(() -> Component.literal(
                         "§a[审批] 已批准 #" + id + " - 对 " + item.targetPlayerName + " 执行 " + item.action), true);
                 executeApprovedAction(item);
                 return 1;
             } else {
-                src.sendError(Text.literal("§c[审批] 无效或已处理的审批 #" + id));
+                src.sendFailure(Component.literal("§c[审批] 无效或已处理的审批 #" + id));
                 return 0;
             }
         } else {
             AdminApprovalQueue.ApprovalItem item = approvalQueue.tryReject(id);
             if (item != null) {
-                src.sendFeedback(() -> Text.literal(
+                src.sendSuccess(() -> Component.literal(
                         "§c[审批] 已拒绝 #" + id + " - " + item.targetPlayerName + " " + item.action), true);
                 return 1;
             } else {
-                src.sendError(Text.literal("§c[审批] 无效或已处理的审批 #" + id));
+                src.sendFailure(Component.literal("§c[审批] 无效或已处理的审批 #" + id));
                 return 0;
             }
         }
@@ -484,9 +485,9 @@ public class ChatReviewSystem {
             StringBuilder roster = new StringBuilder("当前在线玩家:\n");
             var srv = mod.getServer();
             if (srv != null) {
-                for (ServerPlayerEntity p : srv.getPlayerManager().getPlayerList()) {
+                for (ServerPlayer p : srv.getPlayerList().getPlayers()) {
                     boolean admin = isAdmin(p);
-                    roster.append("- ").append(p.getNameForScoreboard())
+                    roster.append("- ").append(p.getScoreboardName())
                             .append(admin ? " (管理员)" : " (普通玩家)").append("\n");
                 }
             }
@@ -559,7 +560,7 @@ public class ChatReviewSystem {
                     continue;
                 }
                 // Skip admins
-                ServerPlayerEntity targetPlayer = server.getPlayerManager().getPlayer(playerId);
+                ServerPlayer targetPlayer = server.getPlayerList().getPlayer(playerId);
                 if (targetPlayer != null && isAdmin(targetPlayer)) {
                     LOGGER.info("Skipping admin {} in review", v.playerName);
                     continue;
@@ -585,8 +586,8 @@ public class ChatReviewSystem {
                     // Broadcast red card
                     String broadcastMsg = "§c[MCAI] §4玩家 " + v.playerName + " 触发红牌: " + v.description;
                     server.execute(() ->
-                            server.getPlayerManager().broadcast(
-                                    Text.literal(broadcastMsg), false));
+                            server.getPlayerList().broadcastSystemMessage(
+                                    Component.literal(broadcastMsg), false));
 
                     // Notify admins privately
                     String adminMsg = "§c[MCAI] §4" + v.playerName + " §c行为分 "+ newScore
@@ -602,8 +603,8 @@ public class ChatReviewSystem {
                     // Yellow card: broadcast warning
                     String broadcastMsg = "§c[MCAI] §e⚠ 玩家 " + v.playerName + " 黄牌警告: " + v.description;
                     server.execute(() ->
-                            server.getPlayerManager().broadcast(
-                                    Text.literal(broadcastMsg), false));
+                            server.getPlayerList().broadcastSystemMessage(
+                                    Component.literal(broadcastMsg), false));
                     addPenaltyEvent(new PenaltyEvent(v.playerName, v.description,
                             v.severity, newScore, PenaltyAction.WARN, -1, currentReviewCycle.get()));
                 } else {
@@ -665,14 +666,14 @@ public class ChatReviewSystem {
         if (server == null) return;
 
         server.execute(() -> {
-            ServerPlayerEntity target = server.getPlayerManager().getPlayer(item.targetPlayerId);
+            ServerPlayer target = server.getPlayerList().getPlayer(item.targetPlayerId);
             if (target == null) {
                 LOGGER.info("Player {} offline, skipping {}", item.targetPlayerName, item.action);
                 return;
             }
             if ("kick".equals(item.action)) {
                 String kickMsg = "你的行为评分过低，已被系统移出服务器。\n理由: " + item.reason;
-                target.networkHandler.disconnect(Text.literal("§c" + kickMsg));
+                target.connection.disconnect(Component.literal("§c" + kickMsg));
                 LOGGER.info("Kicked {} (approval #{})", item.targetPlayerName, item.id);
                 addPenaltyEvent(new PenaltyEvent(item.targetPlayerName,
                         item.reason, 0, tracker.getScore(item.targetPlayerId),
@@ -687,11 +688,11 @@ public class ChatReviewSystem {
         var server = mod.getServer();
         if (server == null) return 0;
         int count = 0;
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
             if (!isAdmin(player)) {
-                int before = tracker.getScore(player.getUuid());
-                tracker.tryRecover(player.getUuid());
-                if (tracker.getScore(player.getUuid()) > before) count++;
+                int before = tracker.getScore(player.getUUID());
+                tracker.tryRecover(player.getUUID());
+                if (tracker.getScore(player.getUUID()) > before) count++;
             }
         }
         return count;
@@ -701,30 +702,29 @@ public class ChatReviewSystem {
         var server = mod.getServer();
         if (server == null) return;
         server.execute(() -> {
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+            for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                 if (isAdmin(player)) {
-                    player.sendMessage(Text.literal(message));
+                    player.sendSystemMessage(Component.literal(message));
                 }
             }
         });
     }
 
-    private boolean isAdmin(ServerPlayerEntity player) {
+    private boolean isAdmin(ServerPlayer player) {
         var server = mod.getServer();
-        if (server == null) return false;
-        return server.getPlayerManager().isOperator(new net.minecraft.server.PlayerConfigEntry(player.getGameProfile()));
+        return server != null && isOpByName(server, player.getGameProfile());
     }
 
     private static boolean isOpByName(MinecraftServer srv, GameProfile profile) {
-        return srv.getPlayerManager().isOperator(new net.minecraft.server.PlayerConfigEntry(profile));
+        return srv.getPlayerList().isOp(new NameAndId(profile));
     }
 
     private UUID findPlayerUUID(String name) {
         var server = mod.getServer();
         if (server == null) return null;
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.getNameForScoreboard().equalsIgnoreCase(name)) {
-                return player.getUuid();
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            if (player.getScoreboardName().equalsIgnoreCase(name)) {
+                return player.getUUID();
             }
         }
         return null;

@@ -275,6 +275,14 @@ public class OpenAIClient {
         statusFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
         statusTool.add("function", statusFn);
 
+        JsonObject rulesTool = new JsonObject();
+        rulesTool.addProperty("type", "function");
+        JsonObject rulesFn = new JsonObject();
+        rulesFn.addProperty("name", "get_game_rules");
+        rulesFn.addProperty("description", "获取服务器游戏规则状态，包括昼夜循环、火焰蔓延、生物破坏、死亡不掉落、生物生成、天气循环、命令方块输出等关键规则。无需参数。");
+        rulesFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        rulesTool.add("function", rulesFn);
+
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
         tools.add(readTool);
@@ -282,6 +290,7 @@ public class OpenAIClient {
         tools.add(recallTool);
         tools.add(rememberTool);
         tools.add(statusTool);
+        tools.add(rulesTool);
         return tools;
     }
 

@@ -16,6 +16,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.gamerules.GameRules;
 
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
 
@@ -381,6 +382,8 @@ public class ChatHandler {
                             results.add(mem.isEmpty() ? "暂无记忆" : mem);
                         } else if ("get_server_status".equals(tc.name)) {
                             results.add(getServerStatus(player));
+                        } else if ("get_game_rules".equals(tc.name)) {
+                            results.add(getGameRules(player));
                         } else {
                             results.add("未知工具: " + tc.name);
                         }
@@ -539,6 +542,47 @@ public class ChatHandler {
                 """, time, weather, biome, tps, mspt, load,
                 server.getPlayerCount(), server.getMaxPlayers());
     }
+
+    private String getGameRules(ServerPlayer player) {
+        var server = mod.getServer();
+        if (server == null) return "服务器未就绪";
+        var rules = ((ServerLevel) player.level()).getGameRules();
+
+        return String.format("""
+                游戏规则:
+                昼夜循环: %s | 天气循环: %s | 火焰伤害: %s
+                生物破坏: %s | 死亡不掉落: %s | 立即重生: %s
+                生物生成: %s | 怪物生成: %s | 幻翼生成: %s
+                灾厄巡逻队: %s | 流浪商人: %s | 监守者生成: %s
+                命令方块输出: %s | 管理员日志: %s | 反馈信息: %s
+                TNT爆炸: %s | 方块掉落: %s | 生物掉落: %s
+                随机刻速度: %d | 重生半径: %d | 睡觉比例: %d%%
+                """,
+                yn(rules.get(GameRules.ADVANCE_TIME)),
+                yn(rules.get(GameRules.ADVANCE_WEATHER)),
+                yn(rules.get(GameRules.FIRE_DAMAGE)),
+                yn(rules.get(GameRules.MOB_GRIEFING)),
+                yn(rules.get(GameRules.KEEP_INVENTORY)),
+                yn(rules.get(GameRules.IMMEDIATE_RESPAWN)),
+                yn(rules.get(GameRules.SPAWN_MOBS)),
+                yn(rules.get(GameRules.SPAWN_MONSTERS)),
+                yn(rules.get(GameRules.SPAWN_PHANTOMS)),
+                yn(rules.get(GameRules.SPAWN_PATROLS)),
+                yn(rules.get(GameRules.SPAWN_WANDERING_TRADERS)),
+                yn(rules.get(GameRules.SPAWN_WARDENS)),
+                yn(rules.get(GameRules.COMMAND_BLOCK_OUTPUT)),
+                yn(rules.get(GameRules.LOG_ADMIN_COMMANDS)),
+                yn(rules.get(GameRules.SEND_COMMAND_FEEDBACK)),
+                yn(rules.get(GameRules.TNT_EXPLODES)),
+                yn(rules.get(GameRules.BLOCK_DROPS)),
+                yn(rules.get(GameRules.MOB_DROPS)),
+                rules.get(GameRules.RANDOM_TICK_SPEED),
+                rules.get(GameRules.RESPAWN_RADIUS),
+                rules.get(GameRules.PLAYERS_SLEEPING_PERCENTAGE)
+        );
+    }
+
+    private static String yn(boolean b) { return b ? "§a是" : "§c否"; }
 
     private String buildPlayerContext(ServerPlayer player) {
         var server = mod.getServer();

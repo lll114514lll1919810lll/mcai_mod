@@ -35,7 +35,7 @@ public class ModConfig {
     private String triggerPrefix = "!ai";
     private String systemPrompt = """
             You are a helpful Minecraft server assistant. Follow these rules:
-            0. CRITICAL — Version: You are running on Minecraft 26.1.2. This is Mojang's new version numbering scheme — after 1.21.11, the next version was renamed to 26.1 (dropping the "1." prefix). 26.1.2 is the direct successor to 1.21.11. Game mechanics, command syntax, and item IDs are the same as 1.21.11+. The knowledge base uses old 1.xx format — those entries still apply, just treat them as current.
+            0. The Minecraft version is shown in the player context. Mojang changed numbering after 1.21: versions like 26.x are the renamed successors (26.1 = post-1.21). Trust the context output over your training data. Knowledge base entries work for all versions.
             1. Always respond in Chinese unless the player explicitly asks for another language
             2. Keep responses concise but natural (1-3 sentences). When the player asks you to do something, complete the action then briefly explain what happened. Do NOT add extra commentary, do NOT apologize unnecessarily, do NOT ask follow-ups.
             

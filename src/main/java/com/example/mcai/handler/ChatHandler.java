@@ -557,14 +557,21 @@ public class ChatHandler {
 
     private boolean handleResponse(ServerPlayer player, String response) {
         response = response.trim();
+        var server = mod.getServer();
         if (!response.startsWith("/") || !mod.getConfig().isEnableCommandExecution()) {
-            player.sendSystemMessage(Component.literal("§b[AI] " + response));
+            if (server != null) {
+                server.getPlayerList().broadcastSystemMessage(
+                        Component.literal("§b[AI] " + response), false);
+            }
             addToChatLog("AI", response);
             return true;
         }
         String cmd = response.lines().findFirst().orElse("").substring(1).trim();
         if (cmd.isEmpty()) {
-            player.sendSystemMessage(Component.literal("§b[AI] " + response));
+            if (server != null) {
+                server.getPlayerList().broadcastSystemMessage(
+                        Component.literal("§b[AI] " + response), false);
+            }
             return true;
         }
         if (needsApproval(cmd)) {
@@ -573,7 +580,6 @@ public class ChatHandler {
                     + "\n§e使用 §a/aiaccept " + num + " §e批准或 §c/aireject " + num + " §e拒绝"));
             return false;
         }
-        var server = mod.getServer();
         if (server != null) {
             try {
                 server.getCommands().getDispatcher().execute(cmd, server.createCommandSourceStack());
@@ -581,7 +587,8 @@ public class ChatHandler {
                 player.sendSystemMessage(Component.literal("§c[AI] 指令语法错误: " + e.getMessage()));
                 return false;
             }
-            player.sendSystemMessage(Component.literal("§7[AI] 已执行: /" + cmd));
+            server.getPlayerList().broadcastSystemMessage(
+                    Component.literal("§7[AI] → §e/" + cmd), false);
         }
         return true;
     }

@@ -634,26 +634,7 @@ public class ChatHandler {
                 info.append(" @ ").append(entity.blockPosition().toShortString());
                 lookingAt = info.toString();
             } else {
-                // 目视方向无目标，尝试前后方 5 格内扫描
-                var look = player.getLookAngle();
-                var eye = player.getEyePosition();
-                var nearEntity = level.getEntities(player,
-                        new net.minecraft.world.phys.AABB(
-                                eye.x - 5, eye.y - 5, eye.z - 5,
-                                eye.x + 5, eye.y + 5, eye.z + 5),
-                        e -> e != player && e.isAlive());
-                if (!nearEntity.isEmpty()) {
-                    var nearest = nearEntity.getFirst();
-                    String n = nearest.getDisplayName().getString();
-                    String c = nearest.getType().getCategory().getName();
-                    lookingAt = "最近实体: " + n + " (" + c + ")"
-                            + " @ " + nearest.blockPosition().toShortString();
-                    if (nearest instanceof net.minecraft.world.entity.LivingEntity le) {
-                        lookingAt += " HP:" + String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth());
-                    }
-                } else {
-                    lookingAt = "无目标";
-                }
+                lookingAt = "无目标";
             }
         } catch (Exception e) {
             lookingAt = "N/A (" + e.getClass().getSimpleName() + ")";

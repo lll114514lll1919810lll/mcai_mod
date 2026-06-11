@@ -108,7 +108,8 @@ public class MCAIConfigScreen extends Screen {
         cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
 
         drawLabel(leftX, sy + rowH * 11, "需审批指令");
-        approvalField = new EditBox(font, inX, sy + rowH * 11, keyW, 20, Component.literal(""));
+        approvalField = new EditBox(font, inX, sy + rowH * 11, fieldW, 20, Component.literal(""));
+        approvalField.setMaxLength(2048);
         if (cfg.has("requireApprovalCommands")) {
             JsonArray arr = cfg.getAsJsonArray("requireApprovalCommands");
             String val = arr.asList().stream()

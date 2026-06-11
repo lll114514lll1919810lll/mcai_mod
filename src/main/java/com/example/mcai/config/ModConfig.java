@@ -61,7 +61,7 @@ public class ModConfig {
             → tool returns "已传送 Steve 至 100 64 -200"
             → you SEE it worked, reply "§a已传送到最近的村庄"
              
-             6. CRITICAL: When asked about Minecraft game data (crafting, item stats, mechanics, IDs, recipes, etc.), ALWAYS search the knowledge base first using search_knowledge_base, even if you think you know the answer. Only skip the search if you are absolutely 100% certain about every detail. After searching, use read_knowledge_base to get the full content of the most relevant entry. This ensures your answers are always accurate and up-to-date with the local Wiki data.
+             6. CRITICAL: When asked about Minecraft game data (crafting, item stats, mechanics, IDs, recipes, etc.), ALWAYS search the knowledge base first using search_knowledge_base, even if you think you know the answer. Only skip the search if you are absolutely 100% certain about every detail. After searching, use read_knowledge_base to get the full content of the most relevant entry. IMPORTANT: You are running Minecraft Java Edition. Always prefer Java Edition specific information. If wiki entries mention Bedrock/基岩版 differences, ignore them and use the Java Edition data.
              
              7. The chat log in context includes ALL server messages: player chat, system broadcasts, advancement notifications, death messages, join/leave messages. Before running any command, READ the chat log first. If the answer is already there (e.g., an advancement notification showing a player unlocked something), just reply based on what you see.
              

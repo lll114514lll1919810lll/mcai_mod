@@ -602,19 +602,20 @@ public class ChatHandler {
     private boolean handleResponse(ServerPlayer player, String response) {
         response = response.trim();
         var server = mod.getServer();
+        String pname = player.getScoreboardName();
         if (!response.startsWith("/") || !mod.getConfig().isEnableCommandExecution()) {
             if (server != null) {
                 server.getPlayerList().broadcastSystemMessage(
-                        Component.literal("§b[AI] " + response), false);
+                        Component.literal("§b[AI] → §f" + pname + "§b " + response), false);
             }
-            addToChatLog("AI", response);
+            addToChatLog("AI → " + pname, response);
             return true;
         }
         String cmd = response.lines().findFirst().orElse("").substring(1).trim();
         if (cmd.isEmpty()) {
             if (server != null) {
                 server.getPlayerList().broadcastSystemMessage(
-                        Component.literal("§b[AI] " + response), false);
+                        Component.literal("§b[AI] → §f" + pname + "§b " + response), false);
             }
             return true;
         }

@@ -200,20 +200,34 @@ public class MCAIConfigScreen extends Screen {
                 GSON.toJson(o, w);
             }
 
-            // Reload: try direct (single player) first, then command, then manual
+            statusTimer = 100;
+            // 1. 同 JVM：直接调用 MCAIMod 重载（单机模式，绕过权限）
             var instance = com.example.mcai.MCAIMod.getInstance();
             if (instance != null) {
                 instance.reloadConfig();
-                status = "§a✓ 配置已保存并重载";
-                statusTimer = 100;
-            } else if (minecraft != null && minecraft.player != null) {
-                minecraft.player.connection.sendCommand("aireload");
-                status = "§a✓ 配置已保存，重载指令已发送";
-                statusTimer = 100;
-            } else {
-                status = "§a✓ 配置已保存 (§6请手动执行 /aireload)";
-                statusTimer = 150;
+                status = "§a✓ 已保存并重载";
+                return;
             }
+            // 2. 单机备用：直接在集成服务器上执行 /aireload
+            if (minecraft != null && minecraft.getSingleplayerServer() != null) {
+                try {
+                    var srv = minecraft.getSingleplayerServer();
+                    srv.getCommands().getDispatcher().execute("aireload", srv.createCommandSourceStack());
+                    status = "§a✓ 已保存并重载";
+                    return;
+                } catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+                    status = "§c重载失败: " + e.getMessage();
+                    return;
+                }
+            }
+            // 3. 联机：发送指令到远程服务器
+            if (minecraft != null && minecraft.player != null) {
+                minecraft.player.connection.sendCommand("aireload");
+                status = "§a✓ 已保存，指令已发送";
+                return;
+            }
+            // 4. 主菜单等无连接场景
+            status = "§a✓ 已保存 (§6加入游戏后自动生效)";
         } catch (IOException e) {
             status = "§c保存失败: " + e.getMessage();
             statusTimer = 200;

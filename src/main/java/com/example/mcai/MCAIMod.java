@@ -8,6 +8,8 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.api.EnvType;
 import com.example.mcai.config.ModConfig;
 import com.example.mcai.api.OpenAIClient;
 import com.example.mcai.handler.ChatHandler;
@@ -55,7 +57,8 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             this.server = s;
             chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-            if (config.isEnableAutoReview() && s.isDedicatedServer()) {
+            if (config.isEnableAutoReview()
+                    && FabricLoader.getInstance().getEnvironmentType() == net.fabricmc.api.EnvType.SERVER) {
                 chatReviewSystem.start();
                 LOGGER.info("Auto behavior review enabled");
             }
@@ -90,7 +93,8 @@ public class MCAIMod implements ModInitializer {
         if (chatReviewSystem != null) chatReviewSystem.stop();
         behaviorTracker = new PlayerBehaviorTracker(config);
         chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-        if (config.isEnableAutoReview()) chatReviewSystem.start();
+        if (config.isEnableAutoReview()
+                && FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER) chatReviewSystem.start();
         LOGGER.info("MCAI config reloaded, KB: {} chunks",
                 knowledgeBase.size());
     }

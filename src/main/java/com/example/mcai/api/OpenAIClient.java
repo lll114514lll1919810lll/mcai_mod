@@ -457,4 +457,104 @@ public class OpenAIClient {
         t.add("function", fn);
         return t;
     }
+
+    public static class ChatSimpleResult {
+        public final String content;
+        public final String reasoningContent;
+
+        public ChatSimpleResult(String content, String reasoningContent) {
+            this.content = content;
+            this.reasoningContent = reasoningContent;
+        }
+    }
+
+    public Optional<String> chatSimple(List<ChatMessage> messages) {
+        var result = chatSimpleFull(messages);
+        return result.map(r -> r.content);
+    }
+
+    public Optional<ChatSimpleResult> chatSimpleFull(List<ChatMessage> messages) {
+        String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";
+
+        JsonObject body = new JsonObject();
+        body.addProperty("model", config.getModel());
+        body.addProperty("max_tokens", config.getMaxTokens());
+        body.addProperty("temperature", config.getTemperature());
+
+        int tl = config.getThinkingLevel();
+        if (tl >= 1) {
+            JsonObject t = new JsonObject();
+            t.addProperty("type", "enabled");
+            body.add("thinking", t);
+            if (tl >= 3) {
+                body.addProperty("reasoning_effort", "max");
+            }
+        }
+
+        JsonArray msgArray = new JsonArray();
+        for (ChatMessage msg : messages) {
+            msgArray.add(msg.toJson());
+        }
+        body.add("messages", msgArray);
+
+        String bodyJson = GSON.toJson(body);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(endpoint))
+                .header("Content-Type", "application/json")
+                .timeout(Duration.ofSeconds(60))
+                .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
+
+        String key = config.getApiKey();
+        if (!key.isEmpty()) {
+            builder.header("Authorization", "Bearer " + key);
+        }
+
+        HttpResponse<String> response;
+        try {
+            response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            LOGGER.error("HTTP request failed: {}", e.getMessage());
+            return Optional.of(new ChatSimpleResult("[API连接失败] " + e.getMessage(), null));
+        }
+
+        if (response.statusCode() != 200) {
+            String resp = response.body();
+            try {
+                JsonObject err = GSON.fromJson(resp, JsonObject.class);
+                if (err.has("error")) {
+                    String msg = err.getAsJsonObject("error").get("message").getAsString();
+                    LOGGER.error("API error {}: {}", response.statusCode(), msg);
+                    return Optional.of(new ChatSimpleResult("[API错误] " + msg, null));
+                }
+            } catch (Exception ignored) {}
+            LOGGER.error("API error {} (no JSON error): {}", response.statusCode(),
+                    resp.length() > 200 ? resp.substring(0, 200) + "..." : resp);
+            return Optional.of(new ChatSimpleResult("[API错误] HTTP " + response.statusCode(), null));
+        }
+
+        JsonObject json;
+        try {
+            json = GSON.fromJson(response.body(), JsonObject.class);
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse API response: {}", e.getMessage());
+            return Optional.of(new ChatSimpleResult("[响应解析失败] 请检查 API 是否兼容", null));
+        }
+
+        JsonArray choices = json.getAsJsonArray("choices");
+        if (choices == null || choices.isEmpty()) {
+            return Optional.of(new ChatSimpleResult("[API异常] 响应中无 choices", null));
+        }
+
+        JsonObject choice = choices.get(0).getAsJsonObject();
+        JsonObject msg = choice.getAsJsonObject("message");
+
+        String reasoningContent = msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull()
+                ? msg.get("reasoning_content").getAsString() : null;
+
+        String content = msg.has("content") && !msg.get("content").isJsonNull()
+                ? msg.get("content").getAsString() : "";
+        if (content.isEmpty()) return Optional.of(new ChatSimpleResult("[API异常] 响应内容为空", reasoningContent));
+        return Optional.of(new ChatSimpleResult(content, reasoningContent));
+    }
 }

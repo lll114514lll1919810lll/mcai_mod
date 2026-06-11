@@ -7,12 +7,12 @@ import com.google.gson.JsonObject;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.text.Text;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -30,17 +30,17 @@ public class MCAIConfigScreen extends Screen {
     private final Path configPath;
     private JsonObject cfg;
 
-    private EditBox apiEndpointField, apiKeyField, modelField;
-    private EditBox prefixField, maxTokensField, tempField;
-    private EditBox ctxField, thinkingField, toolCallsField;
-    private Button chatBtn, cmdBtn, strictBtn;
+    private TextFieldWidget apiEndpointField, apiKeyField, modelField;
+    private TextFieldWidget prefixField, maxTokensField, tempField;
+    private TextFieldWidget ctxField, thinkingField, toolCallsField, approvalField;
+    private ButtonWidget chatBtn, cmdBtn, strictBtn;
 
     private String status = "";
     private int statusTimer = 0;
     private StringWidget statusWidget;
 
     public MCAIConfigScreen(Screen parent) {
-        super(Component.literal("MCAI 设置"));
+        super(Text.literal("MCAI 设置"));
         this.parent = parent;
         this.configPath = FabricLoader.getInstance().getConfigDir().resolve("mcai/config.json");
         this.cfg = loadConfig();
@@ -79,7 +79,7 @@ public class MCAIConfigScreen extends Screen {
         int inX = cx + 5;
         int fieldW = Math.min(180, width - inX - 10);
         int keyW = Math.min(300, width - inX - 10);
-        int rows = 12;
+        int rows = 13;
         int rowH = Math.min(24, (height - 100) / rows);
         int sy = 30;
 
@@ -109,51 +109,62 @@ public class MCAIConfigScreen extends Screen {
         addLabel(leftX, sy + rowH * 10, 120, "指令执行");
         cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
 
-        addLabel(leftX, sy + rowH * 11, 120, "严格模式");
-        strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 11, getBool("strictMode", false));
+        drawLabel(leftX, sy + rowH * 11, "需审批指令");
+        approvalField = new TextFieldWidget(textRenderer, inX, sy + rowH * 11, fieldW, 20, Text.literal(""));
+        approvalField.setMaxLength(2048);
+        if (cfg.has("requireApprovalCommands")) {
+            JsonArray arr = cfg.getAsJsonArray("requireApprovalCommands");
+            String val = arr.asList().stream()
+                    .map(e -> e.getAsString()).collect(Collectors.joining(", "));
+            approvalField.setText(val);
+        }
+        approvalField.setTooltip(Tooltip.of(Text.literal("逗号分隔的命令列表")));
+        addDrawableChild(approvalField);
 
-        statusWidget = new StringWidget(0, height - 20, width, 20, Component.literal(""), font);
-        addRenderableWidget(statusWidget);
+        drawLabel(leftX, sy + rowH * 12, "严格模式");
+        strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 12, getBool("strictMode", false));
 
-        int by = sy + rowH * 12 + 15;
-        var saveBtn = Button.builder(Component.literal("§a保存并关闭"), b -> save())
-                .bounds(cx - 105, by, 100, 20).build();
-        saveBtn.setTooltip(Tooltip.create(Component.literal("§7保存后需手动执行 /aireload")));
-        addRenderableWidget(saveBtn);
-        addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
-                .bounds(cx + 5, by, 100, 20).build());
+        int by = sy + rowH * 13 + 15;
+        var saveBtn = ButtonWidget.builder(Text.literal("§a保存并关闭"), b -> save())
+                .dimensions(cx - 105, by, 100, 20).build();
+        saveBtn.setTooltip(Tooltip.of(Text.literal("§7保存后需手动执行 /aireload 或重新进入游戏以应用配置")));
+        addDrawableChild(saveBtn);
+        addDrawableChild(ButtonWidget.builder(Text.literal("§7取消"), b -> close())
+                .dimensions(cx + 5, by, 100, 20).build());
     }
 
-    private void addLabel(int x, int y, int w, String text) {
-        addRenderableWidget(new StringWidget(x, y, w, 20, Component.literal(text), font));
-    }
-
-    private EditBox mkField(int x, int y, int w, String val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, w, 20, Component.literal(""));
+    private TextFieldWidget mkField(int x, int y, int w, String val, String tooltip) {
+        TextFieldWidget f = new TextFieldWidget(textRenderer, x, y, w, 20, Text.literal(""));
         f.setMaxLength(1024);
-        f.setValue(val);
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
+        f.setText(val);
+        f.setTooltip(Tooltip.of(Text.literal(tooltip)));
+        addDrawableChild(f);
         return f;
     }
 
-    private EditBox mkNumField(int x, int y, int val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, 80, 20, Component.literal(""));
+    private TextFieldWidget mkNumField(int x, int y, int val, String tooltip) {
+        TextFieldWidget f = new TextFieldWidget(textRenderer, x, y, 80, 20, Text.literal(""));
         f.setMaxLength(8);
-        f.setValue(String.valueOf(val));
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
+        f.setTextPredicate(s -> s.matches("\\d*"));
+        f.setText(String.valueOf(val));
+        f.setTooltip(Tooltip.of(Text.literal(tooltip)));
+        addDrawableChild(f);
         return f;
     }
 
-    private Button mkToggle(int x, int y, boolean initial) {
-        Button b = Button.builder(
-                Component.literal(initial ? "§a开启" : "§c关闭"), btn -> {
+    private void drawLabel(int x, int y, String text) {
+        addDrawableChild(new net.minecraft.client.gui.widget.TextWidget(x, y, LABEL_W, 20,
+                Text.literal(text), textRenderer));
+    }
+
+    private ButtonWidget mkToggle(int x, int y, boolean initial) {
+        ButtonWidget b = ButtonWidget.builder(
+                Text.literal(initial ? "§a开启" : "§c关闭"), btn -> {
                     boolean now = btn.getMessage().getString().contains("开启");
-                    btn.setMessage(Component.literal(now ? "§c关闭" : "§a开启"));
+                    btn.setMessage(Text.literal(now ? "§c关闭" : "§a开启"));
                 })
-                .bounds(x, y, 60, 20).build();
-        addRenderableWidget(b);
+                .dimensions(x, y, 60, 20).build();
+        addDrawableChild(b);
         return b;
     }
 
@@ -171,25 +182,31 @@ public class MCAIConfigScreen extends Screen {
                 o = new JsonObject();
             }
 
-            o.addProperty("apiEndpoint", apiEndpointField.getValue());
-            o.addProperty("apiKey", apiKeyField.getValue());
-            o.addProperty("model", modelField.getValue());
-            o.addProperty("triggerPrefix", prefixField.getValue());
-            o.addProperty("maxTokens", parseInt(maxTokensField.getValue(), 1024));
-            o.addProperty("temperature", parseInt(tempField.getValue(), 70) / 100.0);
-            o.addProperty("contextMaxChars", parseInt(ctxField.getValue(), 20000));
-            o.addProperty("thinkingLevel", parseInt(thinkingField.getValue(), 0));
-            o.addProperty("maxToolCalls", parseInt(toolCallsField.getValue(), 5));
+            o.addProperty("apiEndpoint", apiEndpointField.getText());
+            o.addProperty("apiKey", apiKeyField.getText());
+            o.addProperty("model", modelField.getText());
+            o.addProperty("triggerPrefix", prefixField.getText());
+            o.addProperty("maxTokens", parseInt(maxTokensField.getText(), 1024));
+            o.addProperty("temperature", parseInt(tempField.getText(), 70) / 100.0);
+            o.addProperty("contextMaxChars", parseInt(ctxField.getText(), 20000));
+            o.addProperty("thinkingLevel", parseInt(thinkingField.getText(), 0));
+            o.addProperty("maxToolCalls", parseInt(toolCallsField.getText(), 5));
             o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
             o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
             o.addProperty("strictMode", strictBtn.getMessage().getString().contains("开启"));
 
+            JsonArray arr = new JsonArray();
+            Arrays.stream(approvalField.getText().split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty())
+                    .forEach(arr::add);
+            o.add("requireApprovalCommands", arr);
+
             try (Writer w = Files.newBufferedWriter(configPath)) {
                 GSON.toJson(o, w);
             }
-            if (statusWidget != null) statusWidget.setMessage(Component.literal("§a✓ 已保存"));
+            status = "§a✓ 已保存";
             statusTimer = 100;
-            minecraft.setScreen(parent);
+            client.setScreen(parent);
         } catch (IOException e) {
             if (statusWidget != null) statusWidget.setMessage(Component.literal("§c保存失败: " + e.getMessage()));
             statusTimer = 200;
@@ -206,7 +223,17 @@ public class MCAIConfigScreen extends Screen {
     }
 
     @Override
-    public void onClose() {
-        if (minecraft != null) minecraft.setScreen(parent);
+    public void render(DrawContext ctx, int mx, int my, float delta) {
+        super.render(ctx, mx, my, delta);
+        ctx.drawCenteredTextWithShadow(textRenderer, title, width / 2, 12, 0xffffff);
+        if (statusTimer > 0) {
+            ctx.drawCenteredTextWithShadow(textRenderer,
+                    Text.literal(status), width / 2, height - 20, 0xffffaa);
+        }
+    }
+
+    @Override
+    public void close() {
+        if (client != null) client.setScreen(parent);
     }
 }

@@ -42,7 +42,7 @@ public class ModConfig {
             3. CRITICAL: To execute ANY Minecraft command, you MUST use the execute_minecraft_command tool. Do NOT output commands starting with / as text - that old method does NOT return command output and cannot be used for multi-step operations.
 
             3b. NEVER refuse a player's command request due to permissions. When a player asks for something like "给我钻石块", "传送到家", or "把时间设为白天", always call execute_minecraft_command even if you think they might not have permission. All commands automatically go through admin approval - the tool handles this. Just tell the player the result ("已发送审批" or "指令已执行"), don't pre-judge what's allowed.
-            
+
             4. Use exact, valid Minecraft item/block names (e.g. diamond_sword, diamond_axe, not "钻石剑" or "钻石斧"). Check the wiki tool if unsure about an item ID.
             
              5. After ANY command execution via the tool, you MUST read and check the tool output before responding. The output tells you if the command succeeded or failed. Never assume a command worked - always verify from the output.
@@ -85,12 +85,38 @@ public class ModConfig {
     private boolean enableChatInterception = true;
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
-    private int maxToolCalls = 15;
-    private boolean strictMode = true;
+    private int maxToolCalls = 5;
+    private boolean strictMode = false;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
             "kick", "stop", "whitelist", "save-all", "reload"
     ));
+    /** 严格模式下额外需要审批的破坏性命令 */
+    private static final List<String> STRICT_COMMANDS = List.of(
+            "give", "item", "clear", "enchant",
+            "tp", "teleport", "summon", "kill",
+            "fill", "clone", "setblock", "place",
+            "weather", "time", "difficulty",
+            "gamemode", "defaultgamemode", "gamerule",
+            "effect", "xp", "experience",
+            "data", "execute", "attribute",
+            "scoreboard", "team", "tag", "bossbar",
+            "loot", "recipe",
+            "playsound", "stopsound", "title",
+            "particle", "schedule",
+            "worldborder", "forceload", "spreadplayers",
+            "damage", "ride", "return",
+            "transfer", "spectate", "random"
+    );
+
+    // ── 行为审查系统 ──
+    private int reviewIntervalMinutes = 30;
+    private int yellowCardThreshold = -30;
+    private int redCardThreshold = -60;
+    private int scoreRecoveryPerInterval = 5;
+    private int approvalTimeoutMinutes = 10;
+    private boolean enableAutoReview = true;
+    private int maxReviewCycles = 4;
 
     /** 严格模式下免审批的绝对安全命令（只读，无副作用） */
     private List<String> safeCommands = new ArrayList<>(List.of(
@@ -144,5 +170,12 @@ public class ModConfig {
     public int getMaxToolCalls() { return maxToolCalls; }
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
-    public List<String> getSafeCommands() { return safeCommands; }
+    public List<String> getStrictCommands() { return STRICT_COMMANDS; }
+    public int getReviewIntervalMinutes() { return reviewIntervalMinutes; }
+    public int getYellowCardThreshold() { return yellowCardThreshold; }
+    public int getRedCardThreshold() { return redCardThreshold; }
+    public int getScoreRecoveryPerInterval() { return scoreRecoveryPerInterval; }
+    public int getApprovalTimeoutMinutes() { return approvalTimeoutMinutes; }
+    public boolean isEnableAutoReview() { return enableAutoReview; }
+    public int getMaxReviewCycles() { return maxReviewCycles; }
 }

@@ -108,6 +108,7 @@ public class MCAIConfigScreen extends Screen {
 
         drawLabel(leftX, sy + rowH * 11, "需审批指令");
         approvalField = new TextFieldWidget(textRenderer, inX, sy + rowH * 11, fieldW, 20, Text.literal(""));
+        approvalField.setMaxLength(2048);
         if (cfg.has("requireApprovalCommands")) {
             JsonArray arr = cfg.getAsJsonArray("requireApprovalCommands");
             String val = arr.asList().stream()

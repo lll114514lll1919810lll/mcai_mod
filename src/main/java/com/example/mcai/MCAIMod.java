@@ -34,7 +34,7 @@ public class MCAIMod implements ModInitializer {
         config = ModConfig.load();
         knowledgeBase = new KnowledgeBase();
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
-                .getConfigDir().resolve("mcai/kb"));
+                .getConfigDir().resolve("mcai_kb"));
         aiClient = new OpenAIClient(config);
         chatHandler = new ChatHandler(this);
         behaviorTracker = new PlayerBehaviorTracker(config);

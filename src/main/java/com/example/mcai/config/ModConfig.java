@@ -27,7 +27,7 @@ public class ModConfig {
                 }
                 public boolean shouldSkipClass(Class<?> c) { return false; }
             }).create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mcai/config.json");
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("mcai.json");
 
     private String apiEndpoint = "https://api.deepseek.com";
     private String apiKey = "";
@@ -79,9 +79,9 @@ public class ModConfig {
 
              12. NEVER use commands unless the player EXPLICITLY asks you to. Destructive/world-modifying commands (give, fill, clone, setblock, summon, kill, tp, weather, time set, etc.) are strictly prohibited unless the player directly and clearly requests them. Read-only information commands (locate, time query, list, effect list, etc.) are allowed when needed to answer a question. When in doubt, just explain the answer without executing any command.
             """;
-    private int maxTokens = 2048;
-    private double temperature = 0.75;
-    private int thinkingLevel = 1;
+    private int maxTokens = 1024;
+    private double temperature = 0.7;
+    private int thinkingLevel = 0;
     private boolean enableChatInterception = true;
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
@@ -117,14 +117,6 @@ public class ModConfig {
     private int approvalTimeoutMinutes = 10;
     private boolean enableAutoReview = true;
     private int maxReviewCycles = 4;
-
-    /** 严格模式下免审批的绝对安全命令（只读，无副作用） */
-    private List<String> safeCommands = new ArrayList<>(List.of(
-            "locate", "seed", "list", "help",
-            "say", "title", "tell", "msg", "w",
-            "fetchprofile", "scoreboard", "version",
-            "data get"
-    ));
 
     public static ModConfig load() {
         ModConfig config;

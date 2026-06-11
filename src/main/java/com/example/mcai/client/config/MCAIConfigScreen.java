@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 @Environment(EnvType.CLIENT)
 public class MCAIConfigScreen extends Screen {
+    private static final int LABEL_W = 120;
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private final Screen parent;
@@ -37,12 +38,11 @@ public class MCAIConfigScreen extends Screen {
 
     private String status = "";
     private int statusTimer = 0;
-    private StringWidget statusWidget;
 
     public MCAIConfigScreen(Screen parent) {
         super(Text.literal("MCAI 设置"));
         this.parent = parent;
-        this.configPath = FabricLoader.getInstance().getConfigDir().resolve("mcai/config.json");
+        this.configPath = FabricLoader.getInstance().getConfigDir().resolve("mcai.json");
         this.cfg = loadConfig();
     }
 
@@ -72,9 +72,6 @@ public class MCAIConfigScreen extends Screen {
     @Override
     protected void init() {
         int cx = width / 2;
-        addRenderableWidget(new StringWidget(Math.max(cx - 50, 0), 12, 100, 20,
-                Component.literal("MCAI 设置"), font));
-
         int leftX = Math.max(cx - 200, 5);
         int inX = cx + 5;
         int fieldW = Math.min(180, width - inX - 10);
@@ -93,20 +90,20 @@ public class MCAIConfigScreen extends Screen {
         thinkingField  = mkNumField(inX, sy + rowH * 7, getInt("thinkingLevel", 0), "思考等级");
         toolCallsField = mkNumField(inX, sy + rowH * 8, getInt("maxToolCalls", 5), "工具调用上限");
 
-        addLabel(leftX, sy + rowH * 0, 120, "API 地址");
-        addLabel(leftX, sy + rowH * 1, 120, "API 密钥");
-        addLabel(leftX, sy + rowH * 2, 120, "模型名称");
-        addLabel(leftX, sy + rowH * 3, 120, "触发前缀");
-        addLabel(leftX, sy + rowH * 4, 120, "最大令牌");
-        addLabel(leftX, sy + rowH * 5, 120, "温度 (%)");
-        addLabel(leftX, sy + rowH * 6, 120, "上下文字符上限");
-        addLabel(leftX, sy + rowH * 7, 120, "思考等级 0-3");
-        addLabel(leftX, sy + rowH * 8, 120, "工具调用上限");
+        drawLabel(leftX, sy + rowH * 0, "API 地址");
+        drawLabel(leftX, sy + rowH * 1, "API 密钥");
+        drawLabel(leftX, sy + rowH * 2, "模型名称");
+        drawLabel(leftX, sy + rowH * 3, "触发前缀");
+        drawLabel(leftX, sy + rowH * 4, "最大令牌");
+        drawLabel(leftX, sy + rowH * 5, "温度 (%)");
+        drawLabel(leftX, sy + rowH * 6, "上下文字符上限");
+        drawLabel(leftX, sy + rowH * 7, "思考等级 0-3");
+        drawLabel(leftX, sy + rowH * 8, "工具调用上限");
 
-        addLabel(leftX, sy + rowH * 9, 120, "聊天监听");
+        drawLabel(leftX, sy + rowH * 9, "聊天监听");
         chatBtn = mkToggle(inX + fieldW + 5, sy + rowH * 9, getBool("enableChatInterception", true));
 
-        addLabel(leftX, sy + rowH * 10, 120, "指令执行");
+        drawLabel(leftX, sy + rowH * 10, "指令执行");
         cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
 
         drawLabel(leftX, sy + rowH * 11, "需审批指令");
@@ -208,7 +205,7 @@ public class MCAIConfigScreen extends Screen {
             statusTimer = 100;
             client.setScreen(parent);
         } catch (IOException e) {
-            if (statusWidget != null) statusWidget.setMessage(Component.literal("§c保存失败: " + e.getMessage()));
+            status = "§c保存失败: " + e.getMessage();
             statusTimer = 200;
         }
     }

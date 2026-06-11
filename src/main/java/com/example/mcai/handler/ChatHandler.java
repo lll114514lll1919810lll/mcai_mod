@@ -8,7 +8,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
@@ -39,11 +38,6 @@ public class ChatHandler {
     private final MCAIMod mod;
     private final ExecutorService aiExecutor = Executors.newCachedThreadPool(r -> {
         Thread t = new Thread(r, "MCAI-Worker");
-        t.setDaemon(true);
-        return t;
-    });
-    private final ScheduledExecutorService uiScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "MCAI-UI");
         t.setDaemon(true);
         return t;
     });
@@ -209,58 +203,9 @@ public class ChatHandler {
     public void registerChatInterceptor() {
         if (!mod.getConfig().isEnableChatInterception()) return;
         try {
-            // CHAT_MESSAGE: 记录所有消息（内容始终可用，包括未签名消息）
-            ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
-                if (sender != null) {
-                    String text = message.decoratedContent() != null
-                            ? message.decoratedContent().getString()
-                            : "";
-                    addToChatLog(sender.getScoreboardName(), text, isAdminPlayer(sender));
-                }
-            });
-            // ALLOW_CHAT_MESSAGE: 仅用于拦截 !ai 前缀触发
-            ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> {
-                if (sender == null) return true;
-                String text = message.decoratedContent() != null
-                        ? message.decoratedContent().getString()
-                        : (message.signedContent() != null ? message.signedContent() : "");
-                String prefix = mod.getConfig().getTriggerPrefix();
-                if (text.startsWith(prefix)) {
-                    String query = text.substring(prefix.length()).trim();
-                    if (!query.isEmpty()) {
-                        var server = mod.getServer();
-                        if (server != null) {
-                            server.getPlayerList().broadcastSystemMessage(
-                                    Component.literal("§7[§f" + sender.getScoreboardName()
-                                            + "§7]对AI说：§f" + query), false);
-                        }
-                        handleAIQuery(sender, query);
-                    }
-                    return false;
-                }
-                return true;
-            });
-            ServerMessageEvents.GAME_MESSAGE.register((srv, msg, overlay) -> {
-                try {
-                    String text = msg.getString();
-                    // Try to extract [PlayerName] message from /say command
-                    // In 26.1 the format is typically "[PlayerName] message"
-                    var matcher = java.util.regex.Pattern.compile("^\\[(.+?)\\] (.+)$").matcher(text);
-                    if (matcher.matches()) {
-                        String possibleName = matcher.group(1);
-                        String content = matcher.group(2);
-                        ServerPlayer player = srv.getPlayerList().getPlayer(possibleName);
-                        if (player != null) {
-                            addToChatLog(possibleName + "(命令)", content, isAdminPlayer(player));
-                            return;
-                        }
-                    }
-                    addToChatLog("系统", text);
-                } catch (Exception e) {
-                    MCAIMod.LOGGER.warn("GAME_MESSAGE log failed: {}", e.getMessage());
-                    addToChatLog("系统", "<消息记录失败>");
-                }
-            });
+            ServerMessageEvents.ALLOW_CHAT_MESSAGE.register(this::onChatMessage);
+            ServerMessageEvents.GAME_MESSAGE.register((srv, msg, overlay) ->
+                    addToChatLog("系统", msg.getString()));
             MCAIMod.LOGGER.info("Chat interception enabled");
         } catch (NoClassDefFoundError | Exception e) {
             MCAIMod.LOGGER.warn("Chat interception unavailable");
@@ -569,12 +514,6 @@ public class ChatHandler {
                 server.getPlayerManager().broadcast(
                         Text.literal("§7[AI] §f" + playerName + " §7→ §e/" + command
                                 + (result.isEmpty() ? "" : " §7(" + result + ")")), false);
-                // Log to chat log so review AI can see all commands
-                if (player != null) {
-                    addToChatLog(player.getScoreboardName(), "/" + command, isAdminPlayer(player));
-                } else {
-                    addToChatLog("控制台", "/" + command, true);
-                }
                 future.complete(result.isEmpty() ? "指令已执行" : result);
             } catch (Exception e) {
                 future.complete("执行失败: " + e.getMessage());
@@ -675,10 +614,8 @@ public class ChatHandler {
         else if (yaw >= -135 && yaw < -45) facing = "东";
         else facing = "北";
 
-        String gameTimeStr = formatGameTime(level.getGameTime());
-
         return String.format("""
-                版本: %s | 在线(%d/%d): [%s] | %s | 难度: %s
+                版本: %s | 在线(%d/%d): [%s] | 时间: %d | 难度: %s
                 说话者: %s | 坐标: [%d %d %d] | 朝向: %s | 维度: %s | HP: %.1f | 饱食度: %d | 模式: %s | 等级: %d%s
                 """, server.getVersion(), server.getCurrentPlayerCount(), server.getMaxPlayerCount(),
                 playerList, world.getTimeOfDay(), world.getDifficulty().getName(),
@@ -690,8 +627,6 @@ public class ChatHandler {
 
     private boolean handleResponse(ServerPlayerEntity player, String response) {
         response = response.trim();
-        var server = mod.getServer();
-        String pname = player.getScoreboardName();
         if (!response.startsWith("/") || !mod.getConfig().isEnableCommandExecution()) {
             player.sendMessage(Text.literal("§b[AI] " + response));
             addToChatLog("AI", response);
@@ -708,6 +643,7 @@ public class ChatHandler {
                     + "\n§e使用 §a/aiaccept " + num + " §e批准或 §c/aireject " + num + " §e拒绝"));
             return false;
         }
+        var server = mod.getServer();
         if (server != null) {
             try {
                 server.getCommandManager().getDispatcher().execute(cmd, server.getCommandSource());

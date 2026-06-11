@@ -70,8 +70,6 @@ public class ChatHandler {
                             }
 
                             addToChatLog(player.getScoreboardName(), msg);
-                            ctx.getSource().sendSystemMessage(
-                                    Component.literal("§7[AI] 思考中..."));
                             handleAIQuery(player, msg);
                             return Command.SINGLE_SUCCESS;
                         }))

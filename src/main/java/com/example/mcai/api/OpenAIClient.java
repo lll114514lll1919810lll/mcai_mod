@@ -65,6 +65,12 @@ public class OpenAIClient {
             return msg;
         }
 
+        public static ChatMessage toolCallRequest(List<ToolCall> tcs) {
+            ChatMessage msg = new ChatMessage("assistant", "");
+            msg.toolCalls = List.copyOf(tcs);
+            return msg;
+        }
+
         public static ChatMessage toolResult(String toolCallId, String content) {
             ChatMessage msg = new ChatMessage("tool", content);
             msg.toolCallId = toolCallId;
@@ -195,7 +201,7 @@ public class OpenAIClient {
                     return Optional.of("[工具调用异常] 空的 tool_calls");
                 }
 
-                var asstMsg = ChatMessage.toolCallRequest(toolCalls.get(0));
+                var asstMsg = ChatMessage.toolCallRequest(toolCalls);
             // 只回传非空 reasoning_content
             if (reasoningContent != null && !reasoningContent.isEmpty()) {
                 asstMsg.reasoningContent = reasoningContent;

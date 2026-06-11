@@ -5,12 +5,13 @@
 ## 目录
 
 1. [项目概述](#1-项目概述)
-2. [分支与版本矩阵](#2-分支与版本矩阵)
+2. [仓库结构（当前）](#2-仓库结构)
 3. [构建配置清单](#3-构建配置清单)
 4. [API 差异速查表](#4-api-差异速查表)
 5. [关键实现细节](#5-关键实现细节)
 6. [踩坑记录](#6-踩坑记录)
 7. [工作流程建议](#7-工作流程建议)
+8. [2026-06-11 仓库整理血泪史](#8-2026-06-11-仓库整理血泪史)
 
 ---
 
@@ -20,153 +21,113 @@ MCAI 是一个 Fabric 服务端模组，接入 OpenAI 兼容 API（DeepSeek）�
 
 ### 支持版本
 
-| MC 版本 | 服务端 | 客户端 |
-|---------|--------|--------|
-| 26.1.2 (deobfuscated) | ✅ | ✅ |
-| 1.21.11 (Yarn) | ✅ | ✅ |
-| 1.21 / 1.21.1 (Yarn) | ✅ | ✅ |
+| 分支 | MC 版本 | 映射 | 产物 |
+|------|---------|------|------|
+| `main` | 1.21.11 | Yarn v2 | `mcai-1.21.11-1.0.0.jar` |
+| `mc-26.1.2` | 26.1.2 | Mojang (deobfuscated) | `mcai-26.1.2-1.0.0.jar` |
+| `mc-1.21.1` | 1.21 | Yarn v2 | `mcai-1.21.1-1.0.0.jar` |
 
-### 核心功能
-
-- AI 对话 (`/ai`, `!ai` 前缀)
-- Function Calling 工具（知识库搜索、指令执行、服务器状态、调试信息）
-- 指令审批系统（`pendingFutures` 阻塞等待 + 超时自动取消）
-- 北京时间戳聊天记录
-- 管理员身份检查（`isAdminOrConsole`/`isAdminPlayer`）
-- 控制台 AI 查询支持（`handleConsoleAIQuery`）
-- 管理员通知（`notifyAdminsPending`）
-- 行为审查系统（服务端，自动 AI 审查聊天记录、扣分、黄牌/红牌）
-- Mod Menu 配置界面（客户端）
-- 思考动画（ActionBar）
+每个 JAR 同时支持服务端和客户端（含 Mod Menu 配置界面）。
 
 ---
 
 ## 2. 仓库结构
 
-### 当前结构（单分支）
-
 ```
-main (唯一分支，MC 1.21.11，Yarn 映射)
-├── src/                    ← 主源码
-├── build.gradle
-├── gradle.properties
-└── ...
+main           ← MC 1.21.11, Yarn 映射, Java 25
+mc-26.1.2      ← MC 26.1.2, Mojang 映射, Java 25
+mc-1.21.1      ← MC 1.21, Yarn 映射, Java 21
 ```
 
-### 教训：Mojang 和 Yarn 映射不能混在一个分支
+**每个分支都是独立完整的代码副本**，互不依赖，互不覆盖。三个分支的 `src/`、`build.gradle`、`gradle.properties` 各不相同，通过 git 分支管理。
 
-MC 26.1.2 使用 Mojang 映射（`ServerPlayer`、`Component.literal()`），MC 1.21.11 使用 Yarn 映射（`ServerPlayerEntity`、`Text.literal()`）。几乎所有 MC 类名都不同，**无法通过替换几个文件来实现多版本构建**。
-
-```
-❌ 错误的做法：单分支 + versions/ 目录切换源码
-✅ 正确的做法：每个 MC 版本维护独立分支，或只支持一个版本
-```
+**核心原则：**
+- 同一个业务逻辑改动需要在三个分支上分别手动同步
+- 绝对不能跨分支用 `git checkout <other-branch> -- src/` 混搭源码
+- Mojang 和 Yarn 映射体系完全不同，不能共存在一个构建中
 
 ---
 
 ## 3. 构建配置清单
 
-### 版本-工具链映射表
+### 各分支构建参数
 
-| MC 版本 | Loom | Gradle | Java | 构建任务 | 映射类型 |
-|---------|------|--------|------|----------|---------|
-| 26.1.2 | 1.14.1 | 9.5.1+ | 25 | `build` | 无（deobfuscated） |
-| 1.21.11 | 1.15.5 | 9.5.1+ | 21 | `build` 或 `remapJar` | Yarn v2 |
-| 1.21 / 1.21.1 | 1.7.2 | 8.8 | 21 | `build` 或 `remapJar` | Yarn v2 |
+| 参数 | main (1.21.11) | mc-26.1.2 | mc-1.21.1 |
+|------|---------------|-----------|-----------|
+| `minecraft_version` | 1.21.11 | 26.1.2 | 1.21 |
+| `yarn_mappings` | 1.21.11+build.1 | 无（Mojang） | 1.21+build.9 |
+| `loader_version` | 0.18.4 | 0.19.2 | 0.16.9 |
+| `fabric_version` | 0.140.2+1.21.11 | 0.149.1+26.1.2 | 0.100.4+1.21 |
+| `loom_version` | 1.15.5 | 1.14.1 | 1.7.2 |
+| `Java` | 25 | 25 | 21 |
+| `Gradle` | 9.5.1 | 9.5.1 | 8.8 |
+| 插件 ID | `fabric-loom` | `net.fabricmc.fabric-loom` | `fabric-loom` |
+| 依赖写法 | `modImplementation` | `implementation` | `modImplementation` |
+| ModMenu | `modCompileOnly 11.0.1` | `compileOnly 20.0.0-alpha.1` | 同 main |
 
-### build.gradle 关键差异
+### 构建命令
 
-**26.1.2（无混淆映射）：**
-```gradle
-dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-}
-// 无 mappings 依赖！
-// Java 25
-```
+```bash
+# main (1.21.11)：直接构建
+git checkout main
+.\gradlew.bat build
 
-**1.21.x / 1.21.1（Yarn 映射）：**
-```gradle
-dependencies {
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"  // 必须有
-    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-}
-// Java 21，需要 TerraformersMC Maven 仓库放 Mod Menu
-repositories {
-    maven { url = 'https://maven.terraformersmc.com/' }
-}
+# mc-26.1.2：直接构建
+git checkout mc-26.1.2
+.\gradlew.bat build
+
+# mc-1.21.1：必须设置 JAVA_HOME 为 Java 21
+git checkout mc-1.21.1
+$env:JAVA_HOME = "C:\Users\Lecoo\AppData\Roaming\.hmcl\java\windows-x86_64\mojang-java-runtime-delta"
+.\gradlew.bat build
 ```
 
 ### Loom 版本陷阱
 
-| Loom 版本 | Gradle 兼容性 | 说明 |
-|-----------|--------------|------|
-| 1.7.x | 8.8 | 旧 API，`remapJar` 可用 |
-| 1.14.x | 9.5.1+ | 26.1.2 专用，`remapJar` 不可用（用 `build`） |
-| 1.15.x | 9.5.1+ | 需 `plugins { id 'fabric-loom' }` 格式 |
-
-**Loom 1.7.x 的 build.gradle 不能用 `implementation` 代替 `modImplementation`，否则会有 `Access widener namespace` 错误。**
-
-### gradle-wrapper.properties 必须在每个分支上正确设置
-
-`gradle-wrapper.properties` 是 Git 跟踪的，每个分支需要不同的 Gradle 版本。切换分支后必须检查：
-
-```bash
-# 1.21.11（Loom 1.15.5）
-distributionUrl=https\://services.gradle.org/distributions/gradle-9.5.1-bin.zip
-
-# 1.21/1.21.1（Loom 1.7.2）
-distributionUrl=https\://services.gradle.org/distributions/gradle-8.8-bin.zip
-```
+| Loom 版本 | 最低 Gradle | 说明 |
+|-----------|-----------|------|
+| 1.7.x | 8.8 | MC 1.21 专用，用 `fabric-loom` + Yarn |
+| 1.14.x | 9.5+ | MC 26.1.2 专用，用 `net.fabricmc.fabric-loom`，无 Yarn |
+| 1.15.x | 9.5+ | MC 1.21.11 专用，用 `fabric-loom` + Yarn |
 
 ---
 
 ## 4. API 差异速查表
 
-### 26.1.2 (deobfuscated) ↔ 1.21.x (Yarn) 对照
+### Mojang (26.1.2) ↔ Yarn (1.21.x) 对照
 
-| 26.1.2 名称 | 1.21.x / 1.21.1 Yarn | 备注 |
-|-------------|----------------------|------|
-| `CommandSourceStack` | `ServerCommandSource` | 类名不同 |
-| `Commands.literal()` | `CommandManager.literal()` | 工厂类不同 |
-| `Component.literal()` | `Text.literal()` | 文本组件不同 |
-| `ServerPlayer` | `ServerPlayerEntity` | 实体类不同 |
-| `ServerLevel` | `ServerWorld` | 世界类不同 |
-| `player.getScoreboardName()` | `player.getNameForScoreboard()` | 方法名不同 |
-| `player.level()` | `player.getEntityWorld()` | 获取世界方法不同 |
-| `server.getPlayerList()` | `server.getPlayerManager()` | 玩家管理器不同 |
-| `broadcastSystemMessage()` | `broadcast()` | 广播方法不同 |
-| `sendSystemMessage()` | `sendMessage()` | 发送消息方法不同 |
-| `player.isRemoved()` | `player.isDisconnected()` | 断线检测方法不同 |
-| `.level().dimension()` | `.getEntityWorld().getRegistryKey()` | 维度标识不同 |
-| `getBrightness()` | `getLightLevel()` | 光照方法不同 |
-| `.pick()` | `.raycast()` | 射线检测方法不同 |
-| `getSkyDarken()` | `getSkyDarken()`(可能不存在) | 天空亮度方法 |
-| `getCurrentSmoothedTickTime()` | 需用其他方式获取 | TPS 计算方法 |
-| `getCurrentDifficultyAt()` | `getLocalDifficulty()` | 难度方法不同 |
-| `GameRules.ADVANCE_TIME` | `GameRules.DO_DAYLIGHT_CYCLE` | 规则名不同 |
-| `LevelBasedPermissionSet.OWNER` | `LeveledPermissionPredicate.OWNERS`(1.21.11) 或 `int 4`(1.21) | 权限谓词完全不同 |
+| Mojang (26.1.2) | Yarn (1.21.x) | 类别 |
+|-----------------|---------------|------|
+| `CommandSourceStack` | `ServerCommandSource` | 类名 |
+| `Commands.literal()` | `CommandManager.literal()` | 工厂类 |
+| `Component.literal()` | `Text.literal()` | 文本 |
+| `ServerPlayer` | `ServerPlayerEntity` | 玩家实体 |
+| `ServerLevel` | `ServerWorld` | 世界 |
+| `player.getScoreboardName()` | `player.getNameForScoreboard()` | 方法 |
+| `player.level()` | `player.getEntityWorld()` | 世界 |
+| `server.getPlayerList()` | `server.getPlayerManager()` | 玩家管理 |
+| `player.sendSystemMessage()` | `player.sendMessage()` | 消息 |
+| `src.sendFailure()` | `src.sendError()` | 错误反馈 |
+| `src.sendSuccess()` | `src.sendFeedback()` | 成功反馈 |
+| `player.isRemoved()` | `player.isDisconnected()` | 离线检测 |
+| `player.getUUID()` | `player.getUuid()` | UUID |
+| `player.blockPosition()` | `player.getBlockPos()` | 坐标 |
+| `player.getYRot()` | `player.getYaw()` | 朝向 |
+| `player.getFoodData()` | `player.getHungerManager()` | 饱食度 |
+| `player.gameMode` | `player.interactionManager` | 游戏模式 |
+| `server.getCommands()` | `server.getCommandManager()` | 命令系统 |
+| `server.createCommandSourceStack()` | `server.getCommandSource()` | 命令源 |
+| `LevelBasedPermissionSet.OWNER` | `LeveledPermissionPredicate.OWNERS` | 权限 |
 
-### 1.21.11 ↔ 1.21/1.21.1 Yarn 差异
+### 1.21.11 ↔ 1.21 Yarn 差异
 
-| 特性 | 1.21.11 | 1.21 / 1.21.1 |
-|------|---------|---------------|
-| `ServerCommandSource` 构造函数 | `(..., Predicate<ServerCommandSource>, ...)` | `(..., int permissionLevel, ...)` |
-| 权限检查 | `LeveledPermissionPredicate.OWNERS` | `4` (整数权限级别) |
+| 特性 | 1.21.11 | 1.21 |
+|------|---------|------|
+| 权限构造函数 | `Predicate<ServerCommandSource>` | `int permissionLevel` |
+| 权限值 | `LeveledPermissionPredicate.OWNERS` | `4` |
 | OP 检查 | `isOperator(PlayerConfigEntry)` | `isOperator(GameProfile)` |
-| `PlayerConfigEntry` 类 | 存在 | **不存在** |
-| `LeveledPermissionPredicate` 类 | 存在 `net.minecraft.command.permission` | **不存在** |
-| `sendFeedback` / `sendError` | 同 1.21 | 同 1.21 |
-
-**判断当前版本的 API 技巧：**
-```java
-// 检查 PlayerConfigEntry 是否存在
-try { Class.forName("net.minecraft.server.PlayerConfigEntry"); } catch (...) {}
-```
+| `PlayerConfigEntry` | 存在 | **不存在** |
+| `LeveledPermissionPredicate` | 存在 | **不存在** |
 
 ---
 
@@ -175,193 +136,204 @@ try { Class.forName("net.minecraft.server.PlayerConfigEntry"); } catch (...) {}
 ### 审批阻塞系统 (pendingFutures)
 
 ```java
-// ChatHandler.executeCommand() 中的审批阻塞
 if (needsApproval(command)) {
-    int num = addPendingCommand(player.getUuid(), command);
-    String key = player.getUuid() + ":" + num;
     CompletableFuture<String> future = new CompletableFuture<>();
     pendingFutures.put(key, future);
-    notifyAdminsPending(player, command, num);
+    notifyAdminsPending(...);
     try {
-        String result = future.get(3, TimeUnit.MINUTES);  // ⚠️ 阻塞 AI 线程
+        String result = future.get(3, TimeUnit.MINUTES);  // 阻塞 AI 线程
         return result != null ? result : "指令已执行";
     } catch (TimeoutException e) {
-        pendingFutures.remove(key);
         return "[审批超时] 3分钟内无人批准，指令已自动取消";
     }
 }
 ```
 
-**所有涉及 pendingFutures 的地方：**
-1. `executeCommand()` — `future.put` + `future.get(3min)` ⚡
-2. `approveCommand()` — `future.remove(key).complete(result)` ✅
-3. `rejectCommand()` — `future.remove(key).complete("[审批拒绝]...")` ❌
-4. `onPlayerDisconnect()` — `pendingFutures.keySet().removeIf(...)` 🚪
+四个操作点：`executeCommand`（put+get）、`approveCommand`（complete）、`rejectCommand`（complete）、`onPlayerDisconnect`（removeIf）。
 
-**常见错误：只定义了字段但不使用它（死代码）。必须检查 `pendingFutures.put` 是否真的被调用。**
+### 行为审查
 
-### 北京时间戳
-
-```java
-// addToChatLog(String, String, boolean) 的三个参数版本
-private void addToChatLog(String name, String message, boolean isAdmin) {
-    String time = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            .format(ZonedDateTime.now(ZoneId.of("Asia/Shanghai")));
-    String prefix = isAdmin ? "[管理员] " : "";
-    chatLog.add("[" + time + "] " + prefix + name + ": " + message);
-}
-```
-
-### handleResponse 的双路径问题
-
-`handleResponse` 方法在 AI 文本返回时调用。如果 AI 的响应以 `/` 开头，它**直接执行命令**，绕过了审批系统。这会导致：
-
-1. AI 通过 `execute_minecraft_command` 工具调用 → 走 `executeCommand` → 正确走审批
-2. AI 在回复文本中写入命令 → 走 `handleResponse` → ⚠️ 绕过审批
-
-**解决方案：** AI 被提示必须使用工具，不能以文本输出命令。`handleResponse` 只作为后备。
+- 每 30 分钟 AI 分析聊天记录
+- 三级处罚：扣分 (-10) → 黄牌 (-30/阈值) → 红牌 (-60/阈值)
+- 管理员发言带 `[管理员]` 标记，AI 无条件信任
+- 每周期自动恢复 5 分，最多恢复到 0
 
 ---
 
 ## 6. 踩坑记录
 
-### 🔥 坑 1: pendingFutures 定义但未使用
+### 🔥 坑 1: Mojang 和 Yarn 映射不能混
 
-**症状：** 审批系统提示"已提交审批"但不阻塞，命令立即执行。
+**症状：** 编译通过的 JAR 在运行时崩溃 `NoClassDefFoundError: net/minecraft/class_2561`。
 
-**原因：** `executeCommand` 中的 `needsApproval` 块只返回提示消息，没有 `pendingFutures.put/future.get`。
+**原因：** MC 26.1.2 使用 Mojang 映射（无 Yarn intermediary），运行时不存在 `class_2561` 等 Yarn 中继名。从 Yarn 分支 checkout 源码到 Mojang 分支会导致编译通过但运行崩溃。
 
-**修复：** 确保 `executeCommand` 中的 `needsApproval` 分支包含完整的阻塞逻辑。
+**修复：** 每个分支维护独立的完整源码，**绝不能用 `git checkout` 跨映射分支拷文件**。
 
-### 🔥 坑 2: `build/libs/` 被 `clean` 清空
+### 🔥 坑 2: `git checkout <branch> -- src/` 会同时覆盖多种文件
 
-**症状：** 构建后保存的 JAR 文件消失。
+**症状：** 只想恢复某个子目录，结果覆盖了所有 `src/` 下的文件（包括 handler、behavior、config）。
 
-**原因：** 所有分支共享 `build/libs/` 目录，`gradle clean` 会删除它。
+**修复：** 指定精确文件路径，如 `git checkout <branch> -- src/main/java/com/example/mcai/client/`。
 
-**修复：** 将 JAR 保存到项目根目录或独立目录，如 `C:\Users\Lecoo\mc\mcai-xxx.jar`。
+### 🔥 坑 3: PowerShell `Out-File` 默认加 BOM
 
-### 🔥 坑 3: 分支间 `gradle.properties` 不一致
+**症状：** 用 `git show | Out-File` 创建的文件导致 Gradle 报 `Unexpected character: ''`。
 
-**症状：** 切换分支后构建失败，报 Loom/Gradle 版本不兼容错误。
+**修复：** 用 Write 工具或 `Set-Content -Encoding UTF8` 代替 `Out-File`。
 
-**原因：** `gradle.properties` 和 `gradle-wrapper.properties` 在每个分支上需要不同的值，但切换分支时未正确恢复。
+### 🔥 坑 4: Gradle 版本与 Java 版本不兼容
 
-**修复：** 每个分支的 `gradle.properties` 和 `gradle-wrapper.properties` 必须独立维护。使用 `git checkout` 后检查这些文件。
+| Gradle | 最低 Java | 说明 |
+|--------|----------|------|
+| 8.8 | 不支持 Java 25 | MC 1.21.1 需要 Gradle 8.8，但系统 Java 25 无法运行 |
+| 9.5.1 | Java 21+ | MC 1.21.11 / 26.1.2 用这个 |
 
-### 🔥 坑 4: Loom 版本与 Gradle 版本不匹配
+**修复：** mc-1.21.1 构建时必须设置 `$env:JAVA_HOME` 指向 Java 21。
 
-| Loom 版本 | 最低 Gradle |
-|-----------|------------|
-| 1.7.x | 8.8 |
-| 1.14.x | 9.5+ |
-| 1.15.x | 9.5+ |
+### 🔥 坑 5: 分支间 gradle-wrapper.properties 必须匹配
 
-**症状：** `Failed to apply plugin 'fabric-loom'` 或 `UnsupportedOperationException: Unsupported unpick version`。
+**症状：** 切换分支后 Gradle 版本不对，构建失败。
 
-### 🔥 坑 5: 1.21 Fabric API 版本错误
+**原因：** `gradle-wrapper.properties` 是 Git 跟踪的，每个分支不同。Loom 1.7.2 需要 Gradle 8.8，Loom 1.14+ 需要 Gradle 9.5+。
 
-**症状：** `Failed to process jar when running jar processor: fabric-loom:access-widener - Expected official namespace for access widener entry, found: intermediary`
+**修复：** 用 `git checkout <branch>` 切换时会自动更新，不要手动修改。
 
-**原因：** Loom 1.15+ 要求 Fabric API 使用 official 命名空间的 access widener，但旧版 Fabric API 使用 intermediary。
+### 🔥 坑 6: 26.1.2 客户端必须用 ModMenu 20.0.0-alpha.1
 
-**修复：** 使用正确版本的 Fabric API：
-- Loom 1.7.x + Yarn 1.21.11 → `fabric-api 0.140.2+1.21.11`
-- Loom 1.15.x + Yarn 1.21.11 → 需要更新版的 Fabric API
+**原因：** ModMenu 11.x 基于 Yarn 映射，26.1.2 是 Mojang 映射。只有 `20.0.0-alpha.1` 版本为 Mojang 编译。
 
-### 🔥 坑 6: Python 脚本中的中文编码损坏
+**修复：** `mc-26.1.2` 分支的 build.gradle 用 `compileOnly "com.terraformersmc:modmenu:20.0.0-alpha.1"`。
 
-**症状：** 源文件中的中文字符变成乱码（如 `系统` 变成 `绯荤粺`）。
+### 🔥 坑 7: API 版本号必须精确
 
-**原因：** `git show` 输出通过 PowerShell 管道时编码转换错误，或 Python `replace()` 操作中使用了错误的编码。
+**症状：** 用 `fabric_version=0.106.1+1.21.1` 导致 `Could not resolve` 错误。
 
-**修复：** 始终使用 `encoding='utf-8'` 打开文件，避免通过 PowerShell 管道传递文件内容。使用 `subprocess.run(['git', 'show', ...], capture_output=True)` 直接读取。
+**原因：** Maven 仓库没有这个版本。
 
-### 🔥 坑 7: PowerShell 内嵌 Python 单引号冲突
+**修复：** 用已知存在的版本（从旧 gradle.properties 文件复制），如 `fabric_version=0.100.4+1.21`。
 
-**症状：** Python 代码中的 `'''` 或 `"""` 三引号与 PowerShell 的字符串解析冲突，出现语法错误。
+### 🔥 坑 8: 删除分支前必须确认 commit 在 git 历史中
 
-**修复：** 将 Python 脚本保存为 `.py` 文件，然后执行 `python script.py`，不要用 `python -c "..."` 内联。
+**症状：** 删了分支才发现需要从中恢复代码。
 
-### 🔥 坑 8: 新增功能后忘记更新旧分支
+**修复：** 删分支前用 `git log --all --oneline | grep <keyword>` 确认所有提交还在。
 
-**症状：** 旧版本分支缺失新功能（如 pendingFutures、北京时间等）。
+### 🔥 坑 9: 部分恢复 commit 导致代码混乱
 
-**原因：** 只在 26.1.2-server 上开发，未将变更同步到 1.21.x 和 1.21.1 分支。
+**症状：** 从 A 提交恢复 src/，从 B 提交恢复个别文件，编译连锁报错。
 
-**修复：** 从最新的全功能分支（26.1.2-server）派生所有版本分支，而不是从旧分支派生。
+**修复：** 任何恢复操作**从单个完整提交恢复所有源码**，不做拼凑。
 
-### 🔥 坑 9: `CommandSourceStack` 替换不完整
+### 🔥 坑 10: `build/libs/` 是所有分支共享的
 
-**症状：** 编译错误 `找不到符号: CommandSourceStack`。
+**症状：** 在 A 分支构建后切到 B 分支，看到的是 A 分支的 JAR。
 
-**原因：** 只替换了 `import` 中的完全限定名，未替换方法签名和泛型参数中的裸类名。
-
-**修复：** 替换所有出现位置，包括：
-- `import net.minecraft.commands.CommandSourceStack` → `import net.minecraft.server.command.ServerCommandSource`
-- 方法签名 `LiteralArgumentBuilder<CommandSourceStack>` → `LiteralArgumentBuilder<ServerCommandSource>`
-- 字段类型 `SuggestionProvider<CommandSourceStack>` → `SuggestionProvider<ServerCommandSource>`
-
-### 🔥 坑 10: `sendSuccess` / `sendFailure` 在不同版本不同
-
-| 方法 | 26.1.2 | 1.21.x Yarn |
-|------|--------|-------------|
-| 成功反馈 | `sendSuccess(Supplier<Component>, boolean)` | `sendFeedback(Supplier<Text>, boolean)` |
-| 错误反馈 | `sendFailure(Component)` | `sendError(Text)` |
+**修复：** 切分支后执行 `gradle clean build` 确保产物正确。
 
 ---
 
 ## 7. 工作流程建议
 
-### 多版本维护流程
+### 日常开发
 
 ```bash
-# 1. 在 26.1.2-server 上开发新功能
-git checkout mc-26.1.2-server
-# ... 编码、测试、提交 ...
+# 在 main 上开发新功能
+git checkout main
+# ... 编码、测试 ...
+git commit -m "feat: xxx"
+.\gradlew.bat build    # 确认 1.21.11 构建通过
 
-# 2. 移植到 1.21.11
-git checkout 1.21.11-server
-git merge mc-26.1.2-server --squash  # 或手动 cherry-pick
-# 修复 Yarn API 差异
+# 手动同步到其他分支
+git checkout mc-26.1.2
+# 手工移植代码（Yarn → Mojang 手动转换）
+.\gradlew.bat build    # 确认 26.1.2 构建通过
 
-# 3. 移植到 1.21.1
-git checkout 1.21.1-server
-git merge 1.21.11-server --squash
-# 修复 1.21 API 差异（int/Predicate、GameProfile/PlayerConfigEntry）
+git checkout mc-1.21.1
+# 手工移植代码（注意 1.21 API 差异：PlayerConfigEntry、LeveledPermissionPredicate）
+$env:JAVA_HOME = "路径\Java21"
+.\gradlew.bat build    # 确认 1.21 构建通过
 ```
 
-### 推荐：差异最小化策略
+### 文档类修改
 
-将版本特定代码隔离到单独的方法中，用同一套核心逻辑：
+README、LICENSE、USER_GUIDE 等文档在 main 上改完后，用 `git checkout main -- <file>` 同步到其他分支。
 
-```java
-// 版本无关的核心逻辑
-private void doApproval(UUID playerId, String command) { ... }
+### 发布流程
 
-// 版本特定的 API 包装（每个版本不同）
-// 1.21.11: server.getPlayerManager().isOperator(new PlayerConfigEntry(profile))
-// 1.21:    server.getPlayerManager().isOperator(profile)
-// 26.1.2:  server.getPlayerList().isOp(new NameAndId(profile))
+```bash
+# 切到每个分支构建，产物在 build/libs/ 下：
+main:       mcai-1.21.11-1.0.0.jar
+mc-26.1.2:  mcai-26.1.2-1.0.0.jar
+mc-1.21.1:  mcai-1.21.1-1.0.0.jar
+# 用 gh release upload 上传
 ```
 
-### 构建清单
+### 构建验证清单
 
-每次构建前检查：
-- [ ] `gradle.properties` 版本正确
-- [ ] `gradle-wrapper.properties` Gradle 版本与 Loom 匹配
-- [ ] `build.gradle` 的 `loom_version` 与 `gradle.properties` 一致
-- [ ] Java 版本正确（21 或 25）
-- [ ] 清理 loom 缓存：`Remove-Item -Recurse $env:USERPROFILE\.gradle\caches\fabric-loom`
-- [ ] 保存 JAR 到独立目录（不要用 `build/libs/`）
+- [ ] 切到目标分支，确认 `git status` 干净
+- [ ] `gradle.properties`：minecraft_version、fabric_version、loom_version 正确
+- [ ] `gradle-wrapper.properties`：Gradle 版本与 Loom 匹配
+- [ ] `build.gradle`：插件 ID、依赖写法符合该分支的映射类型
+- [ ] 环境变量：26.1.2/main 用系统 Java 25，1.21.1 用 `$env:JAVA_HOME` 设 Java 21
+- [ ] 运行 `gradle clean build`
+- [ ] 检查 `build/libs/mcai-<version>-1.0.0.jar` 存在
 
-### 配置文件路径
+---
 
-所有配置文件存放在 `config/mcai/` 目录下：
-- `config.json` — 主配置（API、模型、阈值等）
-- `scores.json` — 玩家行为分
-- `penalties.json` — 处罚历史
-- `memory.json` — AI 持久记忆
-- `kb/` — 知识库缓存
-- `review_last_response.txt` — 上次审查 AI 原始输出
-- `review_last_reasoning.txt` — 上次审查 AI 推理过程
+## 8. 2026-06-11 仓库整理血泪史
+
+> 从多分支合并到单分支再到三分支，踩过的坑全部记录在此，避免后人重蹈覆辙。
+
+### 背景
+
+原始仓库有 6 个分支（`26.1.2-server/client`、`1.21.11-server/client`、`1.21.1-server/client`），分支间频繁互相覆盖文件导致混乱。
+
+### 尝试一：合并所有分支到 main（失败）
+
+**操作：** `git merge 26.1.2-server` → 冲突，`-X theirs` 解决 → 源码变成 Mojang+Yarn 混合。
+
+**失败原因：** 26.1.2 用 Mojang 映射，1.21.11 用 Yarn 映射，同一个 `ChatHandler.java` 在两个分支是不同 API。合并后编译 1.21.11 报 100 个错误。
+
+### 尝试二：versions/ 目录隔离（失败）
+
+**操作：** 创建 `versions/mc-26.1.2/` 目录放 Mojang 源码，用 build-version.bat 脚本切换。
+
+**失败原因：** 只复制了 ChatHandler/MCAIMod，但 ChatReviewSystem、MCAIConfigScreen 等 6+ 个文件都需要转换映射。而且 PowerShell `Out-File` 引入 BOM 导致 Gradle 解析错误。
+
+### 尝试三：mc-26.1.2 客户端反复踩坑（最终成功）
+
+**失败过程：**
+1. 从 `7c38d0a` 恢复服务端代码 → 构建成功
+2. 从 `458c58b` 恢复客户端代码 → ModConfig 缺方法，编译失败
+3. 发现 `458c58b` 的 ModConfig 只有 2 个 getter，`7c38d0a` 有 8 个
+4. 从 `458c58b` 单独拉 MCAIConfigScreen → ModMenu 版本不对（用了 11.x 而非 20.0.0-alpha.1）
+
+**最终方案：**
+```
+7c38d0a (服务端全量源码) + 458c58b (仅 client/ 目录 + fabric.mod.json)
+→ 不碰 ModConfig / ChatHandler / ChatReviewSystem
+→ build.gradle 加 compileOnly modmenu:20.0.0-alpha.1
+→ 构建通过
+```
+
+**核心教训：不同提交的代码不能混搭。要么全从 A 提交来，要么全从 B 提交来。只能在一个稳定的完整版本上做最小加法。**
+
+### 最终仓库状态
+
+```
+main        → mcai-1.21.11-1.0.0.jar  (Java 25, Yarn, 3 文件需 1.21.1 修复)
+mc-26.1.2   → mcai-26.1.2-1.0.0.jar   (Java 25, Mojang, ModMenu 20.0.0-alpha.1)
+mc-1.21.1   → mcai-1.21.1-1.0.0.jar   (Java 21, Yarn, PlayerConfigEntry/LeveledPermissionPredicate 修复)
+```
+
+### 禁忌清单
+
+| 操作 | 后果 | 正确做法 |
+|------|------|---------|
+| `git checkout <跨映射分支> -- src/` | Yarn/Mojang 混合，编译或运行崩溃 | 手工跨分支移植代码 |
+| `git merge <跨映射分支>` | 同上 | 不合并不同映射的分支 |
+| 从一个分支恢复部分源码 | ModConfig/ChatHandler 版本不一致 | 从单个完整提交恢复全部 |
+| `Out-File` 写 gradle 文件 | BOM 导致解析失败 | 用 Write 工具或 `Set-Content -Encoding UTF8` |
+| 删分支前不检查 git 历史 | 代码丢失 | `git log --all` 确认 |
+| 编一个版本不测其他版本 | 返工 n 轮 | 改结构性内容后全量测试 |

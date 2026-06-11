@@ -121,8 +121,10 @@ public class MCAIConfigScreen extends Screen {
         strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 12, getBool("strictMode", false));
 
         int by = sy + rowH * 13 + 15;
-        addDrawableChild(ButtonWidget.builder(Text.literal("§a保存并重载"), b -> save())
-                .dimensions(cx - 105, by, 100, 20).build());
+        var saveBtn = ButtonWidget.builder(Text.literal("§a保存并关闭"), b -> save())
+                .dimensions(cx - 105, by, 100, 20).build();
+        saveBtn.setTooltip(Tooltip.of(Text.literal("§7保存后需手动执行 /aireload 或重新进入游戏以应用配置")));
+        addDrawableChild(saveBtn);
         addDrawableChild(ButtonWidget.builder(Text.literal("§7取消"), b -> close())
                 .dimensions(cx + 5, by, 100, 20).build());
     }
@@ -198,21 +200,9 @@ public class MCAIConfigScreen extends Screen {
             try (Writer w = Files.newBufferedWriter(configPath)) {
                 GSON.toJson(o, w);
             }
-
-            // Reload: try direct (single player) first, then command, then manual
-            var instance = com.example.mcai.MCAIMod.getInstance();
-            if (instance != null) {
-                instance.reloadConfig();
-                status = "§a✓ 配置已保存并重载";
-                statusTimer = 100;
-            } else if (client != null && client.player != null) {
-                client.player.networkHandler.sendChatCommand("aireload");
-                status = "§a✓ 配置已保存，重载指令已发送";
-                statusTimer = 100;
-            } else {
-                status = "§a✓ 配置已保存 (§6请手动执行 /aireload)";
-                statusTimer = 150;
-            }
+            status = "§a✓ 已保存";
+            statusTimer = 100;
+            client.setScreen(parent);
         } catch (IOException e) {
             status = "§c保存失败: " + e.getMessage();
             statusTimer = 200;

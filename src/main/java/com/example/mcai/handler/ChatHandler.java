@@ -216,6 +216,7 @@ public class ChatHandler {
         UUID id = player.getUuid();
         history.remove(id);
         pendingCommands.remove(id);
+        pendingFutures.keySet().removeIf(k -> k.startsWith(id.toString() + ":"));
     }
 
     private boolean onChatMessage(SignedMessage message, ServerPlayerEntity sender,
@@ -249,20 +250,39 @@ public class ChatHandler {
         int idx = num - 1;
         if (cmds == null || idx < 0 || idx >= cmds.size()) {
             src.sendError(Text.literal("§c编号无效，使用 /aiquery 查看"));
+            String key = player.getUuid() + ":" + num;
+            CompletableFuture<String> f = pendingFutures.remove(key);
+            if (f != null) f.complete("[审批失败] 编号无效");
             return 0;
         }
         String cmd = cmds.remove(idx);
         if (cmds.isEmpty()) pendingCommands.remove(player.getUuid());
+        String result = "指令已执行";
         var server = mod.getServer();
         if (server != null) {
             try {
-                server.getCommandManager().getDispatcher().execute(cmd, server.getCommandSource());
+                StringBuilder out = new StringBuilder();
+                var cs = server.getCommandSource();
+                var src2 = new net.minecraft.server.command.ServerCommandSource(
+                        new net.minecraft.server.command.CommandOutput() {
+                            public void sendMessage(net.minecraft.text.Text msg) { out.append(msg.getString()).append("\n"); }
+                            public boolean shouldReceiveFeedback() { return true; }
+                            public boolean shouldTrackOutput() { return true; }
+                            public boolean shouldBroadcastConsoleToOps() { return false; }
+                        },
+                        cs.getPosition(), cs.getRotation(), cs.getWorld(),
+                        LeveledPermissionPredicate.OWNERS, cs.getName(), cs.getDisplayName(),
+                        server, cs.getEntity());
+                server.getCommandManager().getDispatcher().execute(cmd, src2);
+                result = out.toString().trim();
             } catch (CommandSyntaxException e) {
-                src.sendError(Text.literal("§c指令语法错误: " + e.getMessage()));
-                return 0;
+                result = "指令语法错误: " + e.getMessage();
             }
         }
         src.sendFeedback(() -> Text.literal("§a[AI] 已批准 #" + num + " 并执行: /" + cmd), true);
+        String key = player.getUuid() + ":" + num;
+        CompletableFuture<String> f = pendingFutures.remove(key);
+        if (f != null) f.complete(result);
         return 1;
     }
 
@@ -271,11 +291,17 @@ public class ChatHandler {
         int idx = num - 1;
         if (cmds == null || idx < 0 || idx >= cmds.size()) {
             src.sendError(Text.literal("§c编号无效，使用 /aiquery 查看"));
+            String key = player.getUuid() + ":" + num;
+            CompletableFuture<String> f = pendingFutures.remove(key);
+            if (f != null) f.complete("[审批失败] 编号无效");
             return 0;
         }
         String cmd = cmds.remove(idx);
         if (cmds.isEmpty()) pendingCommands.remove(player.getUuid());
         src.sendFeedback(() -> Text.literal("§c[AI] 已拒绝 #" + num + ": /" + cmd), true);
+        String key = player.getUuid() + ":" + num;
+        CompletableFuture<String> f = pendingFutures.remove(key);
+        if (f != null) f.complete("[审批拒绝] 管理员拒绝了指令: /" + cmd);
         return 1;
     }
 
@@ -450,7 +476,19 @@ public class ChatHandler {
         if (server == null) return "服务器未就绪";
         if (needsApproval(command)) {
             int num = addPendingCommand(player.getUuid(), command);
-            return "[需要审批] 已加入审批队列 #" + num + "，管理员可使用 /aiaccept " + num + " 批准";
+            String key = player.getUuid() + ":" + num;
+            CompletableFuture<String> future = new CompletableFuture<>();
+            pendingFutures.put(key, future);
+            notifyAdminsPending(player, command, num);
+            try {
+                String result = future.get(3, TimeUnit.MINUTES);
+                return result != null ? result : "指令已执行";
+            } catch (java.util.concurrent.TimeoutException e) {
+                pendingFutures.remove(key);
+                return "[审批超时] 3分钟内无人批准，指令已自动取消: /" + command;
+            } catch (Exception e) {
+                return "[审批异常] " + e.getMessage();
+            }
         }
         CompletableFuture<String> future = new CompletableFuture<>();
         String playerName = player.getNameForScoreboard();

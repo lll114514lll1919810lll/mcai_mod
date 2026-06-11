@@ -1,8 +1,14 @@
+<div align="center">
+
+<img src="src/main/resources/assets/mcai/icon.png" width="128" alt="MCAI Logo">
+
 # MCAI - Minecraft AI 助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Fabric](https://img.shields.io/badge/Fabric-1.21+-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-21%2F25-orange.svg)](https://www.java.com/)
+
+</div>
 
 MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管理你的服务器。
 

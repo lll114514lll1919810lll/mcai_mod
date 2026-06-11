@@ -10,9 +10,9 @@
 
 </div>
 
-MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管理你的服务器。
+MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器/在单人客户端提供帮助。纯 AI 开发。
 
-**简单来说：** 玩家在聊天里打 `!ai 帮我查一下怎么附魔钻石剑`，AI 就会回答；有人骂人，AI 会自动警告或踢出；危险操作（比如删档）需要你手动批准。
+**简单来说：** 玩家在聊天里打 `/ai 帮我查一下怎么附魔钻石剑`，AI 就会回答；有人骂人，AI 会自动警告或踢出；危险操作（比如删档）需要你（管理员）手动批准。
 
 ---
 
@@ -20,8 +20,8 @@ MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管�
 
 | 你想做什么 | 怎么用 |
 |-----------|--------|
-| 和 AI 聊天 | 游戏里打 `!ai <你的问题>` |
-| 让 AI 执行命令 | `!ai 给我一把钻石剑`（需管理员审批） |
+| 和 AI 聊天 | 游戏里打 `/ai <你的问题>` 或`!ai <你的问题>`|
+| 让 AI 执行命令 | `/ai 给我一把钻石剑`（可能需管理员审批） |
 | 查看自己的行为分 | `/aiscore` |
 | 搜索游戏知识库 | `/aikb 附魔` |
 | 管理员审批命令 | `/aiaccept 1` 批准，`/aireject 1` 拒绝 |
@@ -47,7 +47,7 @@ MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管�
 - 默认开启严格模式，只有安全命令能直接执行
 
 ### 游戏知识库
-- 内置中文 Minecraft Wiki
+- 内置中文 Minecraft Wiki 核心条目（目前数据截至2026/6/10）
 - 玩家可以问 AI 游戏问题，AI 自动搜索知识库回答
 
 ---
@@ -55,14 +55,14 @@ MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管�
 ## 安装教程
 
 ### 你需要准备
-- 一台 Minecraft **Fabric 服务端**（支持 26.1.2、1.21.11、1.21/1.21.1）
+- Minecraft **Fabric 客户/服务端**（支持 26.1.2、1.21.11、1.21/1.21.1）
 - [Java](https://www.java.com/) 25（26.1.2、1.21.11）或 Java 21（1.21/1.21.1）
-- 一个 [DeepSeek API Key](https://platform.deepseek.com)（注册即可获取，很便宜）
+- 一个 [DeepSeek API Key](https://platform.deepseek.com)
 
 ### 安装步骤
-1. 下载最新版 `mcai-1.0.0.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面）
-2. 把 JAR 文件放到服务器的 `mods/` 文件夹里
-3. 启动服务器，会自动生成配置文件
+1. 下载最新版 `mcai-x.x.x.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面，提供客户端与服务端双版本）
+2. 把 JAR 文件放到客户端/服务器的 `mods/` 文件夹里
+3. 启动客户端/服务器，会自动生成配置文件
 4. 打开 `config/mcai/config.json`，填入你的 API Key：
    ```json
    {
@@ -71,7 +71,8 @@ MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管�
      "model": "deepseek-v4-flash"
    }
    ```
-5. 重启服务器，完成！
+   - 对于客户端，如果安装了 [Mod Menu](https://modrinth.com/mod/modmenu) ，还可以直接在模组菜单完成大部分配置。
+5. 重启客户端/服务器或输入 `/aireload` ，完成！
 
 ---
 
@@ -156,14 +157,14 @@ MCAI 是一个 Minecraft 服务器插件（Fabric 模组），让 AI 自动管�
 能。修改 `apiEndpoint` 为任何 OpenAI 兼容接口（OpenAI、通义千问、GLM 等）。
 
 **Q: 费用高吗？**
-DeepSeek 非常便宜，日常使用每月几块钱。审查 30 分钟才调用一次。
+DeepSeek 非常便宜，日常使用每月几块钱。审查 30 分钟才调用一次也可以修改频率。
 
 ---
 
 ## 技术文档
 
 - [服主使用手册](USER_GUIDE.md) - 详细的配置和使用说明
-- [开发总结](MCAI_MOD_SUMMARY.md) - 多版本维护经验和踩坑记录
+- [开发总结](MCAI_MOD_SUMMARY.md) - 多版本维护经验和踩坑记录（AI踩过的坑哦~）
 
 ## 许可证
 

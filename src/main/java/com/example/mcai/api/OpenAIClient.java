@@ -255,17 +255,6 @@ public class OpenAIClient {
                 "在服务器上执行一条 Minecraft 指令并返回输出。可以用来查信息（/locate, /list）或做操作（/tp, /give, /weather）。会自动处理权限审批。",
                 "command", "string", "要执行的指令，不要带开头的 /");
 
-        JsonObject recallTool = new JsonObject();
-        recallTool.addProperty("type", "function");
-        JsonObject recallFn = new JsonObject();
-        recallFn.addProperty("name", "recall");
-        recallFn.addProperty("description", "读取 AI 之前记住的所有信息（跨服重启持久化）。");
-        recallFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
-        recallTool.add("function", recallFn);
-
-        JsonObject rememberTool = buildTool("remember",
-                "记住一条信息，下次重启服务器后仍然保留。用于记录玩家偏好、常见问题、你学到的经验等。",
-                "content", "string", "要记住的内容，例如「玩家 Steve 喜欢用钻石剑」");
 
         JsonObject statusTool = new JsonObject();
         statusTool.addProperty("type", "function");
@@ -287,8 +276,6 @@ public class OpenAIClient {
         tools.add(kbTool);
         tools.add(readTool);
         tools.add(cmdTool);
-        tools.add(recallTool);
-        tools.add(rememberTool);
         JsonObject debugTool = new JsonObject();
         debugTool.addProperty("type", "function");
         JsonObject debugFn = new JsonObject();

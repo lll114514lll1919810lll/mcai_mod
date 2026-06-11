@@ -261,12 +261,21 @@ public class OpenAIClient {
                 "记住一条信息，下次重启服务器后仍然保留。用于记录玩家偏好、常见问题、你学到的经验等。",
                 "content", "string", "要记住的内容，例如「玩家 Steve 喜欢用钻石剑」");
 
+        JsonObject statusTool = new JsonObject();
+        statusTool.addProperty("type", "function");
+        JsonObject statusFn = new JsonObject();
+        statusFn.addProperty("name", "get_server_status");
+        statusFn.addProperty("description", "获取服务器实时状态：当前游戏时间和日期、天气（晴/雨/雷暴）、所在生物群系、服务器负载（TPS/MSPT）。无需参数，自动使用当前玩家的位置。");
+        statusFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        statusTool.add("function", statusFn);
+
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
         tools.add(readTool);
         tools.add(cmdTool);
         tools.add(recallTool);
         tools.add(rememberTool);
+        tools.add(statusTool);
         return tools;
     }
 

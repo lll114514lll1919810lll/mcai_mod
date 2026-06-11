@@ -331,6 +331,8 @@ public class ChatHandler {
                         } else if ("recall".equals(tc.name)) {
                             String mem = mod.getMemory().getAll();
                             results.add(mem.isEmpty() ? "暂无记忆" : mem);
+                        } else if ("get_server_status".equals(tc.name)) {
+                            results.add(getServerStatus(player));
                         } else {
                             results.add("未知工具: " + tc.name);
                         }
@@ -435,6 +437,53 @@ public class ChatHandler {
         try { return future.get(10, TimeUnit.SECONDS); }
         catch (java.util.concurrent.TimeoutException e) { return "执行超时"; }
         catch (Exception e) { return "执行异常: " + e.getMessage(); }
+    }
+
+    private String getServerStatus(ServerPlayerEntity player) {
+        var server = mod.getServer();
+        if (server == null) return "服务器未就绪";
+        var world = (net.minecraft.server.world.ServerWorld) player.getEntityWorld();
+
+        String time = formatGameTime(world.getTimeOfDay());
+
+        String weather;
+        if (world.isThundering()) weather = "雷暴";
+        else if (world.isRaining()) weather = "下雨";
+        else weather = "晴朗";
+
+        String biome;
+        try {
+            biome = world.getBiome(player.getBlockPos()).getKey().orElseThrow().getValue().getPath();
+        } catch (Exception e) {
+            biome = "未知";
+        }
+
+        String loadInfo = "N/A (仅26.1+支持)";
+
+        return String.format("""
+                服务器状态:
+                时间: %s
+                天气: %s
+                生物群系: %s
+                负载: %s
+                在线: %d/%d
+                """, time, weather, biome, loadInfo,
+                server.getCurrentPlayerCount(), server.getMaxPlayerCount());
+    }
+
+    private static String formatGameTime(long ticks) {
+        long day = ticks / 24000 + 1;
+        long dayTicks = ticks % 24000;
+        long adjusted = (dayTicks + 6000) % 24000;
+        int hour = (int) (adjusted / 1000);
+        int minute = (int) ((adjusted % 1000) * 60 / 1000);
+        String period;
+        int displayHour;
+        if (hour == 0) { displayHour = 12; period = "AM"; }
+        else if (hour < 12) { displayHour = hour; period = "AM"; }
+        else if (hour == 12) { displayHour = 12; period = "PM"; }
+        else { displayHour = hour - 12; period = "PM"; }
+        return String.format("第%d天 %d:%02d %s (tick=%d)", day, displayHour, minute, period, ticks);
     }
 
     private String buildPlayerContext(ServerPlayerEntity player) {

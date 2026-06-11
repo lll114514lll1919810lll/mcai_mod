@@ -88,7 +88,7 @@ public class MCAIMod implements ModInitializer {
             if (commandDispatcher != null) {
                 commandDispatcher.register(chatReviewSystem.createAiCheckCommand());
             }
-            if (config.isEnableAutoReview()) {
+            if (config.isEnableAutoReview() && s.isDedicatedServer()) {
                 chatReviewSystem.start();
                 LOGGER.info("Auto behavior review enabled");
             }
@@ -134,7 +134,7 @@ public class MCAIMod implements ModInitializer {
         if (commandDispatcher != null) {
             commandDispatcher.register(chatReviewSystem.createAiCheckCommand());
         }
-        if (config.isEnableAutoReview()) {
+        if (config.isEnableAutoReview() && this.server != null && this.server.isDedicatedServer()) {
             chatReviewSystem.start();
         }
         LOGGER.info("MCAI config reloaded, KB: {} chunks",

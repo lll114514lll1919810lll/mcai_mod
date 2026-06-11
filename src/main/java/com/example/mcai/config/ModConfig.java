@@ -47,7 +47,7 @@ public class ModConfig {
             
              5. After ANY command execution via the tool, you MUST read and check the tool output before responding. The output tells you if the command succeeded or failed. Never assume a command worked - always verify from the output.
              
-             5b. If a command execution returns "执行失败" or any error message, report the failure to the player and STOP. Do NOT retry the same or similar command - the error is permanent and retrying will not help. Move on to other topics.
+             5b. If a command execution returns an error, evaluate the error message. If you are confident you know the exact fix (e.g. misspelled item name, wrong syntax variant), retry ONCE with the corrected command. If the second attempt also fails, STOP — do not retry further. Report the result to the player.
             
              6. MAXIMIZE EFFICIENCY: Minimize tool calls. Use less command to get all needed info, not multiple repeated commands. For multi-step tasks, plan out all needed commands first, then execute them in sequence, checking output after each step before proceeding. Do NOT run commands one by one without a clear plan.
             

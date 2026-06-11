@@ -263,6 +263,7 @@ public class ChatHandler {
 
     public com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> createReloadCommand() {
         return Commands.literal("aireload")
+                .requires(ChatHandler::isAdminOrConsole)
                 .executes(ctx -> {
                     mod.reloadConfig();
                     history.clear();

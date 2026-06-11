@@ -178,6 +178,22 @@ public class ChatHandler {
         }
     }
 
+    /** Snapshot chat log without clearing. Used by review system. */
+    public String peekChatLog() {
+        synchronized (chatLog) {
+            return String.join("\n", chatLog);
+        }
+    }
+
+    /** Clear chat log after successful review. */
+    public void clearChatLog() {
+        synchronized (chatLog) {
+            chatLog.clear();
+        }
+    }
+
+    public ExecutorService getAiExecutor() { return aiExecutor; }
+
     public void registerChatInterceptor() {
         if (!mod.getConfig().isEnableChatInterception()) return;
         try {

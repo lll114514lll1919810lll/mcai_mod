@@ -89,6 +89,14 @@ public class ModConfig {
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
             "kick", "stop", "whitelist", "save-all", "reload"
     ));
+    // ── 行为审查系统 ──
+    private int reviewIntervalMinutes = 30;
+    private int yellowCardThreshold = -30;
+    private int redCardThreshold = -60;
+    private int scoreRecoveryPerInterval = 1;
+    private int approvalTimeoutMinutes = 10;
+    private boolean enableAutoReview = true;
+
     /** 严格模式下额外需要审批的破坏性命令 */
     private static final List<String> STRICT_COMMANDS = List.of(
             "give", "item", "clear", "enchant",
@@ -152,4 +160,10 @@ public class ModConfig {
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
     public List<String> getStrictCommands() { return STRICT_COMMANDS; }
+    public int getReviewIntervalMinutes() { return reviewIntervalMinutes; }
+    public int getYellowCardThreshold() { return yellowCardThreshold; }
+    public int getRedCardThreshold() { return redCardThreshold; }
+    public int getScoreRecoveryPerInterval() { return scoreRecoveryPerInterval; }
+    public int getApprovalTimeoutMinutes() { return approvalTimeoutMinutes; }
+    public boolean isEnableAutoReview() { return enableAutoReview; }
 }

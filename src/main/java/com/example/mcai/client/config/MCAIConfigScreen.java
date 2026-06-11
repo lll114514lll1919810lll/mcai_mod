@@ -35,7 +35,7 @@ public class MCAIConfigScreen extends Screen {
     private EditBox apiEndpointField, apiKeyField, modelField;
     private EditBox prefixField, maxTokensField, tempField;
     private EditBox ctxField, thinkingField, toolCallsField, approvalField;
-    private Button chatBtn, cmdBtn;
+    private Button chatBtn, cmdBtn, strictBtn;
 
     private String status = "";
     private int statusTimer = 0;
@@ -77,7 +77,7 @@ public class MCAIConfigScreen extends Screen {
         int inX = cx + 5;
         int fieldW = Math.min(180, width - inX - 10);
         int keyW = Math.min(300, width - inX - 10);
-        int rows = 12;
+        int rows = 13;
         int rowH = Math.min(24, (height - 100) / rows);
         int sy = 30;
 
@@ -118,7 +118,10 @@ public class MCAIConfigScreen extends Screen {
         approvalField.setTooltip(Tooltip.create(Component.literal("逗号分隔的命令列表")));
         addRenderableWidget(approvalField);
 
-        int by = sy + rowH * 12 + 15;
+        drawLabel(leftX, sy + rowH * 12, "严格模式");
+        strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 12, getBool("strictMode", false));
+
+        int by = sy + rowH * 13 + 15;
         addRenderableWidget(Button.builder(Component.literal("§a保存并重载"), b -> save())
                 .pos(cx - 105, by).size(100, 20).build());
         addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
@@ -184,6 +187,7 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("maxToolCalls", parseInt(toolCallsField.getValue(), 5));
             o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
             o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
+            o.addProperty("strictMode", strictBtn.getMessage().getString().contains("开启"));
 
             JsonArray arr = new JsonArray();
             Arrays.stream(approvalField.getValue().split(","))

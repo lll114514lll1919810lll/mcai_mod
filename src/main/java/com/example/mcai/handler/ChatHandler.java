@@ -9,6 +9,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
@@ -27,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -37,8 +40,14 @@ public class ChatHandler {
         t.setDaemon(true);
         return t;
     });
+    private final ScheduledExecutorService uiScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "MCAI-UI");
+        t.setDaemon(true);
+        return t;
+    });
     private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final Map<UUID, List<String>> pendingCommands = new ConcurrentHashMap<>();
+    private final Map<UUID, ScheduledFuture<?>> thinkingAnimations = new ConcurrentHashMap<>();
     private final LinkedList<String> chatLog = new LinkedList<>();
 
     public ChatHandler(MCAIMod mod) {
@@ -265,12 +274,54 @@ public class ChatHandler {
         return 1;
     }
 
+    // ── 经验栏动画 ──
+
+    private void startThinkingAnimation(ServerPlayer player) {
+        UUID id = player.getUUID();
+        stopThinkingAnimation(id);
+        ScheduledFuture<?> f = uiScheduler.scheduleAtFixedRate(new Runnable() {
+            int frame = 0;
+            @Override
+            public void run() {
+                var srv = mod.getServer();
+                if (srv == null || player.isRemoved()) {
+                    stopThinkingAnimation(id);
+                    return;
+                }
+                String bar = switch (frame % 4) {
+                    case 0 -> "§7▌§8▌▌ §eAI 思考中...";
+                    case 1 -> "§7▌▌§8▌ §eAI 思考中...";
+                    case 2 -> "§7▌▌▌ §eAI 思考中...";
+                    default -> "§8▌▌▌ §7AI 思考中...";
+                };
+                srv.execute(() -> player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(bar))));
+                frame++;
+            }
+        }, 0, 400, TimeUnit.MILLISECONDS);
+        thinkingAnimations.put(id, f);
+    }
+
+    private void stopThinkingAnimation(UUID id) {
+        ScheduledFuture<?> f = thinkingAnimations.remove(id);
+        if (f != null) f.cancel(false);
+    }
+
+    private void doneThinking(ServerPlayer player) {
+        stopThinkingAnimation(player.getUUID());
+        player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
+    }
+
+    // ── AI 查询 ──
+
     private void handleAIQuery(ServerPlayer player, String query) {
         var playerHistory = history.computeIfAbsent(player.getUUID(), k -> new LinkedList<>());
         int maxCtx = mod.getConfig().getContextMaxChars();
         final UUID pid = player.getUUID();
         final String pname = player.getScoreboardName();
         MCAIMod.LOGGER.info("AI query from {}: {}", pname, query);
+
+        startThinkingAnimation(player);
+
         aiExecutor.execute(() -> {
             try {
                 String context = buildPlayerContext(player);
@@ -340,6 +391,7 @@ public class ChatHandler {
                 if (result.isPresent()) {
                     String response = result.get();
                     server.execute(() -> {
+                        doneThinking(player);
                         if (response.startsWith("[API错误]") || response.startsWith("[API连接失败]")
                                 || response.startsWith("[API异常]") || response.startsWith("[响应解析失败]")
                                 || response.startsWith("[工具调用超限]") || response.startsWith("[工具调用异常]")) {
@@ -354,15 +406,21 @@ public class ChatHandler {
                         }
                     });
                 } else {
-                    server.execute(() -> player.sendSystemMessage(
-                            Component.literal("§c[AI] 无响应，请检查控制台日志")));
+                    server.execute(() -> {
+                        doneThinking(player);
+                        player.sendSystemMessage(
+                                Component.literal("§c[AI] 无响应，请检查控制台日志"));
+                    });
                 }
             } catch (Exception e) {
                 MCAIMod.LOGGER.error("AI query failed", e);
                 var server = mod.getServer();
                 if (server != null) {
-                    server.execute(() -> player.sendSystemMessage(
-                            Component.literal("§c[AI] 异常: " + e.getMessage())));
+                    server.execute(() -> {
+                        doneThinking(player);
+                        player.sendSystemMessage(
+                                Component.literal("§c[AI] 异常: " + e.getMessage()));
+                    });
                 }
             }
         });
@@ -537,7 +595,9 @@ public class ChatHandler {
     }
 
     private boolean needsApproval(String cmd) {
-        return mod.getConfig().getRequireApprovalCommands()
-                .contains(cmd.split("\\s+")[0].toLowerCase());
+        String root = cmd.split("\\s+")[0].toLowerCase();
+        if (mod.getConfig().getRequireApprovalCommands().contains(root)) return true;
+        if (mod.getConfig().isStrictMode() && mod.getConfig().getStrictCommands().contains(root)) return true;
+        return false;
     }
 }

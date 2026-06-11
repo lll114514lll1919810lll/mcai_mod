@@ -86,10 +86,28 @@ public class ModConfig {
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
     private int maxToolCalls = 5;
+    private boolean strictMode = false;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
             "kick", "stop", "whitelist", "save-all", "reload"
     ));
+    /** 严格模式下额外需要审批的破坏性命令 */
+    private static final List<String> STRICT_COMMANDS = List.of(
+            "give", "item", "clear", "enchant",
+            "tp", "teleport", "summon", "kill",
+            "fill", "clone", "setblock", "place",
+            "weather", "time", "difficulty",
+            "gamemode", "defaultgamemode", "gamerule",
+            "effect", "xp", "experience",
+            "data", "execute", "attribute",
+            "scoreboard", "team", "tag", "bossbar",
+            "loot", "recipe",
+            "playsound", "stopsound", "title",
+            "particle", "schedule",
+            "worldborder", "forceload", "spreadplayers",
+            "damage", "ride", "return",
+            "transfer", "spectate", "random"
+    );
 
     public static ModConfig load() {
         ModConfig config;
@@ -134,4 +152,6 @@ public class ModConfig {
     public int getContextMaxChars() { return contextMaxChars; }
     public int getMaxToolCalls() { return maxToolCalls; }
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
+    public boolean isStrictMode() { return strictMode; }
+    public List<String> getStrictCommands() { return STRICT_COMMANDS; }
 }

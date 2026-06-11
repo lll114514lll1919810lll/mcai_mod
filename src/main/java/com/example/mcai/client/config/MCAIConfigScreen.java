@@ -203,7 +203,7 @@ public class MCAIConfigScreen extends Screen {
                 statusTimer = 100;
             } else if (client != null && client.player != null) {
                 // Dedicated server: send reload command (requires permission)
-                client.player.networkHandler.sendCommand("aireload");
+                client.player.networkHandler.sendChatCommand("aireload");
                 status = "§a✓ 配置已保存，重载指令已发送";
                 statusTimer = 100;
             } else {

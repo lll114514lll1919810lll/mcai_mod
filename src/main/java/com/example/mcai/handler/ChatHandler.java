@@ -7,6 +7,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.message.v1.ServerMessageEvents;
 import net.minecraft.network.message.MessageType;
 import net.minecraft.network.message.SignedMessage;
@@ -14,6 +15,8 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+
+import net.minecraft.command.permission.LeveledPermissionPredicate;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -242,7 +245,14 @@ public class ChatHandler {
         String cmd = cmds.remove(idx);
         if (cmds.isEmpty()) pendingCommands.remove(player.getUuid());
         var server = mod.getServer();
-        if (server != null) server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
+        if (server != null) {
+            try {
+                server.getCommandManager().getDispatcher().execute(cmd, server.getCommandSource());
+            } catch (CommandSyntaxException e) {
+                src.sendError(Text.literal("§c指令语法错误: " + e.getMessage()));
+                return 0;
+            }
+        }
         src.sendFeedback(() -> Text.literal("§a[AI] 已批准 #" + num + " 并执行: /" + cmd), true);
         return 1;
     }
@@ -409,9 +419,9 @@ public class ChatHandler {
                             public boolean shouldBroadcastConsoleToOps() { return false; }
                         },
                         cs.getPosition(), cs.getRotation(), cs.getWorld(),
-                        4, cs.getName(), cs.getDisplayName(),
+                        LeveledPermissionPredicate.OWNERS, cs.getName(), cs.getDisplayName(),
                         server, cs.getEntity());
-                server.getCommandManager().executeWithPrefix(src, command);
+                server.getCommandManager().getDispatcher().execute(command, src);
                 String result = out.toString().trim();
                 // Broadcast command execution to all players
                 server.getPlayerManager().broadcast(
@@ -430,13 +440,13 @@ public class ChatHandler {
     private String buildPlayerContext(ServerPlayerEntity player) {
         var server = mod.getServer();
         if (server == null) return "";
-        var world = player.getWorld();
+        var world = player.getEntityWorld();
         var pos = player.getBlockPos();
         String playerList = server.getPlayerManager().getPlayerList().stream()
                 .map(p -> String.format("%s (HP:%.0f %s %s)",
                         p.getNameForScoreboard(), p.getHealth(),
-                        p.getWorld().getRegistryKey().getValue().getPath(),
-                        p.interactionManager.getGameMode().getName()))
+                        p.getEntityWorld().getRegistryKey().getValue().getPath(),
+                        p.interactionManager.getGameMode().asString()))
                 .collect(Collectors.joining(", "));
 
         // Advancement summary
@@ -493,7 +503,12 @@ public class ChatHandler {
         }
         var server = mod.getServer();
         if (server != null) {
-            server.getCommandManager().executeWithPrefix(server.getCommandSource(), cmd);
+            try {
+                server.getCommandManager().getDispatcher().execute(cmd, server.getCommandSource());
+            } catch (CommandSyntaxException e) {
+                player.sendMessage(Text.literal("§c[AI] 指令语法错误: " + e.getMessage()));
+                return false;
+            }
             player.sendMessage(Text.literal("§7[AI] 已执行: /" + cmd));
         }
         return true;

@@ -1,11 +1,36 @@
-.gradle/
+# Build outputs
 build/
-.gradle/
+out/
 *.jar
 *.zip
 !gradle/wrapper/gradle-wrapper.jar
+
+# Gradle
+.gradle/
+gradle/
+!gradle/wrapper/
+
+# IDE
 .idea/
 *.iml
-out/
+.vscode/
+*.code-workspace
+
+# Minecraft
 run/
+logs/
+crash-reports/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+*.log
+*.bak
+*.tmp
+gradle.properties_bak
+final_jars/
 assets/mcai/icon.png
+config/mcai/

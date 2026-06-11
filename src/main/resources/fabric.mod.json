@@ -4,8 +4,13 @@
   "version": "${version}",
   "name": "MCAI",
   "description": "AI assistant mod for Minecraft server - connects to OpenAI-compatible API",
-  "authors": [],
-  "contact": {},
+  "authors": [
+    "MCAI Contributors"
+  ],
+  "contact": {
+    "sources": "https://github.com/YOUR_USERNAME/mc",
+    "issues": "https://github.com/YOUR_USERNAME/mc/issues"
+  },
   "license": "MIT",
   "icon": "assets/mcai/icon.png",
   "environment": "*",

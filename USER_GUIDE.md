@@ -1,5 +1,7 @@
 # MCAI 服主使用手册
 
+> 本文档面向服务器管理员，介绍如何安装、配置和使用 MCAI 模组。开发者请参考 [开发总结与经验教训](MCAI_MOD_SUMMARY.md)。
+
 ## 这是什么
 
 MCAI 是一个 Fabric 服务端模组，接入大语言模型（默认 DeepSeek），为你的 Minecraft 服务器提供：
@@ -13,8 +15,8 @@ MCAI 是一个 Fabric 服务端模组，接入大语言模型（默认 DeepSeek�
 ## 安装
 
 ### 前提条件
-- Minecraft **Fabric 26.1 及以上**服务端
-- JDK 25（26.x 版本）
+- Minecraft **Fabric 服务端**（支持 26.1.2、1.21.11、1.21/1.21.1）
+- JDK 25（26.1.2、1.21.11）或 JDK 21（1.21/1.21.1）
 - 一个 **DeepSeek API Key**（[platform.deepseek.com](https://platform.deepseek.com) 注册获取，余额即可用，很便宜）
 
 ### 步骤

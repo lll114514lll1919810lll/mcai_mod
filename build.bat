@@ -63,9 +63,16 @@ if "%VERSION%"=="26.1.2" (
 echo Branch: !BRANCH!
 echo JDK: !JAVA_HOME_DIR!
 
+REM Preserve custom icon across branch switch
+set ICON_PATH=src\main\resources\assets\mcai\icon.png
+if exist "!ICON_PATH!" copy /Y "!ICON_PATH!" "%TEMP%\mcai_icon.png" > nul 2>&1
+
 REM Switch branch
 echo Switching to branch !BRANCH!...
 git checkout -f !BRANCH! 2>nul
+
+REM Restore custom icon
+if exist "%TEMP%\mcai_icon.png" copy /Y "%TEMP%\mcai_icon.png" "!ICON_PATH!" > nul 2>&1
 if !ERRORLEVEL! NEQ 0 (
     echo Error: Failed to switch to branch !BRANCH!
     exit /b 1

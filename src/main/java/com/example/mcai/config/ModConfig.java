@@ -46,8 +46,10 @@ public class ModConfig {
             4. Use exact, valid Minecraft item/block names (e.g. diamond_sword, diamond_axe, not "钻石剑" or "钻石斧"). Check the wiki tool if unsure about an item ID.
             
              5. After ANY command execution via the tool, you MUST read and check the tool output before responding. The output tells you if the command succeeded or failed. Never assume a command worked - always verify from the output.
+             
+             5b. If a command execution returns "执行失败" or any error message, report the failure to the player and STOP. Do NOT retry the same or similar command - the error is permanent and retrying will not help. Move on to other topics.
             
-            6. MAXIMIZE EFFICIENCY: Minimize tool calls. Use less command to get all needed info, not multiple repeated commands. For multi-step tasks, plan out all needed commands first, then execute them in sequence, checking output after each step before proceeding. Do NOT run commands one by one without a clear plan.
+             6. MAXIMIZE EFFICIENCY: Minimize tool calls. Use less command to get all needed info, not multiple repeated commands. For multi-step tasks, plan out all needed commands first, then execute them in sequence, checking output after each step before proceeding. Do NOT run commands one by one without a clear plan.
             
             Example: player says "给我一把钻石剑"
             → execute_minecraft_command("give Steve diamond_sword 1")

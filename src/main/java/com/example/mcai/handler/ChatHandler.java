@@ -624,7 +624,16 @@ public class ChatHandler {
             } else if (hit.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
                 var entityHit = (net.minecraft.world.phys.EntityHitResult) hit;
                 var entity = entityHit.getEntity();
-                lookingAt = entity.getDisplayName().getString() + " @ " + entity.blockPosition().toShortString();
+                String name = entity.getDisplayName().getString();
+                String type = entity.getType().toString();
+                String category = entity.getType().getCategory().getName();
+                StringBuilder info = new StringBuilder();
+                info.append(name).append(" (").append(category).append(")");
+                if (entity instanceof net.minecraft.world.entity.LivingEntity le) {
+                    info.append(" | HP: ").append(String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth()));
+                }
+                info.append(" | 位置: ").append(entity.blockPosition().toShortString());
+                lookingAt = info.toString();
             } else {
                 lookingAt = "无";
             }

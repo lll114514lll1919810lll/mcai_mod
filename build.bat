@@ -11,9 +11,9 @@ setlocal enabledelayedexpansion
 
 if "%1"=="" (
     echo Usage: build.bat ^<version^>
-    echo   build.bat 1.21    - Minecraft 1.21 (master branch)
-    echo   build.bat 1.21.11 - Minecraft 1.21.11 (master branch)
-    echo   build.bat 26.1.2  - Minecraft 26.1.2 (mc-26.1.2 branch)
+    echo   build.bat 1.21    - Minecraft 1.21     ^(master branch^)
+    echo   build.bat 1.21.11 - Minecraft 1.21.11  ^(mc-1.21.11 branch^)
+    echo   build.bat 26.1.2  - Minecraft 26.1.2   ^(mc-26.1.2 branch^)
     echo   build.bat all     - Build all three versions
     exit /b 1
 )

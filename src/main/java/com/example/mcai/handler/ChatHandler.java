@@ -18,13 +18,14 @@ import net.minecraft.text.Text;
 
 import net.minecraft.command.permission.LeveledPermissionPredicate;
 
-import java.util.ArrayList;
+import com.mojang.authlib.GameProfile;import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +50,7 @@ public class ChatHandler {
     });
     private final Map<UUID, ScheduledFuture<?>> thinkingAnimations = new ConcurrentHashMap<>();
     private final LinkedList<String> chatLog = new LinkedList<>();
+    private final ConcurrentMap<String, CompletableFuture<String>> pendingFutures = new ConcurrentHashMap<>();
 
     public ChatHandler(MCAIMod mod) {
         this.mod = mod;
@@ -173,9 +175,15 @@ public class ChatHandler {
     }
 
     private void addToChatLog(String name, String message) {
+        addToChatLog(name, message, false);
+    }
+
+    private void addToChatLog(String name, String message, boolean isAdmin) {
         synchronized (chatLog) {
-            chatLog.add(name + ": " + message);
-            // Keep last 50 messages max
+            String time = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .format(java.time.ZonedDateTime.now(java.time.ZoneId.of("Asia/Shanghai")));
+            String prefix = isAdmin ? "[管理员] " : "";
+            chatLog.add("[" + time + "] " + prefix + name + ": " + message);
             while (chatLog.size() > 50) chatLog.removeFirst();
         }
     }
@@ -621,5 +629,84 @@ public class ChatHandler {
         if (mod.getConfig().getRequireApprovalCommands().contains(root)) return true;
         if (mod.getConfig().isStrictMode() && mod.getConfig().getStrictCommands().contains(root)) return true;
         return false;
+    }
+
+    private static boolean isAdminOrConsole(ServerCommandSource src) {
+        ServerPlayerEntity p = src.getPlayer();
+        if (p == null) return true;
+        var srv = src.getServer();
+        return srv != null && srv.getPlayerManager().isOperator(new net.minecraft.server.PlayerConfigEntry(p.getGameProfile()));
+    }
+
+    private boolean isAdminPlayer(ServerPlayerEntity player) {
+        var server = mod.getServer();
+        return server != null && server.getPlayerManager().isOperator(new net.minecraft.server.PlayerConfigEntry(player.getGameProfile()));
+    }
+
+    private void handleConsoleAIQuery(ServerCommandSource src, String query) {
+        aiExecutor.execute(() -> {
+            try {
+                var server = mod.getServer();
+                String playerList = server != null
+                        ? server.getPlayerManager().getPlayerList().stream()
+                                .map(p -> p.getNameForScoreboard()).collect(Collectors.joining(", "))
+                        : "";
+                String context = String.format("\u7248\u672c: %s | \u5728\u7EBF(%d/%d): [%s]\n\u8BF4\u8BDD\u8005: \u63A7\u5236\u53F0",
+                        server != null ? server.getVersion() : "?",
+                        server != null ? server.getCurrentPlayerCount() : 0,
+                        server != null ? server.getMaxPlayerCount() : 0,
+                        playerList.isEmpty() ? "\u65E0" : playerList);
+                List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
+                messages.add(new OpenAIClient.ChatMessage("system", mod.getConfig().getSystemPrompt()));
+                String recentChat;
+                synchronized (chatLog) { recentChat = String.join("\n", chatLog); }
+                if (!recentChat.isEmpty()) {
+                    messages.add(new OpenAIClient.ChatMessage("system",
+                            "\u6700\u8FD1\u7684\u804A\u5929\u8BB0\u5F55\uFF08\u4E86\u89E3\u5F53\u524D\u6C1B\u56F4\uFF09:\n" + recentChat));
+                }
+                messages.add(new OpenAIClient.ChatMessage("user", context + "\n\n\u63A7\u5236\u53F0 \u8BF4: " + query));
+                var result = mod.getAiClient().chat(messages, toolCalls -> {
+                    List<String> results = new ArrayList<>();
+                    for (var tc : toolCalls) {
+                        if ("search_knowledge_base".equals(tc.name))
+                            results.add(mod.getKnowledgeBase().search(parseArg(tc.arguments, "query"), 5));
+                        else if ("read_knowledge_base".equals(tc.name))
+                            results.add(mod.getKnowledgeBase().read(parseArg(tc.arguments, "title")));
+                        else if ("execute_minecraft_command".equals(tc.name))
+                            results.add(executeCommand(parseArg(tc.arguments, "command"), null));
+                        else if ("get_server_status".equals(tc.name))
+                            results.add(getServerStatus(null));
+                        else if ("get_game_rules".equals(tc.name))
+                            results.add(getGameRules(null));
+                        else if ("get_debug_info".equals(tc.name))
+                            results.add("\u63A7\u5236\u53F0\u65E0\u6CD5\u83B7\u53D6\u8C03\u8BD5\u4FE1\u606F");
+                        else results.add("\u672A\u77E5\u5DE5\u5177: " + tc.name);
+                    }
+                    return results;
+                });
+                String reply = result.orElse("AI \u65E0\u54CD\u5E94");
+                src.sendFeedback(() -> Text.literal("\u00a7e[AI\u56DE\u590D]\n\u00a7f" + reply), false);
+                addToChatLog("AI \u2192 \u63A7\u5236\u53F0", reply);
+            } catch (Exception e) {
+                MCAIMod.LOGGER.error("Console AI query failed", e);
+                src.sendError(Text.literal("\u00a7cAI \u67E5\u8BE2\u5931\u8D25: " + e.getMessage()));
+            }
+        });
+    }
+
+    private void notifyAdminsPending(ServerPlayerEntity requester, String command, int num) {
+        var server = mod.getServer();
+        if (server == null) return;
+        server.execute(() -> {
+            server.getPlayerManager().broadcast(Text.literal(
+                    "\u00a7e[AI] \u00a7f" + requester.getNameForScoreboard() + " \u00a77\u8BF7\u6C42\u6267\u884C: \u00a7e/" + command
+                    + " \u00a77(\u5F85\u5BA1\u6279)"), false);
+            for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
+                if (isAdminPlayer(p)) {
+                    p.sendMessage(Text.literal(
+                            " \u00a7a/aiaccept " + num + " \u00a77\u6279\u51C6  \u00a7c/aireject " + num + " \u00a77\u62D2\u7EDD  \u00a77(3\u5206\u949F\u8D85\u65F6\u81EA\u52A8\u53D6\u6D88)"));
+                }
+            }
+        });
     }
 }

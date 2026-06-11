@@ -14,6 +14,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.PlayerChatMessage;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import net.minecraft.server.permissions.LevelBasedPermissionSet;
@@ -372,6 +373,8 @@ public class ChatHandler {
                         } else if ("recall".equals(tc.name)) {
                             String mem = mod.getMemory().getAll();
                             results.add(mem.isEmpty() ? "暂无记忆" : mem);
+                        } else if ("get_server_status".equals(tc.name)) {
+                            results.add(getServerStatus(player));
                         } else {
                             results.add("未知工具: " + tc.name);
                         }
@@ -488,6 +491,47 @@ public class ChatHandler {
         try { return future.get(10, TimeUnit.SECONDS); }
         catch (java.util.concurrent.TimeoutException e) { return "执行超时"; }
         catch (Exception e) { return "执行异常: " + e.getMessage(); }
+    }
+
+    private String getServerStatus(ServerPlayer player) {
+        var server = mod.getServer();
+        if (server == null) return "服务器未就绪";
+        var level = (net.minecraft.server.level.ServerLevel) player.level();
+
+        String time = formatGameTime(level.getGameTime());
+
+        String weather;
+        if (level.isThundering()) weather = "雷暴";
+        else if (level.isRaining()) weather = "下雨";
+        else weather = "晴朗";
+
+        String biome;
+        try {
+            var biomeOpt = level.getBiome(player.blockPosition()).unwrapKey();
+            biome = biomeOpt.isPresent()
+                    ? biomeOpt.get().identifier().getPath()
+                    : "未知";
+        } catch (Exception e) {
+            biome = "未知";
+        }
+
+        float mspt = server.getCurrentSmoothedTickTime();
+        double tps = Math.min(20.0, 1000.0 / Math.max(mspt, 0.001));
+        String load;
+        if (tps >= 19.5) load = "流畅";
+        else if (tps >= 15) load = "轻微卡顿";
+        else if (tps >= 10) load = "明显卡顿";
+        else load = "严重卡顿";
+
+        return String.format("""
+                服务器状态:
+                时间: %s
+                天气: %s
+                生物群系: %s
+                负载: TPS=%.1f MSPT=%.1fms (%s)
+                在线: %d/%d
+                """, time, weather, biome, tps, mspt, load,
+                server.getPlayerCount(), server.getMaxPlayers());
     }
 
     private String buildPlayerContext(ServerPlayer player) {

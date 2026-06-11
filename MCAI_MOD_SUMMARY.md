@@ -41,47 +41,26 @@ MCAI 是一个 Fabric 服务端模组，接入 OpenAI 兼容 API（DeepSeek）�
 
 ---
 
-## 2. 仓库结构（单分支 + 版本目录）
+## 2. 仓库结构
 
-### 当前结构
+### 当前结构（单分支）
 
 ```
-main (唯一分支)
-├── src/                    ← 主源码 (MC 1.21.11, Yarn 映射)
-├── versions/
-│   └── mc-26.1.2/         ← MC 26.1.2 版本特定文件
-│       ├── build.gradle
-│       ├── gradle.properties
-│       ├── fabric.mod.json
-│       └── src/            ← 26.1.2 的 Java 源码 (Mojang 映射)
-├── build-version.bat       ← 多版本构建脚本
-├── build.gradle            ← 主构建配置 (1.21.11)
-└── gradle.properties       ← 主版本属性 (1.21.11)
+main (唯一分支，MC 1.21.11，Yarn 映射)
+├── src/                    ← 主源码
+├── build.gradle
+├── gradle.properties
+└── ...
 ```
 
-### 构建命令
+### 教训：Mojang 和 Yarn 映射不能混在一个分支
 
-```bash
-# 构建 MC 1.21.11（默认，直接用当前源码）
-.\gradlew.bat build
+MC 26.1.2 使用 Mojang 映射（`ServerPlayer`、`Component.literal()`），MC 1.21.11 使用 Yarn 映射（`ServerPlayerEntity`、`Text.literal()`）。几乎所有 MC 类名都不同，**无法通过替换几个文件来实现多版本构建**。
 
-# 构建 MC 26.1.2（脚本自动替换文件再构建）
-.\build-version.bat 26.1.2
 ```
-
-### 版本差异
-
-| 差异项 | MC 1.21.11 (main) | MC 26.1.2 (versions/) |
-|--------|-------------------|----------------------|
-| 映射类型 | Yarn v2 | Mojang (deobfuscated) |
-| Java | 21+ | 25 |
-| Loom | 1.15.5 | 1.14.1 |
-| 玩家类 | `ServerPlayerEntity` | `ServerPlayer` |
-| 命令源 | `ServerCommandSource` | `CommandSourceStack` |
-| 文本 API | `Text.literal()` | `Component.literal()` |
-| TPS | 不支持 | `getCurrentSmoothedTickTime()` |
-| F3 信息 | 不支持 | 完整实现 |
-| 游戏规则 | 不支持 | 完整实现 |
+❌ 错误的做法：单分支 + versions/ 目录切换源码
+✅ 正确的做法：每个 MC 版本维护独立分支，或只支持一个版本
+```
 
 ---
 

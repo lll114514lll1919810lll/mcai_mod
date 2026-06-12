@@ -223,7 +223,7 @@ public class OpenAIClient {
 
         // Tool call limit reached: tell AI to wrap up, make one final call without tools
         messages.add(new ChatMessage("user",
-                "你已用完本轮的工具调用次数。请基于已有信息给出最终回答，然后结束对话。不要尝试再次调用工具。"));
+                "本轮工具调用次数已用完。请基于已有信息给出最终回答，然后结束对话。不要尝试再次调用工具。"));
         // Final call without tool definitions
         JsonObject body = new JsonObject();
         body.addProperty("model", config.getModel());

@@ -15,13 +15,13 @@ import java.util.stream.Collectors;
 public class KnowledgeBase {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-KB");
     private static final Gson GSON = new GsonBuilder().create();
-    private static final String BUNDLED_PATH = "assets/mcai/kb/zh_wiki.json";
+    private static final String KB_DIR = "assets/mcai/kb/";
 
     private List<Entry> entries = List.of();
 
     public record Entry(String title, List<String> keywords, String summary, String content) {}
 
-    /** Load from bundled resource first, then merge from external directory */
+    /** Load from bundled resources first, then merge from external directory */
     public void load(Path externalDir) {
         List<Entry> all = new ArrayList<>();
         var seen = new HashSet<String>();
@@ -38,25 +38,11 @@ public class KnowledgeBase {
             }
         }
 
-        // 2. Load bundled KB from JAR
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
-            if (is != null) {
-                try (Reader r = new InputStreamReader(is)) {
-                    List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
-                    if (list != null) {
-                        for (Entry e : list) {
-                            if (seen.add(e.title().toLowerCase(Locale.ROOT))) {
-                                all.add(e);
-                            }
-                        }
-                        loaded = list.size();
-                    }
-                }
-            } else {
-                LOGGER.warn("Bundled KB not found: {}", BUNDLED_PATH);
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to load bundled KB", e);
+        // 2. Load bundled KB files from JAR
+        String[] bundledFiles = {"zh_wiki.json", "create_mod.json", "biomesoplenty.json"};
+        for (String file : bundledFiles) {
+            int n = loadBundledFile(file, all, seen);
+            loaded += n;
         }
 
         // 3. Merge from external directory (overrides/additions)
@@ -88,15 +74,33 @@ public class KnowledgeBase {
     }
 
     private void exportBundledIfNeeded(Path externalDir) {
-        Path target = externalDir.resolve("zh_wiki.json");
-        if (Files.exists(target)) return; // already exported, don't overwrite
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
-            if (is != null) {
-                Files.copy(is, target);
-                LOGGER.info("Exported bundled KB to {}", target);
+        String[] files = {"zh_wiki.json", "create_mod.json", "biomesoplenty.json"};
+        for (String f : files) {
+            Path target = externalDir.resolve(f);
+            if (Files.exists(target)) continue;
+            try (InputStream is = getClass().getClassLoader().getResourceAsStream(KB_DIR + f)) {
+                if (is != null) { Files.copy(is, target); LOGGER.info("Exported bundled KB to {}", target); }
+            } catch (Exception e) { LOGGER.warn("Failed to export {}", f, e); }
+        }
+    }
+
+    private int loadBundledFile(String fileName, List<Entry> all, HashSet<String> seen) {
+        String path = KB_DIR + fileName;
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
+            if (is == null) { LOGGER.warn("Bundled KB not found: {}", path); return 0; }
+            try (Reader r = new InputStreamReader(is)) {
+                List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
+                if (list == null) return 0;
+                int count = 0;
+                for (Entry e : list) {
+                    if (seen.add(e.title().toLowerCase(Locale.ROOT))) { all.add(e); count++; }
+                }
+                LOGGER.info("Loaded {} entries from bundled {}", count, fileName);
+                return count;
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to export bundled KB", e);
+            LOGGER.error("Failed to load bundled KB file {}", fileName, e);
+            return 0;
         }
     }
 

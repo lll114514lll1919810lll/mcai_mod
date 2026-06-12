@@ -25,7 +25,7 @@
   "mcai.config.save": "§a保存并关闭",
   "mcai.config.cancel": "§7取消",
   "mcai.config.saved": "§a✓ 已保存",
-  "mcai.config.save_failed": "§c保存失败: ",
+  "mcai.config.save_failed": "§c保存失败: %s",
   "mcai.config.reload_tip": "§7保存后需手动执行 /aireload",
   "mcai.config.group.api": "§e=== API ===",
   "mcai.config.group.ai": "§e=== AI 设置 ===",
@@ -51,6 +51,7 @@
   "mcai.config.approval_timeout": "审批超时(分)",
   "mcai.config.sys_prompt_path": "AI提示词文件名",
   "mcai.config.review_prompt_path": "审查提示词文件名",
+  "mcai.config.prompt_language": "提示词语言",
   "mcai.config.prompt_tooltip": "文件名（放config/mcai/下），空=用内置",
 
   "mcai.review.red_card": "§c[MCAI] §4触发红牌",

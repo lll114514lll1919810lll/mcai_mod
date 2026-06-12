@@ -25,7 +25,7 @@
   "mcai.config.save": "§aSave & Close",
   "mcai.config.cancel": "§7Cancel",
   "mcai.config.saved": "§a✓ Saved",
-  "mcai.config.save_failed": "§cSave failed: ",
+  "mcai.config.save_failed": "§cSave failed: %s",
   "mcai.config.reload_tip": "§7Run /aireload after saving",
   "mcai.config.group.api": "§e=== API ===",
   "mcai.config.group.ai": "§e=== AI Settings ===",
@@ -51,6 +51,7 @@
   "mcai.config.approval_timeout": "Approval Timeout (min)",
   "mcai.config.sys_prompt_path": "System Prompt File",
   "mcai.config.review_prompt_path": "Review Prompt File",
+  "mcai.config.prompt_language": "Prompt Language",
   "mcai.config.prompt_tooltip": "Filename (under config/mcai/), empty=built-in",
 
   "mcai.review.red_card": "§c[MCAI] §4Red card",

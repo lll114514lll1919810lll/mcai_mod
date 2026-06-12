@@ -13,6 +13,8 @@ out/
 *.iml
 .vscode/
 *.code-workspace
+.vs/
+.mimocode/
 
 # Minecraft
 run/

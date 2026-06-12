@@ -127,7 +127,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 3. 执行 /aireload
 
 可用文件及许可证见 [kb/README.md](kb/README.md)。
-自爬工具：[	ools/wiki_to_kb.py](tools/wiki_to_kb.py)。
+自爬工具：[tools/wiki_to_kb.py](tools/wiki_to_kb.py)。
 
 ## 构建
 

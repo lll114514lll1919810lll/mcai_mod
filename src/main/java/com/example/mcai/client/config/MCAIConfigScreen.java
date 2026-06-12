@@ -76,19 +76,16 @@ public class MCAIConfigScreen extends Screen {
         int lx = Math.max(cx - 210, 5);
         int r = 0;
 
-        // Title
         addRenderableWidget(new StringWidget(cx - 40, 8, 100, 20,
                 Component.translatable("mcai.config.title"), font));
         r++;
 
-        // ── API ──
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.api"), font)); r++;
         addRow(lx, inX, r, "mcai.config.api_endpoint", apiEndpointField = f(inX, ry(r), kw, gs("apiEndpoint", ""))); r++;
         addRow(lx, inX, r, "mcai.config.api_key",      apiKeyField     = f(inX, ry(r), kw, gs("apiKey", ""))); r++;
         addRow(lx, inX, r, "mcai.config.model",        modelField      = f(inX, ry(r), fw, gs("model", "deepseek-v4-flash"))); r++;
 
-        // ── AI ──
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.ai"), font)); r++;
         addRow(lx, inX, r, "mcai.config.trigger_prefix", prefixField     = f(inX, ry(r), 80, gs("triggerPrefix", "!ai"))); r++;
@@ -98,7 +95,6 @@ public class MCAIConfigScreen extends Screen {
         addRow(lx, inX, r, "mcai.config.thinking_level", thinkingField   = n(inX, ry(r), gi("thinkingLevel", 1))); r++;
         addRow(lx, inX, r, "mcai.config.tool_calls",     toolCallsField  = n(inX, ry(r), gi("maxToolCalls", 15))); r++;
 
-        // ── 行为 ──
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.review"), font)); r++;
         tg(lx, inX, fw, r, "mcai.config.chat_listen",  gb("enableChatInterception", true), b -> chatBtn = b); r++;
@@ -111,17 +107,16 @@ public class MCAIConfigScreen extends Screen {
         addRow(lx, inX, r, "mcai.config.score_recovery",  scoreRecoveryField   = n(inX, ry(r), gi("scoreRecoveryPerInterval", 5))); r++;
         addRow(lx, inX, r, "mcai.config.approval_timeout", approvalTimeoutField = n(inX, ry(r), gi("approvalTimeoutMinutes", 10))); r++;
 
-        // ── 提示词 ──
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.prompts"), font)); r++;
         addRow(lx, inX, r, "mcai.config.sys_prompt_path",    sysPromptPathField    = f(inX, ry(r), kw, gs("systemPromptPath", ""))); r++;
         addRow(lx, inX, r, "mcai.config.review_prompt_path", reviewPromptPathField = f(inX, ry(r), kw, gs("reviewPromptPath", ""))); r++;
         addRow(lx, inX, r, "mcai.config.prompt_language",    promptLangField       = f(inX, ry(r), 80, gs("promptLanguage", "zh_cn"))); r++;
 
-        // ── 底部 ──
+        // Bottom bar: always added last so it renders on top
+        int by = height - 25;
         statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);
         addRenderableWidget(statusWidget);
-        int by = height - 25;
         addRenderableWidget(Button.builder(Component.translatable("mcai.config.save"), b -> save())
                 .bounds(cx - 105, by, 100, 20).build());
         addRenderableWidget(Button.builder(Component.translatable("mcai.config.cancel"), b -> onClose())

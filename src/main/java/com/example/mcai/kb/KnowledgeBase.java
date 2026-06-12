@@ -27,6 +27,18 @@ public class KnowledgeBase {
         var seen = new HashSet<String>();
         int loaded = 0;
 
+        // 1. Export bundled KB to external dir if not already present
+        if (externalDir != null) {
+            try {
+                Files.createDirectories(externalDir);
+                exportBundledIfNeeded(externalDir);
+                exportExampleIfNeeded(externalDir);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to setup external KB directory", e);
+            }
+        }
+
+        // 2. Load bundled KB from JAR
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
             if (is != null) {
                 try (Reader r = new InputStreamReader(is)) {
@@ -47,9 +59,11 @@ public class KnowledgeBase {
             LOGGER.error("Failed to load bundled KB", e);
         }
 
+        // 3. Merge from external directory (overrides/additions)
         if (externalDir != null && Files.isDirectory(externalDir)) {
             try (var files = Files.list(externalDir)) {
-                files.filter(f -> f.toString().endsWith(".json")).forEach(f -> {
+                files.filter(f -> f.toString().endsWith(".json") && !f.getFileName().toString().startsWith("_"))
+                        .forEach(f -> {
                     try (Reader r = Files.newBufferedReader(f)) {
                         List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
                         if (list != null) {
@@ -71,6 +85,46 @@ public class KnowledgeBase {
 
         entries = all;
         LOGGER.info("KB loaded: {} entries ({} bundled + external)", entries.size(), loaded);
+    }
+
+    private void exportBundledIfNeeded(Path externalDir) {
+        Path target = externalDir.resolve("zh_wiki.json");
+        if (Files.exists(target)) return; // already exported, don't overwrite
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
+            if (is != null) {
+                Files.copy(is, target);
+                LOGGER.info("Exported bundled KB to {}", target);
+            }
+        } catch (Exception e) {
+            LOGGER.warn("Failed to export bundled KB", e);
+        }
+    }
+
+    private void exportExampleIfNeeded(Path externalDir) {
+        Path target = externalDir.resolve("_example_mod_wiki.json");
+        if (Files.exists(target)) return;
+        String example = """
+                [
+                  {
+                    "title": "Example Mod: Bronze Ingot",
+                    "keywords": ["bronze", "ingot", "example", "metal"],
+                    "summary": "Bronze ingot is an alloy made from copper and tin, used for tools and armor.",
+                    "content": "Bronze Ingot\\nObtained by smelting copper and tin together in a furnace.\\nUsed to craft: Bronze Sword, Bronze Pickaxe, Bronze Armor.\\nSource: Example Mod v2.1"
+                  },
+                  {
+                    "title": "Example Mod: Bronze Sword",
+                    "keywords": ["bronze", "sword", "weapon", "example"],
+                    "summary": "A sword made from bronze ingots, stronger than stone but weaker than iron.",
+                    "content": "Bronze Sword\\nDamage: 6\\nDurability: 250\\nCrafting: 2 bronze ingots + 1 stick"
+                  }
+                ]
+                """;
+        try {
+            Files.writeString(target, example.trim(), java.nio.charset.StandardCharsets.UTF_8);
+            LOGGER.info("Created example KB file: {}", target);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to create example KB file", e);
+        }
     }
 
     public boolean isLoaded() { return !entries.isEmpty(); }

@@ -82,6 +82,7 @@
   "mcai.review.status.failed": "§cReview AI call failed",
   "mcai.review.status.server_not_ready": "§cServer not ready",
   "mcai.review.status.exception": "§cReview exception: %s",
+  "mcai.review.status.no_console": "§cConsole cannot trigger review",
   "mcai.review.no_records": "§7[Review] No previous review records",
   "mcai.review.ai_reasoning": "§7===== AI Reasoning (first 200 chars) =====\n§8%s",
   "mcai.review.ai_reasoning_full": "§7Full reasoning: §econfig/mcai/review_last_reasoning.txt",

@@ -82,6 +82,7 @@
   "mcai.review.status.failed": "§c审查AI调用失败",
   "mcai.review.status.server_not_ready": "§c服务器未就绪",
   "mcai.review.status.exception": "§c审查异常: %s",
+  "mcai.review.status.no_console": "§c控制台无法触发审查",
   "mcai.review.no_records": "§7[审查] 暂无上次审查记录",
   "mcai.review.ai_reasoning": "§7===== AI 推理过程(前200字符) =====\n§8%s",
   "mcai.review.ai_reasoning_full": "§7完整推理见: §econfig/mcai/review_last_reasoning.txt",

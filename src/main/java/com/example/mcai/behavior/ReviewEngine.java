@@ -32,13 +32,14 @@ public class ReviewEngine {
     public String getLastReasoning() { return lastReasoning; }
     public String run() {
         penaltyHistory.advanceCycle(); lastRawResponse = ""; lastReasoning = "";
+        String reviewPrompt = mod.getConfig().getReviewPrompt();
         String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return "§e聊天记录为空，跳过审查";
         StringBuilder roster = new StringBuilder("当前在线玩家:\n"); var srv = mod.getServer();
         if (srv != null) { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { roster.append("- ").append(p.getScoreboardName()).append(isAdmin(p, srv) ? " (管理员)" : " (普通玩家)").append("\n"); } }
         roster.append("\n=== CHAT LOG START ===\n").append(chatSnapshot).append("\n=== CHAT LOG END ===\n");
         String pj = penaltyHistory.getJson(); if (!pj.isEmpty()) roster.append("\n").append(pj);
         List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
-        messages.add(new OpenAIClient.ChatMessage("system", REVIEW_PROMPT)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
+        messages.add(new OpenAIClient.ChatMessage("system", reviewPrompt)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
         var result = mod.getAiClient().chatSimpleFull(messages);
         if (!result.success()) { LOGGER.warn("Review AI call failed: {}", result.error()); return "§c审查AI调用失败"; }
         var chatResult = result.value(); lastRawResponse = chatResult.content; lastReasoning = chatResult.reasoningContent != null ? chatResult.reasoningContent : "";

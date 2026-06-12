@@ -110,6 +110,7 @@ public class MCAIMod implements ModInitializer {
 
     public void reloadConfig() {
         config = ModConfig.load();
+        config.clearPromptCache();
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));

@@ -24,6 +24,14 @@ public class PromptLoader {
                 LOGGER.warn("Failed to read {}, using default", fileName, e);
             }
         }
+        // Write default to file so user can edit it
+        try {
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, defaultContent, StandardCharsets.UTF_8);
+            LOGGER.info("Created default prompt file: {}", path);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to write default prompt to {}", path, e);
+        }
         return defaultContent;
     }
 }

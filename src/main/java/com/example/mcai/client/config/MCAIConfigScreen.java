@@ -33,6 +33,7 @@ public class MCAIConfigScreen extends Screen {
     private EditBox apiEndpointField, apiKeyField, modelField;
     private EditBox prefixField, maxTokensField, tempField;
     private EditBox ctxField, thinkingField, toolCallsField;
+    private EditBox sysPromptPathField, reviewPromptPathField;
     private Button chatBtn, cmdBtn, strictBtn;
 
     private String status = "";
@@ -79,9 +80,9 @@ public class MCAIConfigScreen extends Screen {
         int inX = cx + 5;
         int fieldW = Math.min(180, width - inX - 10);
         int keyW = Math.min(300, width - inX - 10);
-        int rows = 12;
-        int rowH = Math.min(24, (height - 100) / rows);
-        int sy = 30;
+        int rows = 14;
+        int rowH = Math.min(22, (height - 100) / rows);
+        int sy = 28;
 
         apiEndpointField = mkField(inX, sy + rowH * 0, keyW, get("apiEndpoint", ""), "API 地址");
         apiKeyField    = mkField(inX, sy + rowH * 1, keyW, get("apiKey", ""), "API 密钥");
@@ -112,10 +113,16 @@ public class MCAIConfigScreen extends Screen {
         addLabel(leftX, sy + rowH * 11, 120, "严格模式");
         strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 11, getBool("strictMode", false));
 
-        statusWidget = new StringWidget(0, height - 20, width, 20, Component.literal(""), font);
+        sysPromptPathField = mkField(inX, sy + rowH * 12, keyW, get("systemPromptPath", ""), "AI提示词文件(空=内置)");
+        reviewPromptPathField = mkField(inX, sy + rowH * 13, keyW, get("reviewPromptPath", ""), "审查提示词文件(空=内置)");
+
+        addLabel(leftX, sy + rowH * 12, 120, "AI 提示词路径");
+        addLabel(leftX, sy + rowH * 13, 120, "审查提示词路径");
+
+        statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);
         addRenderableWidget(statusWidget);
 
-        int by = sy + rowH * 12 + 15;
+        int by = sy + rowH * 14 + 10;
         var saveBtn = Button.builder(Component.literal("§a保存并关闭"), b -> save())
                 .bounds(cx - 105, by, 100, 20).build();
         saveBtn.setTooltip(Tooltip.create(Component.literal("§7保存后需手动执行 /aireload")));
@@ -183,6 +190,8 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
             o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
             o.addProperty("strictMode", strictBtn.getMessage().getString().contains("开启"));
+            o.addProperty("systemPromptPath", sysPromptPathField.getValue());
+            o.addProperty("reviewPromptPath", reviewPromptPathField.getValue());
 
             try (Writer w = Files.newBufferedWriter(configPath)) {
                 GSON.toJson(o, w);

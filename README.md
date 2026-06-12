@@ -5,8 +5,8 @@
 # MCAI - Minecraft AI 助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Fabric](https://img.shields.io/badge/Fabric-1.21+-blue.svg)](https://fabricmc.net/)
-[![Java](https://img.shields.io/badge/Java-21%2F25-orange.svg)](https://www.java.com/)
+[![Fabric](https://img.shields.io/badge/Fabric-26.1.2-blue.svg)](https://fabricmc.net/)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.java.com/)
 
 </div>
 
@@ -55,12 +55,12 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器/在�
 ## 安装教程
 
 ### 你需要准备
-- Minecraft **Fabric 客户/服务端**（支持 26.1.2、1.21.11、1.21/1.21.1）
-- [Java](https://www.java.com/) 25（26.1.2、1.21.11）或 Java 21（1.21/1.21.1）
+- Minecraft **Fabric 客户/服务端 26.1.2**
+- [Java](https://www.java.com/) 25
 - 一个 [DeepSeek API Key](https://platform.deepseek.com)
 
 ### 安装步骤
-1. 下载最新版 `mcai-x.x.x-x.x.x.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面，客户端与服务端双版本统一）
+1. 下载最新版 `mcai-1.0.0.jar`（在 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 页面，客户端与服务端统一）
 2. 把 JAR 文件放到客户端/服务器的 `mods/` 文件夹里
 3. 启动客户端/服务器，会自动生成配置文件
 4. 打开 `config/mcai/config.json`，填入你的 API Key：
@@ -152,16 +152,12 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器/在�
 git clone https://github.com/lll114514lll1919810lll/mcai_mod.git
 cd mcai_mod
 
-# 构建 MC 1.21.11（默认）
+# 构建
 .\gradlew.bat build
-# 产物: build/libs/mcai-1.0.0.jar
-
-# 构建 MC 26.1.2
-.\build-version.bat 26.1.2
-# 产物: final_jars/mcai-26.1.2.jar
+# 产物: build/libs/mcai-<version>.jar
 ```
 
-需要安装 [Java](https://www.java.com/) 25（MC 26.1.2）或 Java 21+（MC 1.21.11）。
+需要安装 [Java](https://www.java.com/) 25。
 
 ---
 

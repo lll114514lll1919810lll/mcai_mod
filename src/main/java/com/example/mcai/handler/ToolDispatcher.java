@@ -15,11 +15,15 @@ import java.util.ArrayList;
 import java.util.List;
 public class ToolDispatcher {
     private static final Gson GSON = new GsonBuilder().create();
+    private static final int MAX_SCREENSHOTS = 1;
     private final KnowledgeBase knowledgeBase;
     private final CommandExecutionService cmdExec;
     private final MCAIMod mod;
+    private int screenshotCount;
+
     public ToolDispatcher(KnowledgeBase kb, CommandExecutionService cmdExec, MCAIMod mod) { this.knowledgeBase = kb; this.cmdExec = cmdExec; this.mod = mod; }
     public List<String> dispatch(List<OpenAIClient.ToolCall> toolCalls, ServerPlayer player) {
+        screenshotCount = 0;
         List<String> results = new ArrayList<>();
         for (var tc : toolCalls) {
             switch (tc.name) {
@@ -30,6 +34,14 @@ public class ToolDispatcher {
                 case "get_game_rules" -> results.add(getGameRules(player));
                 case "get_debug_info" -> results.add(getDebugInfo(player));
                 case "get_installed_mods" -> results.add(getInstalledMods());
+                case "get_screenshot" -> {
+                    if (screenshotCount >= MAX_SCREENSHOTS) {
+                        results.add("截图调用次数已达上限（每轮对话1次）。请基于已有信息回答。");
+                    } else {
+                        screenshotCount++;
+                        results.add(getScreenshot(player));
+                    }
+                }
                 default -> results.add("未知工具: " + tc.name);
             }
         }
@@ -122,6 +134,39 @@ public class ToolDispatcher {
         }
         // Always include basic info
         sb.append("§7提示: Minecraft物品ID格式为 §e<命名空间>:<物品名>§7，如 minecraft:diamond_sword。Mod物品需使用其modid作为命名空间。");
+        return sb.toString();
+    }
+    /** Vision model screenshot: rich text description of player's current view */
+    private String getScreenshot(ServerPlayer player) {
+        if (player == null) return "控制台无法截图";
+        MinecraftServer server = mod.getServer(); if (server == null) return "服务器未就绪";
+        StringBuilder sb = new StringBuilder("===== 游戏画面截图（文本描述）=====\n");
+        sb.append("玩家: ").append(player.getScoreboardName()).append("\n");
+        sb.append(getServerStatus(player)).append("\n");
+        var level = (ServerLevel) player.level();
+        var pos = player.blockPosition();
+        int blockLight = level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos);
+        int skyLight = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos);
+        sb.append("光照: 方块光=").append(blockLight).append(" 天空光=").append(skyLight).append("\n");
+        try {
+            var hit = player.pick(50.0, 0.0f, false);
+            if (hit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+                var b = (net.minecraft.world.phys.BlockHitResult) hit;
+                var block = level.getBlockState(b.getBlockPos()).getBlock();
+                sb.append("注视: 方块 ").append(block).append(" @ ").append(b.getBlockPos().toShortString()).append("\n");
+            } else if (hit.getType() == net.minecraft.world.phys.HitResult.Type.ENTITY) {
+                var e = (net.minecraft.world.phys.EntityHitResult) hit;
+                var entity = e.getEntity();
+                sb.append("注视: 实体 ").append(entity.getDisplayName().getString());
+                if (entity instanceof net.minecraft.world.entity.LivingEntity le) sb.append(" HP:").append(String.format("%.0f/%.0f", le.getHealth(), le.getMaxHealth()));
+                sb.append("\n");
+            } else {
+                sb.append("注视: 无目标\n");
+            }
+        } catch (Exception e) { sb.append("注视: 无法获取\n"); }
+        sb.append("位置: ").append(pos.getX()).append(" ").append(pos.getY()).append(" ").append(pos.getZ()).append("\n");
+        try { var fluid = level.getFluidState(pos); sb.append("脚下流体: ").append(fluid.isEmpty() ? "无" : fluid.getType()).append("\n"); } catch (Exception e) {}
+        sb.append("================================");
         return sb.toString();
     }
     private static int intVal(Object v) { if (v instanceof Number n) return n.intValue(); return 0; }

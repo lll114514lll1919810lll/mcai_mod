@@ -57,5 +57,7 @@
   "mcai.config.prompt_tooltip": "Filename (under config/mcai/), empty=built-in",
 
   "mcai.review.red_card": "§c[MCAI] §4Red card",
-  "mcai.review.yellow_card": "§c[MCAI] §e⚠ Yellow card"
+  "mcai.review.yellow_card": "§c[MCAI] §e⚠ Yellow card",
+  "mcai.review.retry_failed": "§cReview AI retry failed: %s",
+  "mcai.review.invalid_json": "§cReview AI could not return valid JSON, skipping this cycle"
 }

@@ -57,5 +57,7 @@
   "mcai.config.prompt_tooltip": "文件名（放config/mcai/下），空=用内置",
 
   "mcai.review.red_card": "§c[MCAI] §4触发红牌",
-  "mcai.review.yellow_card": "§c[MCAI] §e⚠ 黄牌警告"
+  "mcai.review.yellow_card": "§c[MCAI] §e⚠ 黄牌警告",
+  "mcai.review.retry_failed": "§c审查AI重试失败: %s",
+  "mcai.review.invalid_json": "§c审查AI无法返回有效JSON，跳过本轮审查"
 }

@@ -78,13 +78,15 @@ public class MCAIMod implements ModInitializer {
 
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             this.server = s;
-            chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-            if (commandDispatcher != null) {
-                commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
-            }
-            if (config.isEnableAutoReview() && s.isDedicatedServer()) {
-                chatReviewSystem.start();
-                LOGGER.info("Auto behavior review enabled");
+            if (s.isDedicatedServer()) {
+                chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
+                if (commandDispatcher != null) {
+                    commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
+                }
+                if (config.isEnableAutoReview()) {
+                    chatReviewSystem.start();
+                    LOGGER.info("Auto behavior review enabled");
+                }
             }
         });
 
@@ -119,14 +121,16 @@ public class MCAIMod implements ModInitializer {
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
-        if (chatReviewSystem != null) chatReviewSystem.stop();
-        behaviorTracker = new PlayerBehaviorTracker(config);
-        chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-        if (commandDispatcher != null) {
-            commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
-        }
-        if (config.isEnableAutoReview() && this.server != null && this.server.isDedicatedServer()) {
-            chatReviewSystem.start();
+        if (chatReviewSystem != null) {
+            chatReviewSystem.stop();
+            behaviorTracker = new PlayerBehaviorTracker(config);
+            chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
+            if (commandDispatcher != null) {
+                commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
+            }
+            if (config.isEnableAutoReview() && this.server != null && this.server.isDedicatedServer()) {
+                chatReviewSystem.start();
+            }
         }
         LOGGER.info("MCAI config reloaded, KB: {} chunks",
                 knowledgeBase.size());

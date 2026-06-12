@@ -221,7 +221,40 @@ public class OpenAIClient {
             return ApiResult.ok(content);
         }
 
-        return ApiResult.err("exceeded " + maxTurns + " tool call limit");
+        // Tool call limit reached: tell AI to wrap up, make one final call without tools
+        messages.add(new ChatMessage("user",
+                "你已用完本轮的工具调用次数。请基于已有信息给出最终回答，然后结束对话。不要尝试再次调用工具。"));
+        // Final call without tool definitions
+        JsonObject body = new JsonObject();
+        body.addProperty("model", config.getModel());
+        body.addProperty("max_tokens", config.getMaxTokens());
+        body.addProperty("temperature", config.getTemperature());
+        int tl = config.getThinkingLevel();
+        if (tl >= 1) { JsonObject t = new JsonObject(); t.addProperty("type", "enabled"); body.add("thinking", t); if (tl >= 3) body.addProperty("reasoning_effort", "max"); }
+        JsonArray msgArray = new JsonArray();
+        for (ChatMessage msg : messages) msgArray.add(msg.toJson());
+        body.add("messages", msgArray);
+        // No tools attached - AI can only reply with text
+        try {
+            HttpResponse<String> response = httpClient.send(
+                    HttpRequest.newBuilder().uri(URI.create(endpoint))
+                            .header("Content-Type", "application/json")
+                            .timeout(Duration.ofSeconds(60))
+                            .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                            .build(),
+                    HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == 200) {
+                JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
+                JsonArray choices = json.getAsJsonArray("choices");
+                if (choices != null && !choices.isEmpty()) {
+                    JsonObject choiceMsg = choices.get(0).getAsJsonObject().getAsJsonObject("message");
+                    String content = choiceMsg.has("content") && !choiceMsg.get("content").isJsonNull()
+                            ? choiceMsg.get("content").getAsString() : "";
+                    if (!content.isEmpty()) return ApiResult.ok(content);
+                }
+            }
+        } catch (Exception e) { LOGGER.warn("Final fallback call failed: {}", e.getMessage()); }
+        return ApiResult.ok("工具调用次数已用完，请参考已有结果。");
     }
 
     /**

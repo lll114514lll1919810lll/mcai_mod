@@ -21,11 +21,16 @@ public class ThinkingAnimation {
                 case 2 -> "§7▌▌▌ §eAI 思考中...";
                 default -> "§8▌▌▌ §7AI 思考中...";
             };
-            server.execute(() -> player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(bar))));
+            server.execute(() -> { if (player.connection != null && !player.isRemoved()) player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(bar))); });
         }, 0, 400, TimeUnit.MILLISECONDS);
         active.put(id, f);
     }
     public void stop(UUID playerId) { ScheduledFuture<?> f = active.remove(playerId); if (f != null) f.cancel(false); }
-    public void done(ServerPlayer player) { stop(player.getUUID()); player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty())); }
+    public void done(ServerPlayer player) {
+        stop(player.getUUID());
+        if (player.connection != null && !player.isRemoved()) {
+            player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
+        }
+    }
     public void shutdown() { scheduler.shutdownNow(); }
 }

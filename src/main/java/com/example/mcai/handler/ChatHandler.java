@@ -87,9 +87,9 @@ public class ChatHandler {
                 MinecraftServer server2 = mod.getServer(); if (server2 == null) return;
                 if (result.success()) {
                     String response = result.value();
-                    server2.execute(() -> { animation.done(player); handleResponse(player, response); synchronized (playerHistory) { playerHistory.add(new OpenAIClient.ChatMessage("user", userContent)); playerHistory.add(new OpenAIClient.ChatMessage("assistant", response)); trimHistoryByChars(playerHistory, maxCtx); } });
-                } else { server2.execute(() -> { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.error", result.error())); }); }
-            } catch (Exception e) { MCAIMod.LOGGER.error("AI query failed", e); MinecraftServer server2 = mod.getServer(); if (server2 != null) { server2.execute(() -> { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.exception", e.getMessage())); }); } }
+                    server2.execute(() -> { try { animation.done(player); handleResponse(player, response); synchronized (playerHistory) { playerHistory.add(new OpenAIClient.ChatMessage("user", userContent)); playerHistory.add(new OpenAIClient.ChatMessage("assistant", response)); trimHistoryByChars(playerHistory, maxCtx); } } catch (Exception ex) { MCAIMod.LOGGER.error("AI response handler error", ex); } });
+                } else { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.error", result.error())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI error handler error", ex); } }); }
+            } catch (Exception e) { MCAIMod.LOGGER.error("AI query failed", e); MinecraftServer server2 = mod.getServer(); if (server2 != null) { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.exception", e.getMessage())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI exception handler error", ex); } }); } }
         });
     }
 

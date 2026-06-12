@@ -4,6 +4,7 @@ import com.example.mcai.api.OpenAIClient;
 import com.example.mcai.kb.KnowledgeBase;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -28,6 +29,7 @@ public class ToolDispatcher {
                 case "get_server_status" -> results.add(getServerStatus(player));
                 case "get_game_rules" -> results.add(getGameRules(player));
                 case "get_debug_info" -> results.add(getDebugInfo(player));
+                case "get_installed_mods" -> results.add(getInstalledMods());
                 default -> results.add("未知工具: " + tc.name);
             }
         }
@@ -44,6 +46,7 @@ public class ToolDispatcher {
                 case "get_server_status" -> results.add(getServerStatus(null));
                 case "get_game_rules" -> results.add("控制台无法获取游戏规则");
                 case "get_debug_info" -> results.add("控制台无法获取调试信息");
+                case "get_installed_mods" -> results.add(getInstalledMods());
                 default -> results.add("未知工具: " + tc.name);
             }
         }
@@ -103,6 +106,23 @@ public class ToolDispatcher {
     private static String facingName(float yRot) {
         if (yRot >= -45 && yRot < 45) return "南 (+Z)"; if (yRot >= 45 && yRot < 135) return "西 (-X)";
         if (yRot >= -135 && yRot < -45) return "东 (+X)"; return "北 (-Z)";
+    }
+
+    private String getInstalledMods() {
+        var mods = FabricLoader.getInstance().getAllMods();
+        StringBuilder sb = new StringBuilder("已安装的Mod列表（用于确定物品命名空间格式 <modid>:<item>）:\n");
+        for (var container : mods) {
+            var meta = container.getMetadata();
+            String id = meta.getId();
+            String name = meta.getName();
+            String ver = meta.getVersion().getFriendlyString();
+            // Skip Fabric API internals and MCAI itself
+            if (id.equals("fabric-api") || id.equals("fabric") || id.equals("mcai") || id.startsWith("fabric-")) continue;
+            sb.append("- ").append(name).append(" (").append(id).append(") §7v").append(ver).append("\n");
+        }
+        // Always include basic info
+        sb.append("§7提示: Minecraft物品ID格式为 §e<命名空间>:<物品名>§7，如 minecraft:diamond_sword。Mod物品需使用其modid作为命名空间。");
+        return sb.toString();
     }
     private static int intVal(Object v) { if (v instanceof Number n) return n.intValue(); return 0; }
     private static String yn(Object v) {

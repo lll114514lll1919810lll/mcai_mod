@@ -394,9 +394,18 @@ public class OpenAIClient {
         debugFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
         debugTool.add("function", debugFn);
 
+        JsonObject modsTool = new JsonObject();
+        modsTool.addProperty("type", "function");
+        JsonObject modsFn = new JsonObject();
+        modsFn.addProperty("name", "get_installed_mods");
+        modsFn.addProperty("description", "获取服务器上安装的所有Mod列表及其版本号。了解安装了哪些Mod后，你就能知道物品的命名空间格式（如 create:brass_ingot、thermal:copper_gear），从而在搜索知识库或执行指令时使用正确的Mod物品ID。无需参数。");
+        modsFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        modsTool.add("function", modsFn);
+
         tools.add(statusTool);
         tools.add(rulesTool);
         tools.add(debugTool);
+        tools.add(modsTool);
         return tools;
     }
 

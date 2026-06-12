@@ -2,6 +2,8 @@
   "mcai": "MCAI",
   "mcai.mod.name": "MCAI - Minecraft AI Assistant",
   "mcai.mod.description": "AI-powered Minecraft server assistant with chat review, command execution, and knowledge base integration",
+  "modmenu.nameTranslation.mcai": "MCAI - Minecraft AI Assistant",
+  "modmenu.descriptionTranslation.mcai": "AI-powered server assistant: chat review, command execution, knowledge base",
 
   "mcai.chat.prefix": "[AI]",
   "mcai.chat.thinking": "Thinking...",

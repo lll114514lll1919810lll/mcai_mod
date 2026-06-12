@@ -35,7 +35,7 @@ public class MCAIConfigScreen extends Screen {
     private EditBox maxTokensField, tempField, ctxField, thinkingField, toolCallsField;
     private EditBox sysPromptPathField, reviewPromptPathField;
     private EditBox reviewIntervalField, yellowCardField, redCardField;
-    private EditBox scoreRecoveryField, approvalTimeoutField;
+    private EditBox scoreRecoveryField, approvalTimeoutField, promptLangField;
     private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn;
 
     public MCAIConfigScreen(Screen parent) {
@@ -109,6 +109,7 @@ public class MCAIConfigScreen extends Screen {
         l(inX, ry(r), "§e=== 提示词 ==="); r++;
         sysPromptPathField    = f(inX, ry(r), kw, gs("systemPromptPath", ""), "文件名（放config/mcai/下），空=用内置");   l(Math.max(cx - 200, 5), ry(r), "AI提示词文件名"); r++;
         reviewPromptPathField = f(inX, ry(r), kw, gs("reviewPromptPath", ""), "文件名（放config/mcai/下），空=用内置"); l(Math.max(cx - 200, 5), ry(r), "审查提示词文件名"); r++;
+        promptLangField      = f(inX, ry(r), 80, gs("promptLanguage", "zh_cn"), "内置提示词语言 zh_cn/en_us");           l(Math.max(cx - 200, 5), ry(r), "提示词语言"); r++;
 
         // ── 底部按钮 ──
         statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);
@@ -171,6 +172,7 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("approvalTimeoutMinutes", pi(approvalTimeoutField.getValue(), 10));
             o.addProperty("systemPromptPath", sysPromptPathField.getValue());
             o.addProperty("reviewPromptPath", reviewPromptPathField.getValue());
+            o.addProperty("promptLanguage", promptLangField.getValue());
             try (Writer w = Files.newBufferedWriter(configPath)) { GSON.toJson(o, w); }
             statusWidget.setMessage(Component.literal("§a✓ 已保存"));
             minecraft.setScreen(parent);

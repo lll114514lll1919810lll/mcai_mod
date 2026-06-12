@@ -2,6 +2,8 @@
   "mcai": "MCAI",
   "mcai.mod.name": "MCAI - Minecraft AI 助手",
   "mcai.mod.description": "让 AI 自动管理你的 Minecraft 服务器：聊天审查、指令执行、知识库搜索",
+  "modmenu.nameTranslation.mcai": "MCAI - Minecraft AI 助手",
+  "modmenu.descriptionTranslation.mcai": "AI 自动管理服务器：聊天审查、指令执行、知识库",
 
   "mcai.chat.prefix": "[AI]",
   "mcai.chat.thinking": "思考中...",

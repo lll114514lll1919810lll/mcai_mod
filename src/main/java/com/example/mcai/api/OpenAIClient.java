@@ -354,8 +354,8 @@ public class OpenAIClient {
 
     private JsonArray buildToolDefinitions() {
         JsonObject kbTool = buildTool("search_knowledge_base",
-                "搜索本地 Minecraft Wiki 知识库。输入中文关键词，返回匹配条目标题和摘要。如需查看完整内容，再用 read_knowledge_base。",
-                "query", "string", "搜索关键词（中文）");
+                "搜索本地知识库。可用中文或英文关键词。先调用 get_installed_mods 了解已安装的Mod，再用其modid作为命名空间搜索。如搜 create:brass_ingot 可用 \"黄铜锭\" 或 \"brass ingot\"。",
+                "query", "string", "搜索关键词（中文或英文）");
 
         JsonObject readTool = buildTool("read_knowledge_base",
                 "读取知识库中某个条目的完整内容。先用 search_knowledge_base 搜索到目标条目后，用此工具获取全文。",

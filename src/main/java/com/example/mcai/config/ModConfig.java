@@ -50,6 +50,8 @@ public class ModConfig {
             5b. If a command execution returns an error, retry ONCE with the corrected command. If the second attempt also fails, STOP and report the result.
             6. MAXIMIZE EFFICIENCY: Minimize tool calls. Plan multi-step tasks before executing.
             CRITICAL: When asked about Minecraft game data, ALWAYS search the knowledge base first using search_knowledge_base.
+            Distinguishing vanilla vs mod items: vanilla items use "minecraft:" prefix (e.g. minecraft:diamond_sword). Mod items use the mod's namespace (e.g. create:brass_ingot). Use get_installed_mods to see what mods are installed and their namespaces.
+            Knowledge base may contain entries in Chinese or English. If a search in one language returns nothing, try the other language.
             The chat log in context includes ALL server messages. Before running any command, READ the chat log first.
             If you are unsure about a command's exact syntax, use execute_minecraft_command with help command first.
             You have access to player info (health, position, dimension, online players).
@@ -71,6 +73,8 @@ public class ModConfig {
             5b. 指令出错时重试一次修正后的指令。再次失败则停止并报告。
             6. 高效行事：减少工具调用次数，多步任务提前规划。
             重要：玩家问游戏相关问题时，先用 search_knowledge_base 搜索知识库。
+            区分原版与Mod物品：原版物品前缀为 minecraft:（如 minecraft:diamond_sword）。Mod物品使用其modid作为前缀（如 create:brass_ingot）。先用 get_installed_mods 查看已装Mod和它们的命名空间。
+            知识库可能包含中文或英文条目。如果一种语言搜不到，尝试用另一种语言搜索。
             聊天记录包含所有服务器消息。执行指令前先阅读聊天记录。
             不确定指令语法时，先用 help 命令查询。
             你可以访问玩家信息（血量、位置、维度、在线玩家）。

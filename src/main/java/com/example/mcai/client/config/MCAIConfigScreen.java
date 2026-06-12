@@ -118,7 +118,8 @@ public class MCAIConfigScreen extends Screen {
         statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);
         addRenderableWidget(statusWidget);
         addRenderableWidget(Button.builder(Component.translatable("mcai.config.save"), b -> save())
-                .bounds(cx - 105, by, 100, 20).build());
+                .bounds(cx - 105, by, 100, 20)
+                .tooltip(Tooltip.create(Component.translatable("mcai.config.reload_tip"))).build());
         addRenderableWidget(Button.builder(Component.translatable("mcai.config.cancel"), b -> onClose())
                 .bounds(cx + 5, by, 100, 20).build());
     }

@@ -28,6 +28,8 @@
   "mcai.config.save_failed": "§cSave failed: %s",
   "mcai.config.reload_tip": "§7Run /aireload after saving",
   "mcai.config.group.api": "§e=== API ===",
+  "mcai.config.on": "§aOn",
+  "mcai.config.off": "§cOff",
   "mcai.config.group.ai": "§e=== AI Settings ===",
   "mcai.config.group.review": "§e=== Behavior Review ===",
   "mcai.config.group.prompts": "§e=== Prompts ===",

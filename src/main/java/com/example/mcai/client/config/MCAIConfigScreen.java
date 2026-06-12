@@ -148,13 +148,18 @@ public class MCAIConfigScreen extends Screen {
         return e;
     }
 
+    private final java.util.IdentityHashMap<Button, Boolean> toggleStates = new java.util.IdentityHashMap<>();
+
     private void tg(int lx, int inX, int fw, int row, String key, boolean initial, Consumer<Button> setter) {
         int y = ry(row);
         addRenderableWidget(new StringWidget(lx, y, LABEL_W, 20, Component.translatable(key), font));
-        Button btn = Button.builder(Component.translatable(initial ? "§a开启" : "§c关闭"), b -> {
-            b.setMessage(Component.translatable(
-                    b.getMessage().getString().contains("开启") ? "§c关闭" : "§a开启"));
-        }).bounds(inX, y, 60, 20).build();
+        Button btn = Button.builder(
+                Component.translatable(initial ? "mcai.config.on" : "mcai.config.off"), b -> {
+                    boolean now = !toggleStates.get(b);
+                    toggleStates.put(b, now);
+                    b.setMessage(Component.translatable(now ? "mcai.config.on" : "mcai.config.off"));
+                }).bounds(inX, y, 60, 20).build();
+        toggleStates.put(btn, initial);
         addRenderableWidget(btn); setter.accept(btn);
     }
 
@@ -173,10 +178,10 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("contextMaxChars", pi(ctxField.getValue(), 20000));
             o.addProperty("thinkingLevel", pi(thinkingField.getValue(), 1));
             o.addProperty("maxToolCalls", pi(toolCallsField.getValue(), 15));
-            o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
-            o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
-            o.addProperty("strictMode", strictBtn.getMessage().getString().contains("开启"));
-            o.addProperty("enableAutoReview", autoReviewBtn.getMessage().getString().contains("开启"));
+            o.addProperty("enableChatInterception", toggleStates.getOrDefault(chatBtn, true));
+            o.addProperty("enableCommandExecution", toggleStates.getOrDefault(cmdBtn, true));
+            o.addProperty("strictMode", toggleStates.getOrDefault(strictBtn, true));
+            o.addProperty("enableAutoReview", toggleStates.getOrDefault(autoReviewBtn, true));
             o.addProperty("reviewIntervalMinutes", pi(reviewIntervalField.getValue(), 30));
             o.addProperty("yellowCardThreshold", pi(yellowCardField.getValue(), -30));
             o.addProperty("redCardThreshold", pi(redCardField.getValue(), -60));

@@ -30,7 +30,7 @@ public class ChatReviewSystem {
     });
     private final AtomicBoolean reviewInProgress = new AtomicBoolean(false);
     private ScheduledFuture<?> scheduledReview;
-    private volatile String lastReviewStatus = "";
+    private volatile Component lastReviewStatus = Component.literal("");
 
     public ChatReviewSystem(MCAIMod mod, PlayerBehaviorTracker tracker) {
         this.mod = mod;
@@ -72,24 +72,24 @@ public class ChatReviewSystem {
 
     public void triggerManualReview(ServerPlayer notifier) {
         if (reviewInProgress.get()) {
-            lastReviewStatus = "§e审查正在进行中，请稍候...";
-            if (notifier != null) notifier.sendSystemMessage(Component.literal(lastReviewStatus));
+            lastReviewStatus = Component.literal("§e审查正在进行中，请稍候...");
+            if (notifier != null) notifier.sendSystemMessage(lastReviewStatus);
             return;
         }
-        lastReviewStatus = "§a审查已启动...";
-        if (notifier != null) notifier.sendSystemMessage(Component.literal(lastReviewStatus));
+        lastReviewStatus = Component.literal("§a审查已启动...");
+        if (notifier != null) notifier.sendSystemMessage(lastReviewStatus);
         reviewScheduler.execute(() -> {
             runReview();
             if (notifier != null) {
                 var srv = mod.getServer();
                 if (srv != null) {
-                    srv.execute(() -> notifier.sendSystemMessage(Component.literal(getLastReviewStatus())));
+                    srv.execute(() -> notifier.sendSystemMessage(getLastReviewStatus()));
                 }
             }
         });
     }
 
-    public String getLastReviewStatus() { return lastReviewStatus; }
+    public Component getLastReviewStatus() { return lastReviewStatus; }
 
     public void clearPenaltyEvents() {
         penaltyHistory.clear();
@@ -102,10 +102,10 @@ public class ChatReviewSystem {
         }
         try {
             lastReviewStatus = reviewEngine.run();
-            LOGGER.info("Review complete: {}", lastReviewStatus);
+            LOGGER.info("Review complete: {}", lastReviewStatus.getString());
         } catch (Exception e) {
             LOGGER.error("Review failed", e);
-            lastReviewStatus = "§c审查异常: " + e.getMessage();
+            lastReviewStatus = Component.literal("§c审查异常: " + e.getMessage());
         } finally {
             reviewInProgress.set(false);
         }

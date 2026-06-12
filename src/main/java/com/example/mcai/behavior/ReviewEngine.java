@@ -30,10 +30,10 @@ public class ReviewEngine {
     public ReviewEngine(MCAIMod mod, PlayerBehaviorTracker tracker, PenaltyHistory penaltyHistory, AdminApprovalQueue approvalQueue) { this.mod = mod; this.tracker = tracker; this.penaltyHistory = penaltyHistory; this.approvalQueue = approvalQueue; }
     public String getLastRawResponse() { return lastRawResponse; }
     public String getLastReasoning() { return lastReasoning; }
-    public String run() {
+    public Component run() {
         penaltyHistory.advanceCycle(); lastRawResponse = ""; lastReasoning = "";
         String reviewPrompt = mod.getConfig().getReviewPrompt();
-        String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return "§e聊天记录为空，跳过审查";
+        String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return Component.literal("§e聊天记录为空，跳过审查");
         StringBuilder roster = new StringBuilder("当前在线玩家:\n"); var srv = mod.getServer();
         if (srv != null) { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { roster.append("- ").append(p.getScoreboardName()).append(isAdmin(p, srv) ? " (管理员)" : " (普通玩家)").append("\n"); } }
         roster.append("\n=== CHAT LOG START ===\n").append(chatSnapshot).append("\n=== CHAT LOG END ===\n");
@@ -41,7 +41,7 @@ public class ReviewEngine {
         List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
         messages.add(new OpenAIClient.ChatMessage("system", reviewPrompt)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
         var result = mod.getAiClient().chatSimpleFull(messages);
-        if (!result.success()) { LOGGER.warn("Review AI call failed: {}", result.error()); return "§c审查AI调用失败"; }
+        if (!result.success()) { LOGGER.warn("Review AI call failed: {}", result.error()); return Component.translatable("mcai.review.failed"); }
         var chatResult = result.value(); lastRawResponse = chatResult.content; lastReasoning = chatResult.reasoningContent != null ? chatResult.reasoningContent : "";
         String response = chatResult.content; LOGGER.info("Review AI response: {}", response); saveReviewFiles();
         List<PlayerViolation> violations = parseViolations(response);
@@ -60,20 +60,20 @@ public class ReviewEngine {
                 saveReviewFiles();
                 LOGGER.info("Review AI retry response: {}", response);
             } else {
-                return "§c审查AI重试失败: " + retryResult.error();
+                return Component.translatable("mcai.review.retry_failed", Component.literal(retryResult.error()));
             }
             if (violations.isEmpty() && !isValidViolationsJson(response)) {
                 LOGGER.error("Review AI still returning non-JSON after retry");
-                return "§c审查AI无法返回有效JSON，跳过本轮审查";
+                return Component.translatable("mcai.review.invalid_json");
             }
         }
 
         if (violations.isEmpty()) {
             mod.getChatLog().clear(); int recovered = recoverScores();
             if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
-            penaltyHistory.save(); penaltyHistory.purgeOld(); return "§a未发现违规行为";
+            penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.translatable("mcai.review.no_violations");
         }
-        if (srv == null) return "§c服务器未就绪";
+        if (srv == null) return Component.literal("§c服务器未就绪");
         StringBuilder redCardActions = new StringBuilder(); Map<String, Integer> cyclePenalties = new HashMap<>();
         for (PlayerViolation v : violations) {
             UUID playerId = findPlayerUUID(v.playerName, srv); if (playerId == null) { LOGGER.warn("Player {} not found", v.playerName); continue; }
@@ -101,7 +101,7 @@ public class ReviewEngine {
         mod.getChatLog().clear(); int recovered = recoverScores();
         if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
         String status = "§a审查完成，处理 "+violations.size()+" 项违规"; if (redCardActions.length() > 0) status += " §c[红牌: "+redCardActions+"]";
-        penaltyHistory.save(); penaltyHistory.purgeOld(); return status;
+        penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.literal(status);
     }
     private void broadcast(String msg, MinecraftServer srv) {
         srv.execute(() -> { srv.getPlayerList().broadcastSystemMessage(Component.literal(msg), false); mod.getChatLog().add("MCAI", msg.replaceAll("§[0-9a-fklmnor]", "").trim()); });

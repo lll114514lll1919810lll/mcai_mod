@@ -80,7 +80,7 @@ public class OpenAIClient {
             JsonObject obj = new JsonObject();
             obj.addProperty("role", role);
             if (toolCalls != null && !toolCalls.isEmpty()) {
-                // tool_calls 消息不传 content，防止 API 报错
+                // tool_calls 消息不传 content
             } else {
                 obj.addProperty("content", content != null ? content : "");
             }

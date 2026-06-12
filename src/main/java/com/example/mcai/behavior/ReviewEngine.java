@@ -45,6 +45,29 @@ public class ReviewEngine {
         var chatResult = result.value(); lastRawResponse = chatResult.content; lastReasoning = chatResult.reasoningContent != null ? chatResult.reasoningContent : "";
         String response = chatResult.content; LOGGER.info("Review AI response: {}", response); saveReviewFiles();
         List<PlayerViolation> violations = parseViolations(response);
+
+        // Retry if AI didn't return valid JSON (but don't retry valid empty results)
+        if (violations.isEmpty() && !isValidViolationsJson(response)) {
+            LOGGER.warn("Review AI returned non-JSON, retrying with strict prompt");
+            messages.add(new OpenAIClient.ChatMessage("user",
+                    "错误：你刚才的回复不是有效的JSON格式。请只返回严格JSON，不要包含任何解释文字。正确格式: {\"violations\":[{\"player_name\":\"玩家名\",\"description\":\"描述\",\"severity\":-20,\"suggested_action\":\"warn\"}]} 或 {\"violations\":[]}"));
+            var retryResult = mod.getAiClient().chatSimpleFull(messages);
+            if (retryResult.success()) {
+                lastRawResponse = retryResult.value().content;
+                lastReasoning = retryResult.value().reasoningContent != null ? retryResult.value().reasoningContent : "";
+                response = retryResult.value().content;
+                violations = parseViolations(response);
+                saveReviewFiles();
+                LOGGER.info("Review AI retry response: {}", response);
+            } else {
+                return "§c审查AI重试失败: " + retryResult.error();
+            }
+            if (violations.isEmpty() && !isValidViolationsJson(response)) {
+                LOGGER.error("Review AI still returning non-JSON after retry");
+                return "§c审查AI无法返回有效JSON，跳过本轮审查";
+            }
+        }
+
         if (violations.isEmpty()) {
             mod.getChatLog().clear(); int recovered = recoverScores();
             if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
@@ -99,5 +122,15 @@ public class ReviewEngine {
             for (JsonElement el : arr) { JsonObject v = el.getAsJsonObject(); if (!v.has("player_name") || !v.has("description")) continue; String name = v.get("player_name").getAsString().trim(); if (!name.matches("[a-zA-Z0-9_]{3,16}")) { LOGGER.warn("Invalid player name: {}", name); continue; } String desc = v.get("description").getAsString().trim(); if (desc.length() > 200) desc = desc.substring(0, 200); int severity = v.has("severity") ? v.get("severity").getAsInt() : -10; if (severity > -10) severity = -10; else if (severity > -20) severity = -10; else if (severity > -30) severity = -20; else severity = -30; String action = v.has("suggested_action") ? v.get("suggested_action").getAsString() : "none"; if (!"none".equals(action) && !"warn".equals(action) && !"kick".equals(action)) action = "none"; result.add(new PlayerViolation(name, desc, severity, action)); }
         } catch (Exception e) { LOGGER.error("Failed to parse review violations", e); }
         return result;
+    }
+
+    /** 检查AI响应是否为有效的违规JSON格式 */
+    private static boolean isValidViolationsJson(String json) {
+        try {
+            String c = json.trim();
+            if (c.startsWith("```")) { int s = c.indexOf('\n'); int e = c.lastIndexOf("```"); if (s > 0 && e > s) c = c.substring(s, e).trim(); }
+            JsonObject obj = GSON.fromJson(c, JsonObject.class);
+            return obj != null && obj.has("violations");
+        } catch (Exception e) { return false; }
     }
 }

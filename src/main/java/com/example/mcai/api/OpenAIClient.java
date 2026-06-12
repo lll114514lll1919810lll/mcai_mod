@@ -176,12 +176,12 @@ public class OpenAIClient {
                 json = GSON.fromJson(response.body(), JsonObject.class);
             } catch (Exception e) {
                 LOGGER.error("Failed to parse API response: {}", e.getMessage());
-                return ApiResult.err("响应解析失败，请检查 API 是否兼容");
+                return ApiResult.err("response parse failed, check API compatibility");
             }
 
             JsonArray choices = json.getAsJsonArray("choices");
             if (choices == null || choices.isEmpty()) {
-                return ApiResult.err("响应中无 choices");
+                return ApiResult.err("no choices in response");
             }
 
             JsonObject choice = choices.get(0).getAsJsonObject();
@@ -196,7 +196,7 @@ public class OpenAIClient {
             if (toolCallsJson != null && toolCallsJson.size() > 0) {
                 List<ToolCall> toolCalls = parseToolCalls(msg);
                 if (toolCalls.isEmpty()) {
-                    return ApiResult.err("空的 tool_calls");
+                    return ApiResult.err("empty tool_calls");
                 }
 
                 var asstMsg = ChatMessage.toolCallRequest(toolCalls);
@@ -217,11 +217,11 @@ public class OpenAIClient {
 
             String content = msg.has("content") && !msg.get("content").isJsonNull()
                     ? msg.get("content").getAsString() : "";
-            if (content.isEmpty()) return ApiResult.err("响应内容为空");
+            if (content.isEmpty()) return ApiResult.err("empty response content");
             return ApiResult.ok(content);
         }
 
-        return ApiResult.err("超过 " + maxTurns + " 轮工具调用");
+        return ApiResult.err("exceeded " + maxTurns + " tool call limit");
     }
 
     /**
@@ -316,12 +316,12 @@ public class OpenAIClient {
             json = GSON.fromJson(response.body(), JsonObject.class);
         } catch (Exception e) {
             LOGGER.error("Failed to parse API response: {}", e.getMessage());
-            return ApiResult.err("响应解析失败，请检查 API 是否兼容");
+            return ApiResult.err("response parse failed, check API compatibility");
         }
 
         JsonArray choices = json.getAsJsonArray("choices");
         if (choices == null || choices.isEmpty()) {
-            return ApiResult.err("响应中无 choices");
+            return ApiResult.err("no choices in response");
         }
 
         JsonObject choice = choices.get(0).getAsJsonObject();
@@ -332,7 +332,7 @@ public class OpenAIClient {
 
         String content = msg.has("content") && !msg.get("content").isJsonNull()
                 ? msg.get("content").getAsString() : "";
-        if (content.isEmpty()) return ApiResult.err("响应内容为空");
+        if (content.isEmpty()) return ApiResult.err("empty response content");
         return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
     }
 

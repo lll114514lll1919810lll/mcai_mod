@@ -123,9 +123,9 @@ public class ChatHandler {
         if (server == null) return true;
         if (cmdExec.needsApproval(cmd)) { String result = cmdExec.executeCommand(cmd, player); player.sendSystemMessage(Component.translatable("mcai.cmd.exec.approval_pending", result)); return false; }
         String result = cmdExec.executeAsOp(cmd, server);
-        if (result != null && !result.isEmpty() && !result.equals("指令已执行")) server.getPlayerList().broadcastSystemMessage(Component.literal("§7[AI] → §e/" + cmd + " §7(" + result + ")"), false);
+        if (result != null && !result.isEmpty() && !result.equals("Command executed")) server.getPlayerList().broadcastSystemMessage(Component.literal("§7[AI] → §e/" + cmd + " §7(" + result + ")"), false);
         else server.getPlayerList().broadcastSystemMessage(Component.literal("§7[AI] → §e/" + cmd), false);
-        chatLog.add("AI → " + pname, "/" + cmd + (result.isEmpty() || "指令已执行".equals(result) ? "" : " (" + result + ")"));
+        chatLog.add("AI → " + pname, "/" + cmd + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
         return true;
     }
 

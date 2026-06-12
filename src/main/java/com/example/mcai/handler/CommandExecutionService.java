@@ -18,32 +18,32 @@ public class CommandExecutionService {
     private final ConcurrentMap<String, CompletableFuture<String>> pendingFutures = new ConcurrentHashMap<>();
     public CommandExecutionService(MCAIMod mod) { this.mod = mod; }
     public String executeCommand(String command, ServerPlayer player) {
-        MinecraftServer server = mod.getServer(); if (server == null) return "服务器未就绪";
+        MinecraftServer server = mod.getServer(); if (server == null) return "server not ready";
         String root = command.split("\\s+")[0].toLowerCase();
-        if (FORBIDDEN_COMMANDS.contains(root)) return "禁止AI执行Mod内部指令";
+        if (FORBIDDEN_COMMANDS.contains(root)) return "forbidden: mod internal command";
         if (player != null && needsApproval(command)) {
             int num = addPendingCommand(player.getUUID(), command);
             String key = player.getUUID() + ":" + num;
             CompletableFuture<String> future = new CompletableFuture<>();
             pendingFutures.put(key, future);
             notifyAdminsPending(player, command, num, server);
-            try { String result = future.get(3, TimeUnit.MINUTES); return result != null ? result : "指令已执行"; }
-            catch (java.util.concurrent.TimeoutException e) { pendingFutures.remove(key); return "§7[审批超时] 3分钟内无人批准，指令已自动取消: /" + command; }
-            catch (Exception e) { return "§7[审批异常] " + e.getMessage(); }
+            try { String result = future.get(3, TimeUnit.MINUTES); return result != null ? result : "§7Command executed"; }
+            catch (java.util.concurrent.TimeoutException e) { pendingFutures.remove(key); return "§7[Approval timeout] No admin approved in 3 minutes, cancelled: /" + command; }
+            catch (Exception e) { return "§7[Approval error] " + e.getMessage(); }
         }
         CompletableFuture<String> future = new CompletableFuture<>();
-        String playerName = player != null ? player.getScoreboardName() : "控制台";
+        String playerName = player != null ? player.getScoreboardName() : "console";
         server.execute(() -> {
             try {
                 String result = executeAsOp(command, server);
                 server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.exec.broadcast_direct", playerName, command, result.isEmpty() ? "" : result), false);
-                mod.getChatLog().add("AI → " + playerName, "/" + command + (result.isEmpty() || "指令已执行".equals(result) ? "" : " (" + result + ")"));
-                future.complete(result.isEmpty() ? "指令已执行" : result);
-            } catch (Exception e) { future.complete("执行失败: " + e.getMessage()); }
+                mod.getChatLog().add("AI → " + playerName, "/" + command + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
+                future.complete(result.isEmpty() ? "Command executed" : result);
+            } catch (Exception e) { future.complete("Execution failed: " + e.getMessage()); }
         });
         try { return future.get(10, TimeUnit.SECONDS); }
-        catch (java.util.concurrent.TimeoutException e) { return "执行超时"; }
-        catch (Exception e) { return "执行异常: " + e.getMessage(); }
+        catch (java.util.concurrent.TimeoutException e) { return "Execution timeout"; }
+        catch (Exception e) { return "Execution error: " + e.getMessage(); }
     }
     public String executeAsOp(String command, MinecraftServer server) {
         try {
@@ -58,15 +58,15 @@ public class CommandExecutionService {
             }, cs.getPosition(), cs.getRotation(), cs.getLevel(), LevelBasedPermissionSet.OWNER, cs.getTextName(), cs.getDisplayName(), server, cs.getEntity());
             server.getCommands().getDispatcher().execute(command, src);
             String result = out.toString().trim();
-            return result.isEmpty() ? "指令已执行" : result;
-        } catch (CommandSyntaxException e) { return "指令语法错误: " + e.getMessage(); }
-        catch (Exception e) { return "执行失败: " + e.getMessage(); }
+            return result.isEmpty() ? "Command executed" : result;
+        } catch (CommandSyntaxException e) { return "Syntax error: " + e.getMessage(); }
+        catch (Exception e) { return "Execution failed: " + e.getMessage(); }
     }
     public int approveCommand(ServerPlayer admin, int num) {
         UUID pid = admin.getUUID(); List<String> cmds = pendingCommands.get(pid); int idx = num - 1;
         if (cmds == null || idx < 0 || idx >= cmds.size()) { String key = pid + ":" + num; CompletableFuture<String> f = pendingFutures.remove(key); if (f != null) f.complete(""); return 0; }
         String cmd = cmds.remove(idx); if (cmds.isEmpty()) pendingCommands.remove(pid);
-        String result = "指令已执行"; MinecraftServer server = mod.getServer();
+        String result = "Command executed"; MinecraftServer server = mod.getServer();
         if (server != null) result = executeAsOp(cmd, server);
         admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.approved", num, cmd));
         String key = pid + ":" + num; CompletableFuture<String> f = pendingFutures.remove(key);
@@ -78,7 +78,7 @@ public class CommandExecutionService {
         String cmd = cmds.remove(idx); if (cmds.isEmpty()) pendingCommands.remove(pid);
         admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.rejected", num, cmd));
         String key = pid + ":" + num; CompletableFuture<String> f = pendingFutures.remove(key);
-        if (f != null) f.complete("[审批拒绝] 管理员拒绝了指令: /" + cmd); return 1;
+        if (f != null) f.complete("[Approval rejected] Admin rejected: /" + cmd); return 1;
     }
     public boolean needsApproval(String command) {
         ModConfig config = mod.getConfig(); String root = command.split("\\s+")[0].toLowerCase();

@@ -128,7 +128,7 @@ public class ModConfig {
     private boolean strictMode = true;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
-            "kick", "stop", "whitelist", "save-all", "reload"
+            "kick", "kill", "stop", "whitelist", "save-all", "reload"
     ));
     // ── 行为审查系统 ──
     private int reviewIntervalMinutes = 30;

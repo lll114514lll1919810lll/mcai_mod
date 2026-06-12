@@ -1,142 +1,154 @@
-<div| /aicheck start | align="center">
+﻿<div align="center">
 
-<img| /aicheck start | src="src/main/resources/assets/mcai/icon.png"| /aicheck start | width="128"| /aicheck start | alt="MCAI| /aicheck start | Logo">
+<img src="src/main/resources/assets/mcai/icon.png" width="128" alt="MCAI Logo">
 
-#| /aicheck start | MCAI| /aicheck start | -| /aicheck start | Minecraft| /aicheck start | AI| /aicheck start | 助手
+# MCAI - Minecraft AI 助手
 
-[![License:| /aicheck start | MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Fabric](https://img.shields.io/badge/Fabric-26.1.2-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.java.com/)
 
 </div>
 
->| /aicheck start | [English| /aicheck start | version](README_EN.md)| /aicheck start | 
+> [English version](README_EN.md) 
 
-MCAI| /aicheck start | 是一�?Minecraft| /aicheck start | Fabric| /aicheck start | 模组，让| /aicheck start | AI| /aicheck start | 自动管理你的服务器。纯| /aicheck start | AI| /aicheck start | 开发�?
+MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。纯 AI 开发。
 
-**简单来说：**| /aicheck start | 玩家�?`/ai| /aicheck start | 帮我查附魔`，AI| /aicheck start | 回答；有人骂人，AI| /aicheck start | 自动警告或踢出；危险操作管理员批准才能执行�?
+**简单来说：** 玩家打 `/ai 帮我查附魔`，AI 回答；有人骂人，AI 自动警告或踢出；危险操作管理员批准才能执行。
 
 ---
 
-##| /aicheck start | 一分钟了解
+## 一分钟了解
 
-|| /aicheck start | 你想做什�?|| /aicheck start | 怎么�?|
+| 你想做什么 | 怎么用 |
 |-----------|--------|
-|| /aicheck start | �?AI| /aicheck start | 聊天| /aicheck start | || /aicheck start | `/ai| /aicheck start | <问题>`| /aicheck start | �?`!ai| /aicheck start | <问题>`| /aicheck start | |
-|| /aicheck start | �?AI| /aicheck start | 执行命令| /aicheck start | || /aicheck start | `/ai| /aicheck start | 给我一把钻石剑`（管理员审批�?|
-|| /aicheck start | 查看行为�?|| /aicheck start | `/aiscore`| /aicheck start | |
-|| /aicheck start | 搜索知识�?|| /aicheck start | `/aikb| /aicheck start | 附魔`| /aicheck start | |
-|| /aicheck start | 管理员审�?|| /aicheck start | `/aiaccept| /aicheck start | 1`| /aicheck start | 批准| /aicheck start | /| /aicheck start | `/aireject| /aicheck start | 1`| /aicheck start | 拒绝| /aicheck start | |
+| 和 AI 聊天 | `/ai <问题>` 或 `!ai <问题>` |
+| 让 AI 执行命令 | `/ai 给我一把钻石剑`（管理员审批） |
+| 查看行为分 | `/aiscore` |
+| 搜索知识库 | `/aikb 附魔` |
+| 管理员审批 | `/aiaccept 1` 批准 / `/aireject 1` 拒绝 |
 
 ---
 
-##| /aicheck start | 核心功能
+## 核心功能
 
-###| /aicheck start | AI| /aicheck start | 对话
--| /aicheck start | 玩家�?`!ai`| /aicheck start | �?`/ai`| /aicheck start | �?AI| /aicheck start | 聊天
--| /aicheck start | AI| /aicheck start | 知道服务器里发生了什么（聊天记录、天气、时间等�?
--| /aicheck start | 支持多轮对话，记住上下文
+### AI 对话
+- 玩家用 `!ai` 或 `/ai` 和 AI 聊天
+- AI 知道服务器里发生了什么（聊天记录、天气、时间等）
+- 支持多轮对话，记住上下文
 
-###| /aicheck start | 自动行为审查
--| /aicheck start | AI| /aicheck start | �?30| /aicheck start | 分钟自动检查聊天记�?
--| /aicheck start | 三级处罚：扣�?�?黄牌警告| /aicheck start | �?红牌踢出
+### 自动行为审查
+- AI 每 30 分钟自动检查聊天记录
+- 三级处罚：扣分 → 黄牌警告 → 红牌踢出
 
-###| /aicheck start | 安全审批
--| /aicheck start | 危险命令需要管理员手动批准�?| /aicheck start | 分钟超时自动取消
--| /aicheck start | 严格模式下仅白名单安全命令免审批
+### 安全审批
+- 危险命令需要管理员手动批准，3 分钟超时自动取消
+- 严格模式下仅白名单安全命令免审批
 
-###| /aicheck start | 游戏知识�?
--| /aicheck start | 内置中文| /aicheck start | Minecraft| /aicheck start | Wiki| /aicheck start | 核心条目
--| /aicheck start | 优先在线搜索，失败时回退到本地知识库
-
----
-
-##| /aicheck start | 安装
-
-###| /aicheck start | 你需要准�?
--| /aicheck start | Minecraft| /aicheck start | **Fabric| /aicheck start | 服务�?26.1.2**
--| /aicheck start | [Java](https://www.java.com/)| /aicheck start | 25
--| /aicheck start | 一�?[DeepSeek| /aicheck start | API| /aicheck start | Key](https://platform.deepseek.com)
-
-###| /aicheck start | 安装步骤
-1.| /aicheck start | �?[Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases)| /aicheck start | 下载最新版| /aicheck start | JAR
-2.| /aicheck start | 放入| /aicheck start | `mods/`| /aicheck start | 文件�?
-3.| /aicheck start | 启动服务端，自动生成配置
-4.| /aicheck start | 编辑| /aicheck start | `config/mcai/config.json`，填�?API| /aicheck start | Key
-5.| /aicheck start | 执行| /aicheck start | `/aireload`| /aicheck start | 重载
+### 游戏知识库
+- 内置中文 Minecraft Wiki 核心条目
+- 优先在线搜索，失败时回退到本地知识库
 
 ---
 
-##| /aicheck start | 命令一�?
+## 安装
 
-###| /aicheck start | 玩家命令
-|| /aicheck start | 命令| /aicheck start | || /aicheck start | 说明| /aicheck start | |
+### 你需要准备
+- Minecraft **Fabric 服务端 26.1.2**
+- [Java](https://www.java.com/) 25
+- 一个 [DeepSeek API Key](https://platform.deepseek.com)
+
+### 安装步骤
+1. 从 [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) 下载最新版 JAR
+2. 放入 `mods/` 文件夹
+3. 启动服务端，自动生成配置
+4. 编辑 `config/mcai/config.json`，填入 API Key
+5. 执行 `/aireload` 重载
+
+---
+
+## 命令一览
+
+### 玩家命令
+| 命令 | 说明 |
 |------|------|
-|| /aicheck start | `!ai| /aicheck start | <消息>`| /aicheck start | `/ai| /aicheck start | <消息>`| /aicheck start | || /aicheck start | �?AI| /aicheck start | 聊天| /aicheck start | |
-|| /aicheck start | `/aiscore`| /aicheck start | || /aicheck start | 查看行为�?|
+| `!ai <消息>` `/ai <消息>` | 和 AI 聊天 |
+| `/aiscore` | 查看行为分 |
 
-###| /aicheck start | 管理员命�?
-|| /aicheck start | 命令| /aicheck start | || /aicheck start | 说明| /aicheck start | |
+### 管理员命令
+| 命令 | 说明 |
 |------|------|
-|| /aicheck start | `/aiaccept| /aicheck start | <编号>`| /aicheck start | || /aicheck start | 批准待审批操�?|
-|| /aicheck start | `/aireject| /aicheck start | <编号>`| /aicheck start | || /aicheck start | 拒绝待审批操�?|
-|| /aicheck start | `/aiquery`| /aicheck start | || /aicheck start | 查看待审批列�?|
-|| /aicheck start | `/aiclear`| /aicheck start | || /aicheck start | 清除| /aicheck start | AI| /aicheck start | 对话历史| /aicheck start | |
-|| /aicheck start | `/aireload`| /aicheck start | || /aicheck start | 重载配置| /aicheck start | |
-|| /aicheck start | `/aikb| /aicheck start | <关键�?`| /aicheck start | || /aicheck start | 搜索知识�?|
+| `/aiaccept <编号>` | 批准待审批操作 |
+| `/aireject <编号>` | 拒绝待审批操作 |
+| `/aiquery` | 查看待审批列表 |
+| `/aiclear` | 清除 AI 对话历史 |
+| `/aireload` | 重载配置 |
+| `/aikb <关键词>` | 搜索知识库 |
 
-###| /aicheck start | 审查管理
-|| /aicheck start | 命令| /aicheck start | || /aicheck start | 说明| /aicheck start | |
+### 审查管理
+| 命令 | 说明 |
 |------|------|
-|| /aicheck start | `/aicheck`| /aicheck start | || /aicheck start | 手动触发审查| /aicheck start | |
-|| /aicheck start | `/aicheck| /aicheck start | approve| /aicheck start | <id>`| /aicheck start | || /aicheck start | 批准踢出| /aicheck start | |
-|| /aicheck start | `/aicheck| /aicheck start | reject| /aicheck start | <id>`| /aicheck start | || /aicheck start | 拒绝踢出| /aicheck start | |
-|| /aicheck start | `/aicheck| /aicheck start | last`| /aicheck start | || /aicheck start | 查看上次审查结果| /aicheck start | |
-|| /aicheck start | `/aicheck| /aicheck start | last| /aicheck start | reasoning`| /aicheck start | || /aicheck start | 查看| /aicheck start | AI| /aicheck start | 推理过程| /aicheck start | |
+| `/aicheck start` | 手动触发审查 |
+| `/aicheck approve <id>` | 批准踢出 |
+| `/aicheck reject <id>` | 拒绝踢出 |
+| `/aicheck last` | 查看上次审查结果 |
+| `/aicheck last reasoning` | 查看 AI 推理过程 |
 
 ---
 
-##| /aicheck start | 配置
+## 配置
 
-文件位置：`config/mcai/config.json`，修改后�?`/aireload`| /aicheck start | 重载�?
+文件位置：`config/mcai/config.json`，修改后用 `/aireload` 重载。
 
-|| /aicheck start | 配置�?|| /aicheck start | 默认�?|| /aicheck start | 说明| /aicheck start | |
+| 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-|| /aicheck start | `apiEndpoint`| /aicheck start | || /aicheck start | `https://api.deepseek.com`| /aicheck start | || /aicheck start | API| /aicheck start | 地址| /aicheck start | |
-|| /aicheck start | `apiKey`| /aicheck start | || /aicheck start | `""`| /aicheck start | || /aicheck start | API| /aicheck start | 密钥| /aicheck start | |
-|| /aicheck start | `model`| /aicheck start | || /aicheck start | `deepseek-v4-flash`| /aicheck start | || /aicheck start | 模型名称| /aicheck start | |
-|| /aicheck start | `strictMode`| /aicheck start | || /aicheck start | `true`| /aicheck start | || /aicheck start | 严格模式| /aicheck start | |
-|| /aicheck start | `reviewIntervalMinutes`| /aicheck start | || /aicheck start | `30`| /aicheck start | || /aicheck start | 审查间隔（分钟）| /aicheck start | |
-|| /aicheck start | `yellowCardThreshold`| /aicheck start | || /aicheck start | `-30`| /aicheck start | || /aicheck start | 黄牌阈�?|
-|| /aicheck start | `redCardThreshold`| /aicheck start | || /aicheck start | `-60`| /aicheck start | || /aicheck start | 红牌阈�?|
-|| /aicheck start | `systemPromptPath`| /aicheck start | || /aicheck start | `""`| /aicheck start | || /aicheck start | AI提示词文件（config/mcai/下）| /aicheck start | |
-|| /aicheck start | `reviewPromptPath`| /aicheck start | || /aicheck start | `""`| /aicheck start | || /aicheck start | 审查提示词文�?|
-|| /aicheck start | `promptLanguage`| /aicheck start | || /aicheck start | `zh_cn`| /aicheck start | || /aicheck start | 内置提示词语言| /aicheck start | |
+| `apiEndpoint` | `https://api.deepseek.com` | API 地址 |
+| `apiKey` | `""` | API 密钥 |
+| `model` | `deepseek-v4-flash` | 模型名称 |
+| `strictMode` | `true` | 严格模式 |
+| `reviewIntervalMinutes` | `30` | 审查间隔（分钟） |
+| `yellowCardThreshold` | `-30` | 黄牌阈值 |
+| `redCardThreshold` | `-60` | 红牌阈值 |
+| `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
+| `reviewPromptPath` | `""` | 审查提示词文件 |
+| `promptLanguage` | `zh_cn` | 内置提示词语言 |
 
-提示词文�?`system_prompt.txt`| /aicheck start | /| /aicheck start | `review_prompt.txt`| /aicheck start | 首次启动自动创建�?
+提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。
 
 ---
 
-##| /aicheck start | 构建
+
+### 知识库导入
+
+知识库文件放置在 config/mcai/kb/ 下即可：
+
+1. 从 [kb/](kb/README.md) 目录下载 .json 文件
+2. 放入 config/mcai/kb/（首次启动自动创建）
+3. 执行 /aireload
+
+可用文件及许可证见 [kb/README.md](kb/README.md)。
+自爬工具：[	ools/wiki_to_kb.py](tools/wiki_to_kb.py)。
+
+## 构建
 
 ```bash
-git| /aicheck start | clone| /aicheck start | https://github.com/lll114514lll1919810lll/mcai_mod.git
-cd| /aicheck start | mcai_mod
-.\gradlew.bat| /aicheck start | build
-#| /aicheck start | 产物:| /aicheck start | build/libs/mcai-<version>.jar
+git clone https://github.com/lll114514lll1919810lll/mcai_mod.git
+cd mcai_mod
+.\gradlew.bat build
+# 产物: build/libs/mcai-<version>.jar
 ```
 
-需�?JDK| /aicheck start | 25�?
+需要 JDK 25。
 
 ---
 
-##| /aicheck start | 链接
+## 链接
 
--| /aicheck start | [服主使用手册](USER_GUIDE.md)
--| /aicheck start | [开发总结](MCAI_MOD_SUMMARY.md)
--| /aicheck start | [English| /aicheck start | version](README_EN.md)
--| /aicheck start | [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
+- [服主使用手册](USER_GUIDE.md)
+- [开发总结](MCAI_MOD_SUMMARY.md)
+- [English version](README_EN.md)
+- [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
 
-##| /aicheck start | 许可�?
+## 许可证
 
-[MIT| /aicheck start | License](LICENSE)
+[MIT License](LICENSE)

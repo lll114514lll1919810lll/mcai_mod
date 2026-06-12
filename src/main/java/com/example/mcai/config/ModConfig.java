@@ -131,8 +131,6 @@ public class ModConfig {
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
     private int maxToolCalls = 15;
-    /** 是否为视觉模型（能理解图片）。启用后AI可获得截图能力。 */
-    private boolean visionModel = false;
     private boolean strictMode = true;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
@@ -226,7 +224,6 @@ public class ModConfig {
     public boolean isEnableCommandExecution() { return enableCommandExecution; }
     public int getContextMaxChars() { return contextMaxChars; }
     public int getMaxToolCalls() { return maxToolCalls; }
-    public boolean isVisionModel() { return visionModel; }
     public List<String> getRequireApprovalCommands() { return requireApprovalCommands; }
     public boolean isStrictMode() { return strictMode; }
     public List<String> getSafeCommands() { return safeCommands; }

@@ -442,18 +442,6 @@ public class OpenAIClient {
         tools.add(rulesTool);
         tools.add(debugTool);
         tools.add(modsTool);
-
-        if (config.isVisionModel()) {
-            JsonObject ssTool = new JsonObject();
-            ssTool.addProperty("type", "function");
-            JsonObject ssFn = new JsonObject();
-            ssFn.addProperty("name", "get_screenshot");
-            ssFn.addProperty("description", "获取当前游戏画面描述。当你需要了解玩家当前看到的内容时调用此工具。返回玩家视野内的方块、实体、UI界面等详细信息。相当于视觉模型的\"截图\"功能。无需参数。");
-            ssFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
-            ssTool.add("function", ssFn);
-            tools.add(ssTool);
-        }
-
         return tools;
     }
 

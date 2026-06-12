@@ -181,19 +181,55 @@ public class KnowledgeBase {
     }
 
     private double score(Entry e, String[] tokens) {
-        String text = (e.title() + " " + String.join(" ", e.keywords() != null ? e.keywords() : List.of())
-                + " " + e.summary()).toLowerCase(Locale.ROOT);
-        int matches = 0;
+        String title = e.title().toLowerCase(Locale.ROOT);
+        String keywords = String.join(" ", e.keywords() != null ? e.keywords() : List.of()).toLowerCase(Locale.ROOT);
+        String summary = e.summary().toLowerCase(Locale.ROOT);
+        double totalWeight = 0;
         for (String t : tokens) {
-            if (text.contains(t)) matches++;
+            boolean inTitle = title.contains(t);
+            boolean inKeywords = !keywords.isEmpty() && keywords.contains(t);
+            boolean inSummary = summary.contains(t);
+            if (inTitle) totalWeight += 3.0;
+            if (inKeywords) totalWeight += 2.0;
+            if (inSummary) totalWeight += 1.0;
         }
-        return (double) matches / Math.max(tokens.length, 1);
+        return totalWeight / (tokens.length * 3.0); // normalize to 0-1
     }
 
     private String[] tokenize(String text) {
-        return text.toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9\u4e00-\u9fff\\s]", " ")
-                .trim()
-                .split("\\s+");
+        String lower = text.toLowerCase(Locale.ROOT);
+        List<String> result = new ArrayList<>();
+        StringBuilder cjk = new StringBuilder();
+        for (int i = 0; i < lower.length(); i++) {
+            char c = lower.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
+                // English/number: flush pending CJK, start word
+                if (cjk.length() > 0) { addCjkTokens(cjk.toString(), result); cjk.setLength(0); }
+                int j = i;
+                while (j < lower.length() && ((lower.charAt(j) >= 'a' && lower.charAt(j) <= 'z') || (lower.charAt(j) >= '0' && lower.charAt(j) <= '9'))) j++;
+                result.add(lower.substring(i, j));
+                i = j - 1;
+            } else if (c >= '\u4e00' && c <= '\u9fff') {
+                // CJK: buffer for bigram processing
+                if (cjk.length() == 0 && !result.isEmpty()) { /* after English, fine */ }
+                cjk.append(c);
+            } else {
+                // punctuation/space: flush CJK
+                if (cjk.length() > 0) { addCjkTokens(cjk.toString(), result); cjk.setLength(0); }
+            }
+        }
+        if (cjk.length() > 0) addCjkTokens(cjk.toString(), result);
+        return result.toArray(new String[0]);
+    }
+
+    /** Add CJK string as original + bigrams for better partial matching */
+    private void addCjkTokens(String cjk, List<String> out) {
+        if (cjk.length() <= 2) { out.add(cjk); return; }
+        // Add the original phrase
+        out.add(cjk);
+        // Add 2-char sliding windows
+        for (int i = 0; i < cjk.length() - 1; i++) {
+            out.add(cjk.substring(i, i + 2));
+        }
     }
 }

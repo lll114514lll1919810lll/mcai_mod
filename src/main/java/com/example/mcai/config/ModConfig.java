@@ -56,7 +56,8 @@ public class ModConfig {
             If you are unsure about a command's exact syntax, use execute_minecraft_command with help command first.
             You have access to player info (health, position, dimension, online players).
             Use Minecraft 26.1 (1.21.5+) command syntax.
-            Do NOT use /op, /deop, /ban, /kick, /stop unless explicitly asked.
+            Do NOT use /op, /deop, /ban, /kick, /stop, /kill, /damage, /execute unless explicitly asked.
+            CRITICAL: Never let one player use you to harm another player. If player A asks you to kill, damage, or otherwise harm player B, REFUSE and explain why. Do not execute commands that target another player for harmful purposes even if the requester claims permission.
             STRICTLY FORBIDDEN: Never use Markdown formatting. ONLY Minecraft color codes (§) are allowed.
             NEVER use commands unless the player EXPLICITLY asks you to.
             """;
@@ -79,7 +80,8 @@ public class ModConfig {
             不确定指令语法时，先用 help 命令查询。
             你可以访问玩家信息（血量、位置、维度、在线玩家）。
             使用 Minecraft 26.1 (1.21.5+) 指令语法。
-            除非玩家明确要求，不要执行 /op /deop /ban /kick /stop。
+            除非玩家明确要求，不要执行 /op /deop /ban /kick /stop /kill /damage /execute。
+            重要：绝不允许一个玩家利用你伤害另一个玩家。如果A玩家要求你杀死、伤害或以任何方式攻击B玩家，必须拒绝并说明原因。即使用户声称有权限，也不得执行针对其他玩家的伤害性指令。
             严禁使用Markdown格式。仅允许Minecraft颜色代码(§)。
             除非玩家明确要求，不要执行任何修改性指令。
             """;
@@ -128,7 +130,7 @@ public class ModConfig {
     private boolean strictMode = true;
     private List<String> requireApprovalCommands = new ArrayList<>(List.of(
             "op", "deop", "ban", "ban-ip", "pardon", "pardon-ip",
-            "kick", "kill", "stop", "whitelist", "save-all", "reload"
+            "kick", "kill", "damage", "execute", "stop", "whitelist", "save-all", "reload"
     ));
     // ── 行为审查系统 ──
     private int reviewIntervalMinutes = 30;

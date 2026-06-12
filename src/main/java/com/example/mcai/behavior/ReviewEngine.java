@@ -41,7 +41,7 @@ public class ReviewEngine {
         List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
         messages.add(new OpenAIClient.ChatMessage("system", reviewPrompt)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
         var result = mod.getAiClient().chatSimpleFull(messages);
-        if (!result.success()) { LOGGER.warn("Review AI call failed: {}", result.error()); return Component.translatable("mcai.review.failed"); }
+        if (!result.success()) { LOGGER.warn("Review AI call failed: {}", result.error()); return Component.translatable("mcai.review.status.failed"); }
         var chatResult = result.value(); lastRawResponse = chatResult.content; lastReasoning = chatResult.reasoningContent != null ? chatResult.reasoningContent : "";
         String response = chatResult.content; LOGGER.info("Review AI response: {}", response); saveReviewFiles();
         List<PlayerViolation> violations = parseViolations(response);
@@ -71,7 +71,7 @@ public class ReviewEngine {
         if (violations.isEmpty()) {
             mod.getChatLog().clear(); int recovered = recoverScores();
             if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
-            penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.translatable("mcai.review.no_violations");
+            penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.translatable("mcai.review.status.no_violations");
         }
         if (srv == null) return Component.literal("§c服务器未就绪");
         StringBuilder redCardActions = new StringBuilder(); Map<String, Integer> cyclePenalties = new HashMap<>();

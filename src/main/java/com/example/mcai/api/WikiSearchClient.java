@@ -39,7 +39,7 @@ public class WikiSearchClient {
 
     /**
      * 在线搜索 Wiki，返回匹配条目的标题和摘要片段。
-     * 失败时返回 null，调用方应回退到本地知识库。
+     * 失败时返回空列表，调用方应回退到本地知识库。
      */
     public List<SearchResult> search(String query, int limit) {
         try {
@@ -57,7 +57,7 @@ public class WikiSearchClient {
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (resp.statusCode() != 200) {
                 LOGGER.warn("Wiki API HTTP {}", resp.statusCode());
-                return null;
+                return List.of();
             }
 
             JsonObject json = GSON.fromJson(resp.body(), JsonObject.class);
@@ -80,7 +80,7 @@ public class WikiSearchClient {
             return list;
         } catch (Exception e) {
             LOGGER.warn("Wiki API search failed: {}", e.getMessage());
-            return null;
+            return List.of();
         }
     }
 

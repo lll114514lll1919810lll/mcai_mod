@@ -88,7 +88,7 @@ public class KnowledgeBase {
 
         // 1. 尝试在线搜索
         var onlineResults = wikiClient.search(query, maxResults);
-        if (onlineResults != null && !onlineResults.isEmpty()) {
+        if (!onlineResults.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("[在线] 找到 ").append(onlineResults.size()).append(" 条 Wiki 条目：\n");
             for (int i = 0; i < onlineResults.size(); i++) {

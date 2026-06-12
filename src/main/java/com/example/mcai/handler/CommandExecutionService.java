@@ -35,7 +35,7 @@ public class CommandExecutionService {
         String playerName = player != null ? player.getScoreboardName() : "console";
         server.execute(() -> {
             try {
-                String result = executeAsOp(command, server);
+                String result = player != null ? executeAsOp(command, server, player) : executeAsOp(command, server);
                 server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.exec.broadcast_direct", playerName, command, result.isEmpty() ? "" : result), false);
                 mod.getChatLog().add("AI → " + playerName, "/" + command + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
                 future.complete(result.isEmpty() ? "Command executed" : result);
@@ -46,16 +46,28 @@ public class CommandExecutionService {
         catch (Exception e) { return "Execution error: " + e.getMessage(); }
     }
     public String executeAsOp(String command, MinecraftServer server) {
+        return executeAsOp(command, server, null, null, null);
+    }
+    public String executeAsOp(String command, MinecraftServer server, ServerPlayer player) {
+        return executeAsOp(command, server, (net.minecraft.server.level.ServerLevel) player.level(), player.blockPosition(), player.getRotationVector());
+    }
+    private String executeAsOp(String command, MinecraftServer server, net.minecraft.server.level.ServerLevel level,
+                               net.minecraft.core.BlockPos pos, net.minecraft.world.phys.Vec2 rot) {
         try {
             StringBuilder out = new StringBuilder();
-            var cs = server.createCommandSourceStack();
             var src = new CommandSourceStack(new CommandSource() {
                 public void sendSystemMessage(Component msg) { out.append(msg.getString()).append("\n"); }
                 public boolean acceptsSuccess() { return true; }
                 public boolean acceptsFailure() { return true; }
                 public boolean alwaysAccepts() { return false; }
                 public boolean shouldInformAdmins() { return false; }
-            }, cs.getPosition(), cs.getRotation(), cs.getLevel(), LevelBasedPermissionSet.OWNER, cs.getTextName(), cs.getDisplayName(), server, cs.getEntity());
+            }, pos != null ? net.minecraft.world.phys.Vec3.atCenterOf(pos) : server.createCommandSourceStack().getPosition(),
+               rot != null ? rot : server.createCommandSourceStack().getRotation(),
+               level != null ? level : server.createCommandSourceStack().getLevel(),
+               LevelBasedPermissionSet.OWNER,
+               server.createCommandSourceStack().getTextName(),
+               server.createCommandSourceStack().getDisplayName(),
+               server, null);
             server.getCommands().getDispatcher().execute(command, src);
             String result = out.toString().trim();
             return result.isEmpty() ? "Command executed" : result;
@@ -67,7 +79,7 @@ public class CommandExecutionService {
         if (cmds == null || idx < 0 || idx >= cmds.size()) { String key = pid + ":" + num; CompletableFuture<String> f = pendingFutures.remove(key); if (f != null) f.complete(""); return 0; }
         String cmd = cmds.remove(idx); if (cmds.isEmpty()) pendingCommands.remove(pid);
         String result = "Command executed"; MinecraftServer server = mod.getServer();
-        if (server != null) result = executeAsOp(cmd, server);
+        if (server != null) result = executeAsOp(cmd, server, admin);
         admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.approved", num, cmd));
         String key = pid + ":" + num; CompletableFuture<String> f = pendingFutures.remove(key);
         if (f != null) f.complete(result); return 1;

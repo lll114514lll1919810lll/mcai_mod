@@ -15,37 +15,46 @@ import java.util.stream.Collectors;
 public class KnowledgeBase {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-KB");
     private static final Gson GSON = new GsonBuilder().create();
-    private static final String KB_DIR = "assets/mcai/kb/";
+    private static final String BUNDLED_PATH = "assets/mcai/kb/zh_wiki.json";
 
     private List<Entry> entries = List.of();
 
     public record Entry(String title, List<String> keywords, String summary, String content) {}
 
-    /** Load from bundled resources first, then merge from external directory */
     public void load(Path externalDir) {
         List<Entry> all = new ArrayList<>();
         var seen = new HashSet<String>();
         int loaded = 0;
 
-        // 1. Export bundled KB to external dir if not already present
         if (externalDir != null) {
             try {
                 Files.createDirectories(externalDir);
-                exportBundledIfNeeded(externalDir);
                 exportExampleIfNeeded(externalDir);
             } catch (Exception e) {
                 LOGGER.warn("Failed to setup external KB directory", e);
             }
         }
 
-        // 2. Load bundled KB files from JAR
-        String[] bundledFiles = {"zh_wiki.json", "create_mod.json", "biomesoplenty.json"};
-        for (String file : bundledFiles) {
-            int n = loadBundledFile(file, all, seen);
-            loaded += n;
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
+            if (is != null) {
+                try (Reader r = new InputStreamReader(is)) {
+                    List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
+                    if (list != null) {
+                        for (Entry e : list) {
+                            if (seen.add(e.title().toLowerCase(Locale.ROOT))) {
+                                all.add(e);
+                            }
+                        }
+                        loaded = list.size();
+                    }
+                }
+            } else {
+                LOGGER.warn("Bundled KB not found: {}", BUNDLED_PATH);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to load bundled KB", e);
         }
 
-        // 3. Merge from external directory (overrides/additions)
         if (externalDir != null && Files.isDirectory(externalDir)) {
             try (var files = Files.list(externalDir)) {
                 files.filter(f -> f.toString().endsWith(".json") && !f.getFileName().toString().startsWith("_"))
@@ -73,37 +82,6 @@ public class KnowledgeBase {
         LOGGER.info("KB loaded: {} entries ({} bundled + external)", entries.size(), loaded);
     }
 
-    private void exportBundledIfNeeded(Path externalDir) {
-        String[] files = {"zh_wiki.json", "create_mod.json", "biomesoplenty.json"};
-        for (String f : files) {
-            Path target = externalDir.resolve(f);
-            if (Files.exists(target)) continue;
-            try (InputStream is = getClass().getClassLoader().getResourceAsStream(KB_DIR + f)) {
-                if (is != null) { Files.copy(is, target); LOGGER.info("Exported bundled KB to {}", target); }
-            } catch (Exception e) { LOGGER.warn("Failed to export {}", f, e); }
-        }
-    }
-
-    private int loadBundledFile(String fileName, List<Entry> all, HashSet<String> seen) {
-        String path = KB_DIR + fileName;
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
-            if (is == null) { LOGGER.warn("Bundled KB not found: {}", path); return 0; }
-            try (Reader r = new InputStreamReader(is)) {
-                List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
-                if (list == null) return 0;
-                int count = 0;
-                for (Entry e : list) {
-                    if (seen.add(e.title().toLowerCase(Locale.ROOT))) { all.add(e); count++; }
-                }
-                LOGGER.info("Loaded {} entries from bundled {}", count, fileName);
-                return count;
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to load bundled KB file {}", fileName, e);
-            return 0;
-        }
-    }
-
     private void exportExampleIfNeeded(Path externalDir) {
         Path target = externalDir.resolve("_example_mod_wiki.json");
         if (Files.exists(target)) return;
@@ -113,7 +91,7 @@ public class KnowledgeBase {
                     "title": "Example Mod: Bronze Ingot",
                     "keywords": ["bronze", "ingot", "example", "metal"],
                     "summary": "Bronze ingot is an alloy made from copper and tin, used for tools and armor.",
-                    "content": "Bronze Ingot\\nObtained by smelting copper and tin together in a furnace.\\nUsed to craft: Bronze Sword, Bronze Pickaxe, Bronze Armor.\\nSource: Example Mod v2.1"
+                    "content": "Bronze Ingot\\nObtained by smelting copper and tin together in a furnace.\\nUsed to craft: Bronze Sword, Bronze Pickaxe, Bronze Armor."
                   },
                   {
                     "title": "Example Mod: Bronze Sword",
@@ -197,7 +175,7 @@ public class KnowledgeBase {
             if (inKeywords) totalWeight += 2.0;
             if (inSummary) totalWeight += 1.0;
         }
-        return totalWeight / (tokens.length * 3.0); // normalize to 0-1
+        return totalWeight / (tokens.length * 3.0);
     }
 
     private String[] tokenize(String text) {
@@ -207,18 +185,14 @@ public class KnowledgeBase {
         for (int i = 0; i < lower.length(); i++) {
             char c = lower.charAt(i);
             if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
-                // English/number: flush pending CJK, start word
                 if (cjk.length() > 0) { addCjkTokens(cjk.toString(), result); cjk.setLength(0); }
                 int j = i;
                 while (j < lower.length() && ((lower.charAt(j) >= 'a' && lower.charAt(j) <= 'z') || (lower.charAt(j) >= '0' && lower.charAt(j) <= '9'))) j++;
                 result.add(lower.substring(i, j));
                 i = j - 1;
             } else if (c >= '\u4e00' && c <= '\u9fff') {
-                // CJK: buffer for bigram processing
-                if (cjk.length() == 0 && !result.isEmpty()) { /* after English, fine */ }
                 cjk.append(c);
             } else {
-                // punctuation/space: flush CJK
                 if (cjk.length() > 0) { addCjkTokens(cjk.toString(), result); cjk.setLength(0); }
             }
         }
@@ -226,12 +200,9 @@ public class KnowledgeBase {
         return result.toArray(new String[0]);
     }
 
-    /** Add CJK string as original + bigrams for better partial matching */
     private void addCjkTokens(String cjk, List<String> out) {
         if (cjk.length() <= 2) { out.add(cjk); return; }
-        // Add the original phrase
         out.add(cjk);
-        // Add 2-char sliding windows
         for (int i = 0; i < cjk.length() - 1; i++) {
             out.add(cjk.substring(i, i + 2));
         }

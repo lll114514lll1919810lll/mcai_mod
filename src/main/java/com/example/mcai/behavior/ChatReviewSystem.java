@@ -72,11 +72,11 @@ public class ChatReviewSystem {
 
     public void triggerManualReview(ServerPlayer notifier) {
         if (reviewInProgress.get()) {
-            lastReviewStatus = Component.literal("§e审查正在进行中，请稍候...");
+            lastReviewStatus = Component.translatable("mcai.review.status.in_progress");
             if (notifier != null) notifier.sendSystemMessage(lastReviewStatus);
             return;
         }
-        lastReviewStatus = Component.literal("§a审查已启动...");
+        lastReviewStatus = Component.translatable("mcai.review.status.starting");
         if (notifier != null) notifier.sendSystemMessage(lastReviewStatus);
         reviewScheduler.execute(() -> {
             runReview();
@@ -105,7 +105,7 @@ public class ChatReviewSystem {
             LOGGER.info("Review complete: {}", lastReviewStatus.getString());
         } catch (Exception e) {
             LOGGER.error("Review failed", e);
-            lastReviewStatus = Component.literal("§c审查异常: " + e.getMessage());
+            lastReviewStatus = Component.translatable("mcai.review.status.exception", e.getMessage());
         } finally {
             reviewInProgress.set(false);
         }
@@ -122,8 +122,7 @@ public class ChatReviewSystem {
                 return;
             }
             if ("kick".equals(item.action)) {
-                String kickMsg = "你的行为评分过低，已被系统移出服务器。\n理由: " + item.reason;
-                target.connection.disconnect(Component.literal("§c" + kickMsg));
+                target.connection.disconnect(Component.translatable("mcai.review.kick_msg", item.reason));
                 LOGGER.info("Kicked {} (approval #{})", item.targetPlayerName, item.id);
                 penaltyHistory.addEvent(new PenaltyEvent(item.targetPlayerName,
                         item.reason, 0, tracker.getScore(item.targetPlayerId),

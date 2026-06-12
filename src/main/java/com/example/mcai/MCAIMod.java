@@ -42,6 +42,9 @@ public class MCAIMod implements ModInitializer {
     public void onInitialize() {
         instance = this;
         config = ModConfig.load();
+        // 初始化时触发提示词文件自动创建（如不存在则以内置默认内容创建）
+        config.getSystemPrompt();
+        config.getReviewPrompt();
         knowledgeBase = new KnowledgeBase();
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
@@ -111,6 +114,8 @@ public class MCAIMod implements ModInitializer {
     public void reloadConfig() {
         config = ModConfig.load();
         config.clearPromptCache();
+        config.getSystemPrompt();
+        config.getReviewPrompt();
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));

@@ -107,8 +107,8 @@ public class MCAIConfigScreen extends Screen {
 
         // ── 提示词 ──
         l(inX, ry(r), "§e=== 提示词 ==="); r++;
-        sysPromptPathField    = f(inX, ry(r), kw, gs("systemPromptPath", ""), "文件名放config/mcai/下，空=内置。首次自动创建");   l(Math.max(cx - 200, 5), ry(r), "AI提示词文件"); r++;
-        reviewPromptPathField = f(inX, ry(r), kw, gs("reviewPromptPath", ""), "文件名放config/mcai/下，空=内置。首次自动创建"); l(Math.max(cx - 200, 5), ry(r), "审查提示词文件"); r++;
+        sysPromptPathField    = f(inX, ry(r), kw, gs("systemPromptPath", ""), "文件名（放config/mcai/下），空=用内置");   l(Math.max(cx - 200, 5), ry(r), "AI提示词文件名"); r++;
+        reviewPromptPathField = f(inX, ry(r), kw, gs("reviewPromptPath", ""), "文件名（放config/mcai/下），空=用内置"); l(Math.max(cx - 200, 5), ry(r), "审查提示词文件名"); r++;
 
         // ── 底部按钮 ──
         statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);

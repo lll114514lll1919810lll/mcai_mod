@@ -192,7 +192,8 @@ public class OpenAIClient {
                     ? msg.get("reasoning_content").getAsString() : null;
 
             // Check for tool_calls directly in the message
-            JsonArray toolCallsJson = msg.getAsJsonArray("tool_calls");
+            JsonElement tcElement = msg.get("tool_calls");
+            JsonArray toolCallsJson = (tcElement != null && !tcElement.isJsonNull()) ? tcElement.getAsJsonArray() : null;
             if (toolCallsJson != null && toolCallsJson.size() > 0) {
                 List<ToolCall> toolCalls = parseToolCalls(msg);
                 if (toolCalls.isEmpty()) {
@@ -371,7 +372,9 @@ public class OpenAIClient {
 
     private List<ToolCall> parseToolCalls(JsonObject msg) {
         List<ToolCall> calls = new ArrayList<>();
-        JsonArray arr = msg.getAsJsonArray("tool_calls");
+        JsonElement arrEl = msg.get("tool_calls");
+        if (arrEl == null || arrEl.isJsonNull()) return calls;
+        JsonArray arr = arrEl.getAsJsonArray();
         if (arr == null) return calls;
         for (JsonElement el : arr) {
             JsonObject tc = el.getAsJsonObject();

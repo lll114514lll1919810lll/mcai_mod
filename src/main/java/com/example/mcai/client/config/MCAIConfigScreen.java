@@ -2,7 +2,6 @@ package com.example.mcai.client.config;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -19,26 +18,25 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 @Environment(EnvType.CLIENT)
 public class MCAIConfigScreen extends Screen {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final int ROW_H = 22;
 
     private final Screen parent;
     private final Path configPath;
     private JsonObject cfg;
-
-    private EditBox apiEndpointField, apiKeyField, modelField;
-    private EditBox prefixField, maxTokensField, tempField;
-    private EditBox ctxField, thinkingField, toolCallsField;
-    private EditBox sysPromptPathField, reviewPromptPathField;
-    private Button chatBtn, cmdBtn, strictBtn;
-
-    private String status = "";
-    private int statusTimer = 0;
+    private double scrollOffset;
     private StringWidget statusWidget;
+
+    private EditBox apiEndpointField, apiKeyField, modelField, prefixField;
+    private EditBox maxTokensField, tempField, ctxField, thinkingField, toolCallsField;
+    private EditBox sysPromptPathField, reviewPromptPathField;
+    private EditBox reviewIntervalField, yellowCardField, redCardField;
+    private EditBox scoreRecoveryField, approvalTimeoutField;
+    private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn;
 
     public MCAIConfigScreen(Screen parent) {
         super(Component.literal("MCAI 设置"));
@@ -57,165 +55,142 @@ public class MCAIConfigScreen extends Screen {
         return new JsonObject();
     }
 
-    private String get(String key, String def) {
-        return cfg.has(key) ? cfg.get(key).getAsString() : def;
-    }
-    private int getInt(String key, int def) {
-        return cfg.has(key) ? cfg.get(key).getAsInt() : def;
-    }
-    private double getDouble(String key, double def) {
-        return cfg.has(key) ? cfg.get(key).getAsDouble() : def;
-    }
-    private boolean getBool(String key, boolean def) {
-        return cfg.has(key) ? cfg.get(key).getAsBoolean() : def;
-    }
+    private String gs(String key, String def) { return cfg.has(key) ? cfg.get(key).getAsString() : def; }
+    private int gi(String key, int def) { return cfg.has(key) ? cfg.get(key).getAsInt() : def; }
+    private double gd(String key, double def) { return cfg.has(key) ? cfg.get(key).getAsDouble() : def; }
+    private boolean gb(String key, boolean def) { return cfg.has(key) ? cfg.get(key).getAsBoolean() : def; }
+
+    private int ry(int row) { return (int)(28 + row * ROW_H - scrollOffset); }
 
     @Override
     protected void init() {
+        rebuildWidgets();
+    }
+
+    @Override
+    protected void rebuildWidgets() {
+        clearWidgets();
         int cx = width / 2;
-        addRenderableWidget(new StringWidget(Math.max(cx - 50, 0), 12, 100, 20,
-                Component.literal("MCAI 设置"), font));
-
-        int leftX = Math.max(cx - 200, 5);
         int inX = cx + 5;
-        int fieldW = Math.min(180, width - inX - 10);
-        int keyW = Math.min(300, width - inX - 10);
-        int rows = 14;
-        int rowH = Math.min(22, (height - 100) / rows);
-        int sy = 28;
+        int fw = Math.min(180, width - inX - 10);
+        int kw = Math.min(300, width - inX - 10);
+        int r = 0;
 
-        apiEndpointField = mkField(inX, sy + rowH * 0, keyW, get("apiEndpoint", ""), "API 地址");
-        apiKeyField    = mkField(inX, sy + rowH * 1, keyW, get("apiKey", ""), "API 密钥");
-        modelField     = mkField(inX, sy + rowH * 2, fieldW, get("model", "deepseek-v4-flash"), "模型名称");
-        prefixField    = mkField(inX, sy + rowH * 3, 80, get("triggerPrefix", "!ai"), "触发前缀");
-        maxTokensField = mkNumField(inX, sy + rowH * 4, getInt("maxTokens", 1024), "最大令牌");
-        tempField      = mkNumField(inX, sy + rowH * 5, (int)(getDouble("temperature", 0.7) * 100), "温度(0-100)");
-        ctxField       = mkNumField(inX, sy + rowH * 6, getInt("contextMaxChars", 20000), "上下文字符上限");
-        thinkingField  = mkNumField(inX, sy + rowH * 7, getInt("thinkingLevel", 0), "思考等级");
-        toolCallsField = mkNumField(inX, sy + rowH * 8, getInt("maxToolCalls", 5), "工具调用上限");
+        t(cx - 40, 8, 100, "§lMCAI 设置"); r++;
 
-        addLabel(leftX, sy + rowH * 0, 120, "API 地址");
-        addLabel(leftX, sy + rowH * 1, 120, "API 密钥");
-        addLabel(leftX, sy + rowH * 2, 120, "模型名称");
-        addLabel(leftX, sy + rowH * 3, 120, "触发前缀");
-        addLabel(leftX, sy + rowH * 4, 120, "最大令牌");
-        addLabel(leftX, sy + rowH * 5, 120, "温度 (%)");
-        addLabel(leftX, sy + rowH * 6, 120, "上下文字符上限");
-        addLabel(leftX, sy + rowH * 7, 120, "思考等级 0-3");
-        addLabel(leftX, sy + rowH * 8, 120, "工具调用上限");
+        // ── API ──
+        l(inX, ry(r), "§e=== API ==="); r++;
+        apiEndpointField = f(inX, ry(r), kw, gs("apiEndpoint", ""), "API 地址");         l(Math.max(cx - 200, 5), ry(r), "API 地址"); r++;
+        apiKeyField     = f(inX, ry(r), kw, gs("apiKey", ""), "API 密钥");                l(Math.max(cx - 200, 5), ry(r), "API 密钥"); r++;
+        modelField      = f(inX, ry(r), fw, gs("model", "deepseek-v4-flash"), "模型名称"); l(Math.max(cx - 200, 5), ry(r), "模型名称"); r++;
 
-        addLabel(leftX, sy + rowH * 9, 120, "聊天监听");
-        chatBtn = mkToggle(inX + fieldW + 5, sy + rowH * 9, getBool("enableChatInterception", true));
+        // ── AI ──
+        l(inX, ry(r), "§e=== AI 设置 ==="); r++;
+        prefixField     = f(inX, ry(r), 80, gs("triggerPrefix", "!ai"), "触发前缀");   l(Math.max(cx - 200, 5), ry(r), "触发前缀"); r++;
+        maxTokensField  = n(inX, ry(r), gi("maxTokens", 2048), "单次回复最大token数");   l(Math.max(cx - 200, 5), ry(r), "最大令牌"); r++;
+        tempField       = n(inX, ry(r), (int)(gd("temperature", 0.75) * 100), "回复随机性"); l(Math.max(cx - 200, 5), ry(r), "温度 (0-100)"); r++;
+        ctxField        = n(inX, ry(r), gi("contextMaxChars", 20000), "对话历史最大字符数"); l(Math.max(cx - 200, 5), ry(r), "上下文字符上限"); r++;
+        thinkingField   = n(inX, ry(r), gi("thinkingLevel", 1), "0=关 1=开 3=最强");    l(Math.max(cx - 200, 5), ry(r), "思考等级 0-3"); r++;
+        toolCallsField  = n(inX, ry(r), gi("maxToolCalls", 15), "单次对话最多工具调用");  l(Math.max(cx - 200, 5), ry(r), "工具调用上限"); r++;
 
-        addLabel(leftX, sy + rowH * 10, 120, "指令执行");
-        cmdBtn = mkToggle(inX + fieldW + 5, sy + rowH * 10, getBool("enableCommandExecution", true));
+        // ── 行为 ──
+        l(inX, ry(r), "§e=== 行为审查 ==="); r++;
+        tg(inX, fw, r, "聊天监听", gb("enableChatInterception", true), b -> chatBtn = b); r++;
+        tg(inX, fw, r, "指令执行", gb("enableCommandExecution", true), b -> cmdBtn = b); r++;
+        tg(inX, fw, r, "严格模式", gb("strictMode", true), b -> strictBtn = b); r++;
+        tg(inX, fw, r, "自动审查", gb("enableAutoReview", true), b -> autoReviewBtn = b); r++;
+        reviewIntervalField  = n(inX, ry(r), gi("reviewIntervalMinutes", 30), "自动审查间隔(分)");     l(Math.max(cx - 200, 5), ry(r), "审查间隔(分)"); r++;
+        yellowCardField      = n(inX, ry(r), gi("yellowCardThreshold", -30), "低于此分触发黄牌");       l(Math.max(cx - 200, 5), ry(r), "黄牌阈值"); r++;
+        redCardField         = n(inX, ry(r), gi("redCardThreshold", -60), "低于此分触发红牌");          l(Math.max(cx - 200, 5), ry(r), "红牌阈值"); r++;
+        scoreRecoveryField   = n(inX, ry(r), gi("scoreRecoveryPerInterval", 5), "每周期自动恢复分数");  l(Math.max(cx - 200, 5), ry(r), "每周期恢复"); r++;
+        approvalTimeoutField = n(inX, ry(r), gi("approvalTimeoutMinutes", 10), "踢出审批超时(分)");     l(Math.max(cx - 200, 5), ry(r), "审批超时(分)"); r++;
 
-        addLabel(leftX, sy + rowH * 11, 120, "严格模式");
-        strictBtn = mkToggle(inX + fieldW + 5, sy + rowH * 11, getBool("strictMode", false));
+        // ── 提示词 ──
+        l(inX, ry(r), "§e=== 提示词 ==="); r++;
+        sysPromptPathField    = f(inX, ry(r), kw, gs("systemPromptPath", ""), "AI提示词文件(空=内置)");   l(Math.max(cx - 200, 5), ry(r), "AI 提示词"); r++;
+        reviewPromptPathField = f(inX, ry(r), kw, gs("reviewPromptPath", ""), "审查提示词文件(空=内置)"); l(Math.max(cx - 200, 5), ry(r), "审查提示词"); r++;
 
-        sysPromptPathField = mkField(inX, sy + rowH * 12, keyW, get("systemPromptPath", ""), "AI提示词文件(空=内置)");
-        reviewPromptPathField = mkField(inX, sy + rowH * 13, keyW, get("reviewPromptPath", ""), "审查提示词文件(空=内置)");
-
-        addLabel(leftX, sy + rowH * 12, 120, "AI 提示词路径");
-        addLabel(leftX, sy + rowH * 13, 120, "审查提示词路径");
-
+        // ── 底部按钮 ──
         statusWidget = new StringWidget(0, height - 25, width, 20, Component.literal(""), font);
         addRenderableWidget(statusWidget);
-
-        int by = sy + rowH * 14 + 10;
-        var saveBtn = Button.builder(Component.literal("§a保存并关闭"), b -> save())
-                .bounds(cx - 105, by, 100, 20).build();
-        saveBtn.setTooltip(Tooltip.create(Component.literal("§7保存后需手动执行 /aireload")));
-        addRenderableWidget(saveBtn);
+        int by = height - 25;
+        addRenderableWidget(Button.builder(Component.literal("§a保存并关闭"), b -> save())
+                .bounds(cx - 105, by, 100, 20).build());
         addRenderableWidget(Button.builder(Component.literal("§7取消"), b -> onClose())
                 .bounds(cx + 5, by, 100, 20).build());
     }
 
-    private void addLabel(int x, int y, int w, String text) {
+    private void l(int x, int y, String text) { addRenderableWidget(new StringWidget(x, y, 150, 20, Component.literal(text), font)); }
+    private EditBox f(int x, int y, int w, String val, String tip) {
+        EditBox e = new EditBox(font, x, y, w, 20, Component.literal(""));
+        e.setMaxLength(1024); e.setValue(val);
+        e.setTooltip(Tooltip.create(Component.literal(tip)));
+        addRenderableWidget(e); return e;
+    }
+    private EditBox n(int x, int y, int val, String tip) {
+        EditBox e = new EditBox(font, x, y, 80, 20, Component.literal(""));
+        e.setMaxLength(12); e.setValue(String.valueOf(val));
+        e.setTooltip(Tooltip.create(Component.literal(tip)));
+        addRenderableWidget(e); return e;
+    }
+    private void t(int x, int y, int w, String text) {
         addRenderableWidget(new StringWidget(x, y, w, 20, Component.literal(text), font));
     }
-
-    private EditBox mkField(int x, int y, int w, String val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, w, 20, Component.literal(""));
-        f.setMaxLength(1024);
-        f.setValue(val);
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
-        return f;
-    }
-
-    private EditBox mkNumField(int x, int y, int val, String tooltip) {
-        EditBox f = new EditBox(font, x, y, 80, 20, Component.literal(""));
-        f.setMaxLength(8);
-        f.setValue(String.valueOf(val));
-        f.setTooltip(Tooltip.create(Component.literal(tooltip)));
-        addRenderableWidget(f);
-        return f;
-    }
-
-    private Button mkToggle(int x, int y, boolean initial) {
-        Button b = Button.builder(
-                Component.literal(initial ? "§a开启" : "§c关闭"), btn -> {
-                    boolean now = btn.getMessage().getString().contains("开启");
-                    btn.setMessage(Component.literal(now ? "§c关闭" : "§a开启"));
-                })
-                .bounds(x, y, 60, 20).build();
-        addRenderableWidget(b);
-        return b;
+    private void tg(int inX, int fw, int row, String label, boolean initial, Consumer<Button> setter) {
+        int x = inX + fw + 5; int y = ry(row);
+        l(Math.max(x - 200, 5), y, label);
+        Button btn = Button.builder(Component.literal(initial ? "§a开启" : "§c关闭"), b -> {
+            b.setMessage(Component.literal(b.getMessage().getString().contains("开启") ? "§c关闭" : "§a开启"));
+        }).bounds(x, y, 60, 20).build();
+        addRenderableWidget(btn); setter.accept(btn);
     }
 
     private void save() {
         try {
             Files.createDirectories(configPath.getParent());
-            JsonObject o;
-            if (Files.exists(configPath)) {
-                try (Reader r = Files.newBufferedReader(configPath)) {
-                    o = GSON.fromJson(r, JsonObject.class);
-                } catch (Exception e) {
-                    o = new JsonObject();
-                }
-            } else {
-                o = new JsonObject();
-            }
-
+            JsonObject o = Files.exists(configPath)
+                    ? GSON.fromJson(Files.newBufferedReader(configPath), JsonObject.class) : new JsonObject();
+            if (o == null) o = new JsonObject();
             o.addProperty("apiEndpoint", apiEndpointField.getValue());
             o.addProperty("apiKey", apiKeyField.getValue());
             o.addProperty("model", modelField.getValue());
             o.addProperty("triggerPrefix", prefixField.getValue());
-            o.addProperty("maxTokens", parseInt(maxTokensField.getValue(), 1024));
-            o.addProperty("temperature", parseInt(tempField.getValue(), 70) / 100.0);
-            o.addProperty("contextMaxChars", parseInt(ctxField.getValue(), 20000));
-            o.addProperty("thinkingLevel", parseInt(thinkingField.getValue(), 0));
-            o.addProperty("maxToolCalls", parseInt(toolCallsField.getValue(), 5));
+            o.addProperty("maxTokens", pi(maxTokensField.getValue(), 2048));
+            o.addProperty("temperature", pi(tempField.getValue(), 75) / 100.0);
+            o.addProperty("contextMaxChars", pi(ctxField.getValue(), 20000));
+            o.addProperty("thinkingLevel", pi(thinkingField.getValue(), 1));
+            o.addProperty("maxToolCalls", pi(toolCallsField.getValue(), 15));
             o.addProperty("enableChatInterception", chatBtn.getMessage().getString().contains("开启"));
             o.addProperty("enableCommandExecution", cmdBtn.getMessage().getString().contains("开启"));
             o.addProperty("strictMode", strictBtn.getMessage().getString().contains("开启"));
+            o.addProperty("enableAutoReview", autoReviewBtn.getMessage().getString().contains("开启"));
+            o.addProperty("reviewIntervalMinutes", pi(reviewIntervalField.getValue(), 30));
+            o.addProperty("yellowCardThreshold", pi(yellowCardField.getValue(), -30));
+            o.addProperty("redCardThreshold", pi(redCardField.getValue(), -60));
+            o.addProperty("scoreRecoveryPerInterval", pi(scoreRecoveryField.getValue(), 5));
+            o.addProperty("approvalTimeoutMinutes", pi(approvalTimeoutField.getValue(), 10));
             o.addProperty("systemPromptPath", sysPromptPathField.getValue());
             o.addProperty("reviewPromptPath", reviewPromptPathField.getValue());
-
-            try (Writer w = Files.newBufferedWriter(configPath)) {
-                GSON.toJson(o, w);
-            }
-            if (statusWidget != null) statusWidget.setMessage(Component.literal("§a✓ 已保存"));
-            statusTimer = 100;
+            try (Writer w = Files.newBufferedWriter(configPath)) { GSON.toJson(o, w); }
+            statusWidget.setMessage(Component.literal("§a✓ 已保存"));
             minecraft.setScreen(parent);
         } catch (IOException e) {
-            if (statusWidget != null) statusWidget.setMessage(Component.literal("§c保存失败: " + e.getMessage()));
-            statusTimer = 200;
+            statusWidget.setMessage(Component.literal("§c保存失败: " + e.getMessage()));
         }
     }
 
-    private int parseInt(String s, int def) {
-        try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; }
+    private int pi(String s, int def) { try { return Integer.parseInt(s.trim()); } catch (Exception e) { return def; } }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        int totalH = 28 * ROW_H; // enough for all rows
+        int visibleH = height - 50;
+        double maxS = Math.max(0, totalH - visibleH);
+        scrollOffset = Math.clamp(scrollOffset - scrollY * ROW_H * 2, 0, maxS);
+        rebuildWidgets();
+        return true;
     }
 
     @Override
-    public void tick() {
-        if (statusTimer > 0) statusTimer--;
-    }
-
-    @Override
-    public void onClose() {
-        if (minecraft != null) minecraft.setScreen(parent);
-    }
+    public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
 }

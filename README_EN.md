@@ -1,8 +1,8 @@
-﻿# MCAI - Minecraft AI Assistant
+# MCAI - Minecraft AI Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Fabric](https://img.shields.io/badge/Fabric-26.1.2-blue.svg)](https://fabricmc.net/)
-[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.java.com/)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/technologies/downloads/)
 
 > [中文版本](README.md)
 
@@ -33,7 +33,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 
 ### Auto Behavior Review
 - AI analyzes chat every 30 minutes
-- Three-tier penalty: score deduction → yellow card → red card (kick)
+- Three-tier penalty: score deduction -> yellow card -> red card (kick)
 - Admin messages are trusted; admins can declare server rules
 
 ### Admin Approval
@@ -51,7 +51,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 
 ### Requirements
 - Minecraft **Fabric server 26.1.2**
-- [Java](https://www.java.com/) 25
+- [Java](https://www.oracle.com/java/technologies/downloads/) 25
 - A [DeepSeek API Key](https://platform.deepseek.com) (or any OpenAI-compatible API)
 
 ### Steps
@@ -60,6 +60,18 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 3. Start the server to auto-generate config
 4. Edit `config/mcai/config.json`, fill in your API Key
 5. Run `/aireload` to reload config
+### Single-Player Usage
+
+The mod works in **single-player** too (no dedicated server required):
+
+1. Install **Fabric client** (same version 26.1.2 as the server)
+2. Place the JAR in `.minecraft/mods/` folder
+3. Launch the game and enter a single-player world
+4. Config and commands are identical to the server setup
+5. You are the world owner with full admin permissions by default
+6. (Optional) Install [Mod Menu](https://modrinth.com/mod/modmenu) for in-game config editing
+
+> Tip: The behavior review system is auto-disabled in single-player (no need to review yourself).
 
 ---
 
@@ -123,7 +135,7 @@ Place .json files in config/mcai/kb/ to extend AI knowledge:
 3. Run /aireload
 
 See [kb/README.md](kb/README.md) for available files and licenses.
-DIY scraper: [	ools/wiki_to_kb.py](tools/wiki_to_kb.py).
+DIY scraper: [tools/wiki_to_kb.py](tools/wiki_to_kb.py).
 
 ## Build
 

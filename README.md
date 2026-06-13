@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
 
 <img src="src/main/resources/assets/mcai/icon.png" width="128" alt="MCAI Logo">
 
@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Fabric](https://img.shields.io/badge/Fabric-26.1.2-blue.svg)](https://fabricmc.net/)
-[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.java.com/)
+[![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/technologies/downloads/)
 
 </div>
 
@@ -39,7 +39,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 ### 自动行为审查
 - AI 每 30 分钟自动检查聊天记录
-- 三级处罚：扣分 → 黄牌警告 → 红牌踢出
+- 三级处罚：扣分 -> 黄牌警告 -> 红牌踢出
 
 ### 安全审批
 - 危险命令需要管理员手动批准，3 分钟超时自动取消
@@ -55,7 +55,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 ### 你需要准备
 - Minecraft **Fabric 服务端 26.1.2**
-- [Java](https://www.java.com/) 25
+- [Java](https://www.oracle.com/java/technologies/downloads/) 25
 - 一个 [DeepSeek API Key](https://platform.deepseek.com)
 
 ### 安装步骤
@@ -64,6 +64,18 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 3. 启动服务端，自动生成配置
 4. 编辑 `config/mcai/config.json`，填入 API Key
 5. 执行 `/aireload` 重载
+### 单人游戏使用
+
+模组同样支持**单人游戏**（无需专用服务端）：
+
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.1.2）
+2. 将 JAR 放入 `.minecraft/mods/` 文件夹
+3. 启动游戏，进入单人世界
+4. 配置文件和命令与服务端完全一致
+5. 你是世界 owner，默认拥有所有管理权限
+6. （可选）安装 [Mod Menu](https://modrinth.com/mod/modmenu) 可在游戏内直接修改配置
+
+> 提示：单人模式下行为审查系统自动关闭（单人无需审查）。
 
 ---
 

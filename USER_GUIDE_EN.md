@@ -1,4 +1,4 @@
-﻿# MCAI - Server Admin Guide (English)
+# MCAI - Server Admin Guide (English)
 
 > [中文版本](USER_GUIDE.md)
 
@@ -16,6 +16,18 @@
 2. Start server once to auto-generate config
 3. Edit `config/mcai/config.json`, fill in your API Key
 4. Run `/aireload` to reload
+### Single-Player
+
+The mod works in **single-player** too - no dedicated server needed:
+
+1. Install **Fabric client** (same version 26.1.2 as the server)
+2. Place the JAR in `.minecraft/mods/` folder
+3. Launch the game and enter a single-player world
+4. Config auto-generated at `config/mcai/config.json` (game root directory)
+5. All commands are available; you are the world owner with full permissions
+6. (Optional) Install [Mod Menu](https://modrinth.com/mod/modmenu) for in-game config editing
+
+> Note: The behavior review system is auto-disabled in single-player, and `/aicheck` no longer works.
 
 ```json
 {
@@ -82,16 +94,16 @@
 | Tier | Condition | Effect |
 |------|----------|--------|
 | Score | severity -10 | Score only, no broadcast |
-| Yellow | severity -20 or ≤ -30 | Broadcast warning |
-| Red | severity -30 or ≤ -60 | Broadcast + kick (admin approval) |
+| Yellow | severity -20 or <= -30 | Broadcast warning |
+| Red | severity -30 or <= -60 | Broadcast + kick (admin approval) |
 
 ### Score Recovery
 - Online non-admin players recover **5 points** per review cycle
 - Caps at **0**
 
 ### Evidence Standard
-- Multiple reports → sufficient evidence
-- Single report without corroboration → no penalty
+- Multiple reports -> sufficient evidence
+- Single report without corroboration -> no penalty
 - Admin statements override all claims
 
 ---

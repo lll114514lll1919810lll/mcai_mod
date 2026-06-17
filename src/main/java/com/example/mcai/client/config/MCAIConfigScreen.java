@@ -187,6 +187,10 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("systemPromptPath", sysPromptPathField.getValue());
             o.addProperty("reviewPromptPath", reviewPromptPathField.getValue());
             try (Writer w = Files.newBufferedWriter(configPath)) { GSON.toJson(o, w); }
+            // 通知服务器重载配置
+            if (minecraft != null && minecraft.player != null) {
+                minecraft.player.connection.sendCommand("aireload");
+            }
             statusWidget.setMessage(Component.translatable("mcai.config.saved"));
             minecraft.setScreen(parent);
         } catch (IOException e) {

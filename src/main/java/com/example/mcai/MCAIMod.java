@@ -18,6 +18,10 @@ import com.example.mcai.behavior.ChatReviewSystem;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 
+import java.nio.file.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class MCAIMod implements ModInitializer {
     public static final String MOD_ID = "mcai";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -37,6 +41,8 @@ public class MCAIMod implements ModInitializer {
     private volatile ChatReviewSystem chatReviewSystem;
     private volatile MinecraftServer server;
     private CommandDispatcher<CommandSourceStack> commandDispatcher;
+    private WatchService configWatcher;
+    private ScheduledExecutorService watcherScheduler;
 
     @Override
     public void onInitialize() {
@@ -93,13 +99,68 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
             if (chatReviewSystem != null) chatReviewSystem.stop();
             if (behaviorTracker != null) behaviorTracker.save();
+            if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
+            if (watcherScheduler != null) watcherScheduler.shutdownNow();
         });
 
         chatHandler.registerChatInterceptor();
+        startConfigWatcher();
 
         LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, KB: {} chunks",
                 config.getTriggerPrefix(), config.getApiEndpoint(),
                 knowledgeBase.size());
+    }
+
+    /** 启动配置文件监视器，自动热重载 */
+    private void startConfigWatcher() {
+        Path configDir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mcai");
+        try {
+            Files.createDirectories(configDir);
+            configWatcher = FileSystems.getDefault().newWatchService();
+            configDir.register(configWatcher, StandardWatchEventKinds.ENTRY_MODIFY);
+
+            AtomicLong lastReload = new AtomicLong(0);
+            watcherScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "MCAI-ConfigWatcher");
+                t.setDaemon(true);
+                return t;
+            });
+            watcherScheduler.execute(() -> {
+                while (true) {
+                    try {
+                        WatchKey key = configWatcher.take();
+                        for (WatchEvent<?> event : key.pollEvents()) {
+                            String fileName = ((Path) event.context()).toString();
+                            if ("config.json".equals(fileName)) {
+                                long now = System.currentTimeMillis();
+                                // 防抖：2秒内不重复重载
+                                if (now - lastReload.get() < 2000) continue;
+                                lastReload.set(now);
+                                LOGGER.info("Config file changed, auto-reloading...");
+                                // 延迟 500ms 确保文件写入完成
+                                watcherScheduler.schedule(() -> {
+                                    try {
+                                        if (server != null) {
+                                            server.execute(() -> reloadConfig());
+                                        }
+                                    } catch (Exception e) {
+                                        LOGGER.error("Auto-reload failed", e);
+                                    }
+                                }, 500, TimeUnit.MILLISECONDS);
+                            }
+                        }
+                        key.reset();
+                    } catch (InterruptedException e) {
+                        break;
+                    } catch (Exception e) {
+                        LOGGER.error("Config watcher error", e);
+                    }
+                }
+            });
+            LOGGER.info("Config file watcher enabled for {}", configDir);
+        } catch (Exception e) {
+            LOGGER.warn("Failed to start config watcher: {}", e.getMessage());
+        }
     }
 
     public static MCAIMod getInstance() { return instance; }

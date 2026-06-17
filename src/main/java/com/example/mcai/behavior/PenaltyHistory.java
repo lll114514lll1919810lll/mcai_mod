@@ -13,10 +13,11 @@ public class PenaltyHistory {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-Penalty");
     private static final Gson GSON = new GsonBuilder().create();
     private static final Path PENALTY_FILE = FabricLoader.getInstance().getConfigDir().resolve("mcai/penalties.json");
-    private final ModConfig config;
     private final AtomicInteger currentReviewCycle = new AtomicInteger(0);
     private final LinkedList<PenaltyEvent> recentPenalties = new LinkedList<>();
+    private ModConfig config;
     public PenaltyHistory(ModConfig config) { this.config = config; load(); }
+    public void reloadConfig(ModConfig newConfig) { this.config = newConfig; }
     public int getCurrentCycle() { return currentReviewCycle.get(); }
     public int advanceCycle() { return currentReviewCycle.incrementAndGet(); }
     public void addEvent(PenaltyEvent event) { synchronized (recentPenalties) { recentPenalties.addLast(event); } }

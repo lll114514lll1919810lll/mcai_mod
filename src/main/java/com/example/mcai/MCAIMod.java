@@ -121,17 +121,9 @@ public class MCAIMod implements ModInitializer {
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
         if (chatReviewSystem != null) {
-            chatReviewSystem.stop();
-            behaviorTracker = new PlayerBehaviorTracker(config);
-            chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
-            if (commandDispatcher != null) {
-                commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
-            }
-            if (config.isEnableAutoReview() && this.server != null && this.server.isDedicatedServer()) {
-                chatReviewSystem.start();
-            }
+            chatReviewSystem.reloadConfig(config);
         }
-        LOGGER.info("MCAI config reloaded, KB: {} chunks",
+        LOGGER.info("MCAI config reloaded, KB: {} chunks (history preserved)",
                 knowledgeBase.size());
     }
 }

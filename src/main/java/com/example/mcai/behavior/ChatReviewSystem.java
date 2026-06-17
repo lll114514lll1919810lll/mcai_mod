@@ -58,6 +58,18 @@ public class ChatReviewSystem {
         LOGGER.info("Auto review started, interval={}min", interval);
     }
 
+    /** 热重载配置：更新配置引用，仅在间隔变化时重新调度 */
+    public void reloadConfig(com.example.mcai.config.ModConfig newConfig) {
+        penaltyHistory.reloadConfig(newConfig);
+        int newInterval = newConfig.getReviewIntervalMinutes();
+        if (scheduledReview != null && !scheduledReview.isCancelled()) {
+            scheduledReview.cancel(false);
+            scheduledReview = reviewScheduler.scheduleAtFixedRate(
+                    this::runReview, newInterval, newInterval, TimeUnit.MINUTES);
+        }
+        LOGGER.info("Review system config reloaded, interval={}min", newInterval);
+    }
+
     public void stop() {
         if (scheduledReview != null) {
             scheduledReview.cancel(false);

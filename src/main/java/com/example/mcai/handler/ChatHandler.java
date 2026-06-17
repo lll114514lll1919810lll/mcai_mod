@@ -205,6 +205,6 @@ public class ChatHandler {
 
     public void clearHistory(UUID playerId) { history.remove(playerId); }
     public void clearAllHistory() { history.clear(); }
-    public void reloadAll() { mod.reloadConfig(); history.clear(); cmdExec.clearAll(); chatLog.clear(); }
+    public void reloadAll() { mod.reloadConfig(); }
     private void trimHistoryByChars(LinkedList<OpenAIClient.ChatMessage> h, int maxChars) { while (!h.isEmpty()) { int total = 0; for (var msg : h) { total += msg.content != null ? msg.content.length() : 0; } if (total <= maxChars) break; h.removeFirst(); } }
 }

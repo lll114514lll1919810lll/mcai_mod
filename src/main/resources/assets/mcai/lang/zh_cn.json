@@ -117,7 +117,7 @@
   "mcai.config.cancel": "§7取消",
   "mcai.config.saved": "§a✓ 已保存",
   "mcai.config.save_failed": "§c保存失败: %s",
-  "mcai.config.reload_tip": "§7保存后需手动执行 /aireload",
+  "mcai.config.reload_tip": "§7保存后自动热重载（约2秒生效）",
   "mcai.config.group.api": "§e=== API ===",
   "mcai.config.on": "§a开启",
   "mcai.config.off": "§c关闭",
@@ -144,8 +144,9 @@
   "mcai.config.approval_timeout": "审批超时(分)",
   "mcai.config.sys_prompt_path": "AI提示词文件名",
   "mcai.config.review_prompt_path": "审查提示词文件名",
-  "mcai.config.prompt_language": "提示词语言",
-  "mcai.config.prompt_tooltip": "文件名（放config/mcai/下），空=用内置",
+  "mcai.config.tip.api_endpoint": "DeepSeek 或其他 OpenAI 兼容 API 地址",
+  "mcai.config.tip.api_key": "API 密钥，以明文存储在 config.json 中",
+  "mcai.config.tip.prompt_path": "文件名（放 config/mcai/ 下），空=用内置默认提示词",
 
   "mcai.review.retry_failed": "§c审查AI重试失败: %s",
   "mcai.review.invalid_json": "§c审查AI无法返回有效JSON，跳过本轮审查"

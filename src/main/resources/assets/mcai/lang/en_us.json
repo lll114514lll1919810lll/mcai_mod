@@ -117,7 +117,7 @@
   "mcai.config.cancel": "§7Cancel",
   "mcai.config.saved": "§a✓ Saved",
   "mcai.config.save_failed": "§cSave failed: %s",
-  "mcai.config.reload_tip": "§7Run /aireload after saving",
+  "mcai.config.reload_tip": "§7Auto-reloads after saving (~2s)",
   "mcai.config.group.api": "§e=== API ===",
   "mcai.config.on": "§aOn",
   "mcai.config.off": "§cOff",
@@ -144,8 +144,9 @@
   "mcai.config.approval_timeout": "Approval Timeout (min)",
   "mcai.config.sys_prompt_path": "System Prompt File",
   "mcai.config.review_prompt_path": "Review Prompt File",
-  "mcai.config.prompt_language": "Prompt Language",
-  "mcai.config.prompt_tooltip": "Filename (under config/mcai/), empty=built-in",
+  "mcai.config.tip.api_endpoint": "DeepSeek or other OpenAI-compatible API endpoint",
+  "mcai.config.tip.api_key": "API key, stored in plaintext in config.json",
+  "mcai.config.tip.prompt_path": "Filename (under config/mcai/), empty=default built-in prompt",
 
   "mcai.review.retry_failed": "§cReview AI retry failed: %s",
   "mcai.review.invalid_json": "§cReview AI could not return valid JSON, skipping this cycle"

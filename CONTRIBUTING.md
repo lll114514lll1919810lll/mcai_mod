@@ -13,7 +13,7 @@
 ## 开发环境
 
 ### 前提条件
-- JDK 21 或 25
+- JDK 25
 - Git
 - IDE（推荐 IntelliJ IDEA）
 
@@ -23,12 +23,8 @@
 git clone https://github.com/YOUR_USERNAME/mc.git
 cd mc
 
-# 选择版本
-copy gradle-1.21.properties gradle.properties      # 1.21/1.21.1
-copy gradle-1.21.11.properties gradle.properties    # 1.21.11
-
-# 构建
-.\gradlew.bat jar
+# 构建（需要 JDK 25）
+.\gradlew.bat build
 ```
 
 ### 项目结构
@@ -36,18 +32,33 @@ copy gradle-1.21.11.properties gradle.properties    # 1.21.11
 src/main/java/com/example/mcai/
 ├── MCAIMod.java              - 模组入口
 ├── api/
-│   ├── OpenAIClient.java     - API 调用
-│   └── WikiSearchClient.java - Wiki 搜索
-├── client/
-│   ├── ModMenuIntegration.java - Mod Menu 集成
-│   └── config/
-│       └── MCAIConfigScreen.java - 配置界面
+│   ├── OpenAIClient.java     - DeepSeek API 调用（工具调用）
+│   └── ApiResult.java        - API 响应记录
 ├── config/
-│   └── ModConfig.java        - 配置管理
+│   └── ModConfig.java        - JSON 配置管理
 ├── handler/
-│   └── ChatHandler.java      - 聊天处理
-└── kb/
-    └── KnowledgeBase.java    - 知识库
+│   ├── ChatHandler.java      - 聊天处理（协调器）
+│   ├── ChatLog.java          - 服务器聊天日志
+│   ├── ThinkingAnimation.java - "思考中..." 动画
+│   ├── PlayerContextBuilder.java - 玩家上下文构建
+│   ├── CommandExecutionService.java - 命令执行（需审批）
+│   ├── ToolDispatcher.java   - AI 工具调用路由
+│   └── CommandRegistry.java  - /ai* 命令注册
+├── behavior/
+│   ├── ChatReviewSystem.java - 自动行为审查（30分钟周期）
+│   ├── ReviewEngine.java     - AI 审查处理
+│   ├── ReviewCommandRegistry.java - /aicheck 命令
+│   ├── PlayerBehaviorTracker.java - 玩家行为评分
+│   ├── PenaltyEvent.java     - 处罚记录
+│   ├── PenaltyHistory.java   - 处罚历史
+│   ├── AdminApprovalQueue.java - 踢出审批队列
+│   └── PlayerViolation.java  - 违规记录
+├── kb/
+│   └── KnowledgeBase.java    - Bigram CJK 知识库搜索
+└── client/
+    ├── ModMenuIntegration.java - Mod Menu 集成
+    └── config/
+        └── MCAIConfigScreen.java - 配置界面
 ```
 
 ## 代码规范

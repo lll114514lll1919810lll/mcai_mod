@@ -16,6 +16,8 @@ public class KnowledgeBase {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-KB");
     private static final Gson GSON = new GsonBuilder().create();
     private static final String BUNDLED_PATH = "assets/mcai/kb/zh_wiki.json";
+    private static final int MAX_ENTRIES = 50000;
+    private static final long MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB per file
 
     private List<Entry> entries = List.of();
 
@@ -59,15 +61,35 @@ public class KnowledgeBase {
             try (var files = Files.list(externalDir)) {
                 files.filter(f -> f.toString().endsWith(".json") && !f.getFileName().toString().startsWith("_"))
                         .forEach(f -> {
+                    if (all.size() >= MAX_ENTRIES) {
+                        LOGGER.warn("KB entry limit reached ({}), skipping remaining files", MAX_ENTRIES);
+                        return;
+                    }
+                    try {
+                        long fileSize = Files.size(f);
+                        if (fileSize > MAX_FILE_SIZE_BYTES) {
+                            LOGGER.warn("Skipping oversized KB file: {} ({}MB > {}MB)", f.getFileName(), fileSize / (1024*1024), MAX_FILE_SIZE_BYTES / (1024*1024));
+                            return;
+                        }
+                    } catch (IOException e) {
+                        LOGGER.warn("Failed to check file size: {}", f, e);
+                        return;
+                    }
                     try (Reader r = Files.newBufferedReader(f)) {
                         List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
                         if (list != null) {
+                            int added = 0;
                             for (Entry e : list) {
+                                if (all.size() >= MAX_ENTRIES) {
+                                    LOGGER.warn("KB entry limit reached ({}), stopping", MAX_ENTRIES);
+                                    break;
+                                }
                                 if (seen.add(e.title().toLowerCase(Locale.ROOT))) {
                                     all.add(e);
+                                    added++;
                                 }
                             }
-                            LOGGER.info("Loaded {} external entries from {}", list.size(), f.getFileName());
+                            LOGGER.info("Loaded {} external entries from {}", added, f.getFileName());
                         }
                     } catch (IOException ex) {
                         LOGGER.error("Failed to read {}", f, ex);

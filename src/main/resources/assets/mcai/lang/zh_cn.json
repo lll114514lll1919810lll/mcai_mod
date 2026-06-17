@@ -12,6 +12,8 @@
   "mcai.chat.exception": "§c[AI] 异常: %s",
   "mcai.chat.no_response": "§c[AI] 无响应，请检查控制台日志",
   "mcai.chat.reply.console": "§e[AI回复]\n§f%s",
+  "mcai.chat.cooldown": "§c[AI] 请等待 %d 秒后再试",
+  "mcai.chat.concurrent_limit": "§c[AI] 当前使用AI的玩家过多，请稍后再试",
 
   "mcai.cmd.ai.usage": "§c用法: /ai <消息>",
   "mcai.cmd.ai.broadcast": "§7[§f%s§7]对AI说：§f%s",

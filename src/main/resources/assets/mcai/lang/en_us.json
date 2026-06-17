@@ -12,6 +12,8 @@
   "mcai.chat.exception": "§c[AI] Error: %s",
   "mcai.chat.no_response": "§c[AI] No response, check console log",
   "mcai.chat.reply.console": "§e[AI Reply]\n§f%s",
+  "mcai.chat.cooldown": "§c[AI] Please wait %d seconds before trying again",
+  "mcai.chat.concurrent_limit": "§c[AI] Too many players using AI, please try again later",
 
   "mcai.cmd.ai.usage": "§cUsage: /ai <message>",
   "mcai.cmd.ai.broadcast": "§7[§f%s§7] asked AI: §f%s",

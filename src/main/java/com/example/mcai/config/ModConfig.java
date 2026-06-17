@@ -154,6 +154,12 @@ public class ModConfig {
 
     private int maxReviewCycles = 4;
 
+    // ── 非管理员限频 ──
+    /** 非管理员玩家调用 AI 的冷却时间（秒） */
+    private int aiCooldownSeconds = 60;
+    /** 最多同时调用 AI 的非管理员玩家数 */
+    private int aiMaxConcurrent = 3;
+
     public static ModConfig load() {
         ModConfig config;
         if (Files.exists(CONFIG_PATH)) {
@@ -168,7 +174,34 @@ public class ModConfig {
             config = new ModConfig();
         }
         config.save();
+        config.logSecurityWarnings();
         return config;
+    }
+
+    /** 记录安全警告 */
+    private void logSecurityWarnings() {
+        // #4: API Key 明文存储警告
+        if (apiKey != null && !apiKey.isEmpty()) {
+            LOGGER.warn("[安全] API Key 以明文存储在 config.json 中。请确保配置文件权限为 600，或改用环境变量。");
+        }
+        // #5: Prompt 文件路径穿越警告
+        if (systemPromptPath != null && !systemPromptPath.isEmpty() && systemPromptPath.contains("..")) {
+            LOGGER.warn("[安全] systemPromptPath 包含 '..' 路径穿越字符，可能读取 config/mcai/ 之外的文件。");
+        }
+        if (reviewPromptPath != null && !reviewPromptPath.isEmpty() && reviewPromptPath.contains("..")) {
+            LOGGER.warn("[安全] reviewPromptPath 包含 '..' 路径穿越字符，可能读取 config/mcai/ 之外的文件。");
+        }
+        // #7: SSRF 警告
+        if (apiEndpoint != null && !apiEndpoint.isEmpty()) {
+            String lower = apiEndpoint.toLowerCase();
+            if (lower.startsWith("http://")) {
+                LOGGER.warn("[安全] API 端点使用 HTTP（非 HTTPS），API Key 将以明文传输。建议改用 HTTPS。");
+            }
+            if (lower.contains("localhost") || lower.contains("127.0.0.1") || lower.contains("0.0.0.0")
+                    || lower.contains("169.254.169.254") || lower.contains("[::1]")) {
+                LOGGER.warn("[安全] API 端点指向本地/内网地址，存在 SSRF 风险。仅在可信环境中使用。");
+            }
+        }
     }
 
     /** 获取 AI 聊天提示词。优先加载外部文件，未配置时根据 promptLanguage 使用内置默认。 */
@@ -234,4 +267,6 @@ public class ModConfig {
     public int getScoreRecoveryPerInterval() { return scoreRecoveryPerInterval; }
     public int getApprovalTimeoutMinutes() { return approvalTimeoutMinutes; }
     public boolean isEnableAutoReview() { return enableAutoReview; }
+    public int getAiCooldownSeconds() { return aiCooldownSeconds; }
+    public int getAiMaxConcurrent() { return aiMaxConcurrent; }
 }

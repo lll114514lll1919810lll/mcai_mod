@@ -110,8 +110,14 @@ public class OpenAIClient {
                                    Function<List<ToolCall>, List<String>> toolExecutor) {
         String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";
         int maxTurns = config.getMaxToolCalls();
+        long startTime = System.currentTimeMillis();
+        long totalTimeoutMs = 5 * 60 * 1000L; // 5 minutes total timeout
 
         for (int turn = 0; turn < maxTurns; turn++) {
+            if (System.currentTimeMillis() - startTime > totalTimeoutMs) {
+                LOGGER.warn("Tool call loop timed out after {}ms, forcing final response", totalTimeoutMs);
+                break;
+            }
             JsonObject body = new JsonObject();
             body.addProperty("model", config.getModel());
             body.addProperty("max_tokens", config.getMaxTokens());

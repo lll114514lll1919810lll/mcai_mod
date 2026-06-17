@@ -69,6 +69,4 @@ src/main/java/com/example/mcai/
 
 ## Files That Need Care
 
-- `build.bat` — multi-version build script, still references branch switching (stale, but harmless)
 - `tools/wiki_to_kb.py` — wiki scraper, depends on `requests` and `beautifulsoup4`
-- `CONTRIBUTING.md` — references multi-version setup instructions that are outdated (single branch now)

@@ -97,10 +97,12 @@ public class PlayerBehaviorTracker {
         if (!Files.exists(SCORE_FILE)) return;
         try {
             String json = Files.readString(SCORE_FILE, StandardCharsets.UTF_8);
-            java.util.Map<String, Object> data = GSON.fromJson(json, java.util.Map.class);
+            java.lang.reflect.Type mapType = new TypeToken<java.util.Map<String, Object>>() {}.getType();
+            java.util.Map<String, Object> data = GSON.fromJson(json, mapType);
             if (data == null) return;
             if (data.containsKey("scores")) {
-                java.util.Map<String, Double> rawScores = (java.util.Map<String, Double>) data.get("scores");
+                java.lang.reflect.Type scoreMapType = new TypeToken<java.util.Map<String, Double>>() {}.getType();
+                java.util.Map<String, Double> rawScores = GSON.fromJson(GSON.toJson(data.get("scores")), scoreMapType);
                 if (rawScores != null) {
                     for (var entry : rawScores.entrySet()) {
                         scores.put(UUID.fromString(entry.getKey()), entry.getValue().intValue());
@@ -108,7 +110,8 @@ public class PlayerBehaviorTracker {
                 }
             }
             if (data.containsKey("lastRecoveryTime")) {
-                java.util.Map<String, Double> rawTimes = (java.util.Map<String, Double>) data.get("lastRecoveryTime");
+                java.lang.reflect.Type timeMapType = new TypeToken<java.util.Map<String, Double>>() {}.getType();
+                java.util.Map<String, Double> rawTimes = GSON.fromJson(GSON.toJson(data.get("lastRecoveryTime")), timeMapType);
                 if (rawTimes != null) {
                     for (var entry : rawTimes.entrySet()) {
                         lastRecoveryTime.put(UUID.fromString(entry.getKey()), entry.getValue().longValue());

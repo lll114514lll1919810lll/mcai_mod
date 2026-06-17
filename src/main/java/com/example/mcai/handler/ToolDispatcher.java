@@ -120,7 +120,16 @@ public class ToolDispatcher {
         try { return Boolean.parseBoolean(v.toString()) ? "§a是" : "§c否"; } catch (Exception e) { return v != null ? v.toString() : "?"; }
     }
     private static String parseArg(String json, String key) {
-        try { var obj = GSON.fromJson(json, com.google.gson.JsonObject.class); if (obj.has(key)) return obj.get(key).getAsString(); } catch (Exception ignored) {}
-        return json;
+        try {
+            var obj = GSON.fromJson(json, com.google.gson.JsonObject.class);
+            if (obj != null && obj.has(key)) {
+                var elem = obj.get(key);
+                if (elem.isJsonPrimitive()) return elem.getAsString();
+                return elem.toString();
+            }
+        } catch (Exception e) {
+            MCAIMod.LOGGER.warn("Invalid tool argument JSON: {}", json.length() > 100 ? json.substring(0, 100) + "..." : json);
+        }
+        return "";
     }
 }

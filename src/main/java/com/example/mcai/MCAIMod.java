@@ -23,8 +23,8 @@ public class MCAIMod implements ModInitializer {
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     private static MCAIMod instance;
 
-    private ModConfig config;
-    private OpenAIClient aiClient;
+    private volatile ModConfig config;
+    private volatile OpenAIClient aiClient;
     private ChatLog chatLog;
     private ThinkingAnimation animation;
     private PlayerContextBuilder contextBuilder;
@@ -32,9 +32,9 @@ public class MCAIMod implements ModInitializer {
     private ToolDispatcher toolDispatcher;
     private ChatHandler chatHandler;
     private CommandRegistry cmdReg;
-    private KnowledgeBase knowledgeBase;
-    private PlayerBehaviorTracker behaviorTracker;
-    private ChatReviewSystem chatReviewSystem;
+    private volatile KnowledgeBase knowledgeBase;
+    private volatile PlayerBehaviorTracker behaviorTracker;
+    private volatile ChatReviewSystem chatReviewSystem;
     private volatile MinecraftServer server;
     private CommandDispatcher<CommandSourceStack> commandDispatcher;
 

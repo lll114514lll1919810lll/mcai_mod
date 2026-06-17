@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import com.example.mcai.handler.ChatHandler;
 public class ReviewEngine {
     static final Logger LOGGER = LoggerFactory.getLogger("MCAI-Review");
     private static final Gson GSON = new GsonBuilder().create();
@@ -36,7 +37,7 @@ public class ReviewEngine {
         String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return Component.literal("§e聊天记录为空，跳过审查");
         StringBuilder roster = new StringBuilder("当前在线玩家:\n"); var srv = mod.getServer();
         if (srv != null) { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { roster.append("- ").append(p.getScoreboardName()).append(isAdmin(p, srv) ? " (管理员)" : " (普通玩家)").append("\n"); } }
-        roster.append("\n=== CHAT LOG START ===\n").append(chatSnapshot).append("\n=== CHAT LOG END ===\n");
+        roster.append("\n=== CHAT LOG START ===\n").append(sanitizeChatLog(chatSnapshot)).append("\n=== CHAT LOG END ===\n");
         String pj = penaltyHistory.getJson(); if (!pj.isEmpty()) roster.append("\n").append(pj);
         List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
         messages.add(new OpenAIClient.ChatMessage("system", reviewPrompt)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
@@ -113,7 +114,34 @@ public class ReviewEngine {
     private static boolean isAdmin(ServerPlayer player, MinecraftServer srv) { return srv != null && srv.getPlayerList().isOp(new NameAndId(player.getGameProfile())); }
     private static UUID findPlayerUUID(String name, MinecraftServer srv) { if (srv == null) return null; for (ServerPlayer p : srv.getPlayerList().getPlayers()) { if (p.getScoreboardName().equalsIgnoreCase(name)) return p.getUUID(); } return null; }
     private void saveReviewFiles() {
-        try { Path d = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mcai"); Files.createDirectories(d); if (lastReasoning != null && !lastReasoning.isEmpty()) Files.writeString(d.resolve("review_last_reasoning.txt"), lastReasoning, StandardCharsets.UTF_8); if (lastRawResponse != null && !lastRawResponse.isEmpty()) Files.writeString(d.resolve("review_last_response.txt"), lastRawResponse, StandardCharsets.UTF_8); } catch (Exception e) { LOGGER.warn("Failed to save review files: {}", e.getMessage()); }
+        try {
+            Path d = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mcai");
+            Files.createDirectories(d);
+            if (lastReasoning != null && !lastReasoning.isEmpty()) writeWithSplit(d, "review_last_reasoning.txt", lastReasoning);
+            if (lastRawResponse != null && !lastRawResponse.isEmpty()) writeWithSplit(d, "review_last_response.txt", lastRawResponse);
+        } catch (Exception e) { LOGGER.warn("Failed to save review files: {}", e.getMessage()); }
+    }
+
+    private static final long MAX_FILE_SIZE = 100 * 1024; // 100KB
+
+    private static void writeWithSplit(Path dir, String baseName, String content) throws Exception {
+        byte[] data = content.getBytes(StandardCharsets.UTF_8);
+        if (data.length <= MAX_FILE_SIZE) {
+            Files.writeString(dir.resolve(baseName), content, StandardCharsets.UTF_8);
+            return;
+        }
+        // 拆分写入：baseName -> baseName, baseName.1, baseName.2, ...
+        int part = 0;
+        int offset = 0;
+        while (offset < data.length) {
+            int len = (int) Math.min(MAX_FILE_SIZE, data.length - offset);
+            String chunk = new String(data, offset, len, StandardCharsets.UTF_8);
+            String fileName = part == 0 ? baseName : baseName.replace(".txt", "." + part + ".txt");
+            Files.writeString(dir.resolve(fileName), chunk, StandardCharsets.UTF_8);
+            offset += len;
+            part++;
+        }
+        LOGGER.info("Split {} into {} parts ({}KB total)", baseName, part, data.length / 1024);
     }
     private static List<PlayerViolation> parseViolations(String json) {
         List<PlayerViolation> result = new ArrayList<>();
@@ -132,5 +160,21 @@ public class ReviewEngine {
             JsonObject obj = GSON.fromJson(c, JsonObject.class);
             return obj != null && obj.has("violations");
         } catch (Exception e) { return false; }
+    }
+
+    /** 对聊天记录进行 Prompt Injection 防护：去除控制字符 */
+    private static String sanitizeChatLog(String chatLog) {
+        if (chatLog == null || chatLog.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String line : chatLog.split("\n")) {
+            StringBuilder clean = new StringBuilder();
+            for (int i = 0; i < line.length(); i++) {
+                char c = line.charAt(i);
+                if (c >= 0x20 && c != 0x7F) clean.append(c);
+            }
+            String sanitized = clean.toString().trim();
+            if (!sanitized.isEmpty()) sb.append(sanitized).append("\n");
+        }
+        return sb.toString().trim();
     }
 }

@@ -32,5 +32,4 @@ public class ThinkingAnimation {
             player.connection.send(new ClientboundSetActionBarTextPacket(Component.empty()));
         }
     }
-    public void shutdown() { scheduler.shutdownNow(); }
 }

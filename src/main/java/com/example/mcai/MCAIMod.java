@@ -114,43 +114,56 @@ public class MCAIMod implements ModInitializer {
     /** 启动配置文件监视器，自动热重载 */
     private void startConfigWatcher() {
         Path configDir = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mcai");
+        Path configFile = configDir.resolve("config.json");
         try {
             Files.createDirectories(configDir);
             configWatcher = FileSystems.getDefault().newWatchService();
-            configDir.register(configWatcher, StandardWatchEventKinds.ENTRY_MODIFY);
+            configDir.register(configWatcher,
+                    StandardWatchEventKinds.ENTRY_MODIFY,
+                    StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_DELETE);
 
             AtomicLong lastReload = new AtomicLong(0);
+            AtomicLong lastModified = new AtomicLong(0);
             watcherScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
                 Thread t = new Thread(r, "MCAI-ConfigWatcher");
                 t.setDaemon(true);
                 return t;
             });
+
+            Runnable doReload = () -> {
+                long now = System.currentTimeMillis();
+                if (now - lastReload.get() < 2000) return;
+                lastReload.set(now);
+                LOGGER.info("Config file changed, auto-reloading...");
+                try {
+                    MinecraftServer srv = server;
+                    if (srv != null) {
+                        srv.execute(() -> reloadConfig());
+                    } else {
+                        reloadConfig();
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Auto-reload failed", e);
+                }
+            };
+
+            // WatchService 线程
             watcherScheduler.execute(() -> {
                 while (true) {
                     try {
                         WatchKey key = configWatcher.take();
+                        boolean configChanged = false;
                         for (WatchEvent<?> event : key.pollEvents()) {
                             String fileName = ((Path) event.context()).toString();
                             if ("config.json".equals(fileName)) {
-                                long now = System.currentTimeMillis();
-                                if (now - lastReload.get() < 2000) continue;
-                                lastReload.set(now);
-                                LOGGER.info("Config file changed, auto-reloading...");
-                                watcherScheduler.schedule(() -> {
-                                    try {
-                                        MinecraftServer srv = server;
-                                        if (srv != null) {
-                                            srv.execute(() -> reloadConfig());
-                                        } else {
-                                            reloadConfig();
-                                        }
-                                    } catch (Exception e) {
-                                        LOGGER.error("Auto-reload failed", e);
-                                    }
-                                }, 500, TimeUnit.MILLISECONDS);
+                                configChanged = true;
                             }
                         }
                         key.reset();
+                        if (configChanged) {
+                            watcherScheduler.schedule(doReload, 500, TimeUnit.MILLISECONDS);
+                        }
                     } catch (InterruptedException e) {
                         break;
                     } catch (Exception e) {
@@ -158,6 +171,22 @@ public class MCAIMod implements ModInitializer {
                     }
                 }
             });
+
+            // 兜底轮询线程（每5秒检查文件修改时间）
+            watcherScheduler.scheduleAtFixedRate(() -> {
+                try {
+                    if (Files.exists(configFile)) {
+                        long mtime = Files.getLastModifiedTime(configFile).toMillis();
+                        if (mtime > lastModified.get()) {
+                            lastModified.set(mtime);
+                            if (lastReload.get() > 0) {
+                                doReload.run();
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }, 5, 5, TimeUnit.SECONDS);
+
             LOGGER.info("Config file watcher enabled for {}", configDir);
         } catch (Exception e) {
             LOGGER.warn("Failed to start config watcher: {}", e.getMessage());

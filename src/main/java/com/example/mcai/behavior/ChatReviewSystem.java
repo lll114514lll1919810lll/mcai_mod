@@ -45,7 +45,6 @@ public class ChatReviewSystem {
 
     public MinecraftServer getServer() { return mod.getServer(); }
     public ReviewCommandRegistry getCommandRegistry() { return cmdReg; }
-    public AdminApprovalQueue getApprovalQueue() { return approvalQueue; }
     public PenaltyHistory getPenaltyHistory() { return penaltyHistory; }
 
     public void start() {
@@ -102,10 +101,6 @@ public class ChatReviewSystem {
     }
 
     public Component getLastReviewStatus() { return lastReviewStatus; }
-
-    public void clearPenaltyEvents() {
-        penaltyHistory.clear();
-    }
 
     private void runReview() {
         if (!reviewInProgress.compareAndSet(false, true)) {

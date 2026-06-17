@@ -231,10 +231,6 @@ public class ModConfig {
         cachedReviewPrompt = null;
     }
 
-    public String getSystemPromptPath() { return systemPromptPath; }
-    public String getReviewPromptPath() { return reviewPromptPath; }
-    public String getPromptLanguage() { return promptLanguage; }
-
     public void save() {
         try {
             Files.createDirectories(CONFIG_PATH.getParent());

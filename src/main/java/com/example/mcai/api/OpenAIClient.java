@@ -280,16 +280,7 @@ public class OpenAIClient {
     /**
      * Simple chat call without tool definitions and single-turn.
      * Used for behavior review where no tool execution is needed.
-     * Supports thinking mode if configured.
-     */
-    public ApiResult<String> chatSimple(List<ChatMessage> messages) {
-        var result = chatSimpleFull(messages);
-        if (result.success()) return ApiResult.ok(result.value().content);
-        return ApiResult.err(result.error());
-    }
-
-    /**
-     * Like chatSimple but returns both content and reasoning_content.
+     * Supports thinking mode if configured. Returns both content and reasoning_content.
      */
     public ApiResult<ChatSimpleResult> chatSimpleFull(List<ChatMessage> messages) {
         String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";

@@ -21,7 +21,33 @@ public class KnowledgeBase {
 
     private List<Entry> entries = List.of();
 
-    public record Entry(String title, List<String> keywords, String summary, String content) {}
+    public static class Entry {
+        private final String title;
+        private final List<String> keywords;
+        private final String summary;
+        private final String content;
+        private final String titleLower;
+        private final String keywordsLower;
+        private final String summaryLower;
+
+        public Entry(String title, List<String> keywords, String summary, String content) {
+            this.title = title;
+            this.keywords = keywords;
+            this.summary = summary;
+            this.content = content;
+            this.titleLower = title.toLowerCase(Locale.ROOT);
+            this.keywordsLower = String.join(" ", keywords != null ? keywords : List.of()).toLowerCase(Locale.ROOT);
+            this.summaryLower = summary.toLowerCase(Locale.ROOT);
+        }
+
+        public String title() { return title; }
+        public List<String> keywords() { return keywords; }
+        public String summary() { return summary; }
+        public String content() { return content; }
+        String titleLower() { return titleLower; }
+        String keywordsLower() { return keywordsLower; }
+        String summaryLower() { return summaryLower; }
+    }
 
     public void load(Path externalDir) {
         List<Entry> all = new ArrayList<>();
@@ -185,9 +211,9 @@ public class KnowledgeBase {
     }
 
     private double score(Entry e, String[] tokens) {
-        String title = e.title().toLowerCase(Locale.ROOT);
-        String keywords = String.join(" ", e.keywords() != null ? e.keywords() : List.of()).toLowerCase(Locale.ROOT);
-        String summary = e.summary().toLowerCase(Locale.ROOT);
+        String title = e.titleLower();
+        String keywords = e.keywordsLower();
+        String summary = e.summaryLower();
         double totalWeight = 0;
         for (String t : tokens) {
             boolean inTitle = title.contains(t);

@@ -25,7 +25,6 @@ public class MCAIConfigScreen extends Screen {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final int ROW_H = 22;
     private static final int LABEL_W = 110;
-    private static final int COL2 = 120; // second column start (label + gap)
 
     private final Screen parent;
     private final Path configPath;
@@ -162,9 +161,7 @@ public class MCAIConfigScreen extends Screen {
     private void save() {
         try {
             Files.createDirectories(configPath.getParent());
-            JsonObject o = Files.exists(configPath)
-                    ? GSON.fromJson(Files.newBufferedReader(configPath), JsonObject.class) : new JsonObject();
-            if (o == null) o = new JsonObject();
+            JsonObject o = cfg != null ? cfg : new JsonObject();
             o.addProperty("apiEndpoint", apiEndpointField.getValue());
             o.addProperty("apiKey", apiKeyField.getValue());
             o.addProperty("model", modelField.getValue());

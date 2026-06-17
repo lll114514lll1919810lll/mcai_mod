@@ -98,7 +98,7 @@ public class MCAIMod implements ModInitializer {
 
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
             if (chatReviewSystem != null) chatReviewSystem.stop();
-            if (behaviorTracker != null) behaviorTracker.save();
+            if (behaviorTracker != null) behaviorTracker.saveImmediate();
             if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
             if (watcherScheduler != null) watcherScheduler.shutdownNow();
         });

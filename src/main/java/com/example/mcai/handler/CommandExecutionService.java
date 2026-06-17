@@ -101,7 +101,6 @@ public class CommandExecutionService {
     public List<String> getPendingCommands(UUID playerId) { return pendingCommands.get(playerId); }
     public Map<UUID, List<String>> getAllPendingCommands() { return pendingCommands; }
     public void cleanupPlayer(UUID playerId) { pendingCommands.remove(playerId); pendingFutures.keySet().removeIf(k -> k.startsWith(playerId.toString() + ":")); }
-    public void clearAll() { pendingCommands.clear(); pendingFutures.clear(); }
     private int addPendingCommand(UUID pid, String cmd) { List<String> list = pendingCommands.computeIfAbsent(pid, k -> new CopyOnWriteArrayList<>()); list.add(cmd); return list.size(); }
     private void notifyAdminsPending(ServerPlayer requester, String command, int num, MinecraftServer server) {
         server.execute(() -> {
@@ -112,9 +111,19 @@ public class CommandExecutionService {
             }
         });
     }
-    private boolean isAdminPlayer(ServerPlayer player, MinecraftServer server) { return server != null && server.getPlayerList().isOp(new NameAndId(player.getGameProfile())); }
+    private boolean isAdminPlayer(ServerPlayer player, MinecraftServer server) { return isAdmin(player, server); }
     public static boolean isAdminOrConsole(CommandSourceStack src) {
         ServerPlayer p = src.getPlayer(); if (p == null) return true;
-        MinecraftServer srv = src.getServer(); return srv != null && srv.getPlayerList().isOp(new NameAndId(p.getGameProfile()));
+        return isAdmin(p, src.getServer());
+    }
+    public static boolean isAdmin(ServerPlayer player, MinecraftServer server) {
+        return server != null && server.getPlayerList().isOp(new NameAndId(player.getGameProfile()));
+    }
+    public static ServerPlayer findPlayerByName(String name, MinecraftServer server) {
+        if (server == null) return null;
+        for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+            if (p.getScoreboardName().equalsIgnoreCase(name)) return p;
+        }
+        return null;
     }
 }

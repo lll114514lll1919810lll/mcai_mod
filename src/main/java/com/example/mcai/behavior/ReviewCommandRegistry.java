@@ -36,7 +36,18 @@ public class ReviewCommandRegistry {
     }
     private void executeApprovedAction(AdminApprovalQueue.ApprovalItem item) {
         var server = chatReviewSystem.getServer(); if (server == null) return;
-        server.execute(() -> { ServerPlayer target = server.getPlayerList().getPlayer(item.targetPlayerId); if (target == null) { LOGGER.info("Player {} offline, skipping {}", item.targetPlayerName, item.action); return; } if ("kick".equals(item.action)) { target.connection.disconnect(Component.translatable("mcai.review.kick_msg", item.reason)); LOGGER.info("Kicked {} (approval #{})", item.targetPlayerName, item.id); } });
+        server.execute(() -> {
+            ServerPlayer target = server.getPlayerList().getPlayer(item.targetPlayerId);
+            if (target == null) { LOGGER.info("Player {} offline, skipping {}", item.targetPlayerName, item.action); return; }
+            if ("kick".equals(item.action)) {
+                target.connection.disconnect(Component.translatable("mcai.review.kick_msg", item.reason));
+                LOGGER.info("Kicked {} (approval #{})", item.targetPlayerName, item.id);
+                chatReviewSystem.getPenaltyHistory().addEvent(new PenaltyEvent(
+                        item.targetPlayerName, item.reason, 0, 0,
+                        PenaltyEvent.PenaltyAction.KICK_EXECUTED, item.id,
+                        chatReviewSystem.getPenaltyHistory().getCurrentCycle()));
+            }
+        });
     }
     private int showHelp(CommandSourceStack src) {
         src.sendSuccess(() -> Component.translatable("mcai.cmd.help.title"), false);

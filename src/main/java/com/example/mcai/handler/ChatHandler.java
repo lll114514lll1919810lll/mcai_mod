@@ -17,8 +17,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 public class ChatHandler {
     private final MCAIMod mod;
@@ -75,7 +73,7 @@ public class ChatHandler {
      * 对聊天记录进行 Prompt Injection 防护：
      * 逐行过滤，去除控制字符和注入尝试模式
      */
-    private static String sanitizeChatLogForPrompt(String chatLog) {
+    public static String sanitizeChatLogForPrompt(String chatLog) {
         if (chatLog == null || chatLog.isEmpty()) return "";
         StringBuilder sb = new StringBuilder();
         for (String line : chatLog.split("\n")) {
@@ -119,7 +117,7 @@ public class ChatHandler {
         final String pname = player.getScoreboardName();
 
         // 非管理员限频检查
-        boolean isAdmin = server.getPlayerList().isOp(new net.minecraft.server.players.NameAndId(player.getGameProfile()));
+        boolean isAdmin = CommandExecutionService.isAdmin(player, server);
         if (!isAdmin) {
             int cooldown = mod.getConfig().getAiCooldownSeconds();
             if (cooldown > 0) {
@@ -204,7 +202,13 @@ public class ChatHandler {
     }
 
     public void clearHistory(UUID playerId) { history.remove(playerId); }
-    public void clearAllHistory() { history.clear(); }
     public void reloadAll() { mod.reloadConfig(); }
-    private void trimHistoryByChars(LinkedList<OpenAIClient.ChatMessage> h, int maxChars) { while (!h.isEmpty()) { int total = 0; for (var msg : h) { total += msg.content != null ? msg.content.length() : 0; } if (total <= maxChars) break; h.removeFirst(); } }
+    private void trimHistoryByChars(LinkedList<OpenAIClient.ChatMessage> h, int maxChars) {
+        int total = 0;
+        for (var msg : h) { total += msg.content != null ? msg.content.length() : 0; }
+        while (total > maxChars && !h.isEmpty()) {
+            var removed = h.removeFirst();
+            total -= removed.content != null ? removed.content.length() : 0;
+        }
+    }
 }

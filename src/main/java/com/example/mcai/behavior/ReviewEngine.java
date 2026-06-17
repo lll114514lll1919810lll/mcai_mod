@@ -1,6 +1,7 @@
 package com.example.mcai.behavior;
 import com.example.mcai.MCAIMod;
 import com.example.mcai.api.OpenAIClient;
+import com.example.mcai.handler.CommandExecutionService;
 import com.google.gson.*;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
@@ -37,7 +38,7 @@ public class ReviewEngine {
         String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return Component.literal("§e聊天记录为空，跳过审查");
         StringBuilder roster = new StringBuilder("当前在线玩家:\n"); var srv = mod.getServer();
         if (srv != null) { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { roster.append("- ").append(p.getScoreboardName()).append(isAdmin(p, srv) ? " (管理员)" : " (普通玩家)").append("\n"); } }
-        roster.append("\n=== CHAT LOG START ===\n").append(sanitizeChatLog(chatSnapshot)).append("\n=== CHAT LOG END ===\n");
+        roster.append("\n=== CHAT LOG START ===\n").append(ChatHandler.sanitizeChatLogForPrompt(chatSnapshot)).append("\n=== CHAT LOG END ===\n");
         String pj = penaltyHistory.getJson(); if (!pj.isEmpty()) roster.append("\n").append(pj);
         List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
         messages.add(new OpenAIClient.ChatMessage("system", reviewPrompt)); messages.add(new OpenAIClient.ChatMessage("user", roster.toString()));
@@ -88,12 +89,12 @@ public class ReviewEngine {
             if ("kick".equals(v.suggestedAction) || newScore <= mod.getConfig().getRedCardThreshold()) {
                 long timeoutMs = mod.getConfig().getApprovalTimeoutMinutes() * 60_000L;
                 int aid = approvalQueue.addItem(playerId, v.playerName, "kick", v.description, timeoutMs);
-                broadcast("§c[MCAI] §4玩家 "+v.playerName+" 触发红牌: "+v.description, srv);
-                notifyAdmins("§c[MCAI] §4"+v.playerName+" §c行为分 "+newScore+" 触发红牌踢出 (ID="+aid+")\n§7使用 §e/aicheck approve "+aid+" §7批准 或 §c/aicheck reject "+aid+" §7拒绝\n§7(10分钟无响应自动批准)", srv);
+                broadcast(Component.translatable("mcai.review.kick_broadcast", v.playerName, v.description), srv);
+                notifyAdmins(Component.translatable("mcai.review.admin_notify", v.playerName, newScore, aid, aid, aid), srv);
                 redCardActions.append(v.playerName).append("(").append(aid).append(") ");
                 penaltyHistory.addEvent(new PenaltyEvent(v.playerName, v.description, v.severity, newScore, PenaltyEvent.PenaltyAction.KICK, aid, penaltyHistory.getCurrentCycle()));
             } else if ("warn".equals(v.suggestedAction) || newScore <= mod.getConfig().getYellowCardThreshold()) {
-                broadcast("§c[MCAI] §e⚠ 玩家 "+v.playerName+" 黄牌警告: "+v.description, srv);
+                broadcast(Component.translatable("mcai.review.yellow_broadcast", v.playerName, v.description), srv);
                 penaltyHistory.addEvent(new PenaltyEvent(v.playerName, v.description, v.severity, newScore, PenaltyEvent.PenaltyAction.WARN, -1, penaltyHistory.getCurrentCycle()));
             } else {
                 penaltyHistory.addEvent(new PenaltyEvent(v.playerName, v.description, v.severity, newScore, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
@@ -104,15 +105,15 @@ public class ReviewEngine {
         String status = "§a审查完成，处理 "+violations.size()+" 项违规"; if (redCardActions.length() > 0) status += " §c[红牌: "+redCardActions+"]";
         penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.literal(status);
     }
-    private void broadcast(String msg, MinecraftServer srv) {
-        srv.execute(() -> { srv.getPlayerList().broadcastSystemMessage(Component.literal(msg), false); mod.getChatLog().add("MCAI", msg.replaceAll("§[0-9a-fklmnor]", "").trim()); });
+    private void broadcast(Component msg, MinecraftServer srv) {
+        srv.execute(() -> { srv.getPlayerList().broadcastSystemMessage(msg, false); mod.getChatLog().add("MCAI", msg.getString().replaceAll("§[0-9a-fklmnor]", "").trim()); });
     }
-    private void notifyAdmins(String message, MinecraftServer srv) {
-        srv.execute(() -> { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { if (isAdmin(p, srv)) p.sendSystemMessage(Component.literal(message)); } });
+    private void notifyAdmins(Component message, MinecraftServer srv) {
+        srv.execute(() -> { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { if (isAdmin(p, srv)) p.sendSystemMessage(message); } });
     }
     private int recoverScores() { var srv = mod.getServer(); if (srv == null) return 0; int c = 0; for (ServerPlayer p : srv.getPlayerList().getPlayers()) { if (!isAdmin(p, srv)) { int b = tracker.getScore(p.getUUID()); tracker.tryRecover(p.getUUID()); if (tracker.getScore(p.getUUID()) > b) c++; } } return c; }
-    private static boolean isAdmin(ServerPlayer player, MinecraftServer srv) { return srv != null && srv.getPlayerList().isOp(new NameAndId(player.getGameProfile())); }
-    private static UUID findPlayerUUID(String name, MinecraftServer srv) { if (srv == null) return null; for (ServerPlayer p : srv.getPlayerList().getPlayers()) { if (p.getScoreboardName().equalsIgnoreCase(name)) return p.getUUID(); } return null; }
+    private static boolean isAdmin(ServerPlayer player, MinecraftServer srv) { return CommandExecutionService.isAdmin(player, srv); }
+    private static UUID findPlayerUUID(String name, MinecraftServer srv) { ServerPlayer p = CommandExecutionService.findPlayerByName(name, srv); return p != null ? p.getUUID() : null; }
     private void saveReviewFiles() {
         try {
             Path d = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mcai");
@@ -160,21 +161,5 @@ public class ReviewEngine {
             JsonObject obj = GSON.fromJson(c, JsonObject.class);
             return obj != null && obj.has("violations");
         } catch (Exception e) { return false; }
-    }
-
-    /** 对聊天记录进行 Prompt Injection 防护：去除控制字符 */
-    private static String sanitizeChatLog(String chatLog) {
-        if (chatLog == null || chatLog.isEmpty()) return "";
-        StringBuilder sb = new StringBuilder();
-        for (String line : chatLog.split("\n")) {
-            StringBuilder clean = new StringBuilder();
-            for (int i = 0; i < line.length(); i++) {
-                char c = line.charAt(i);
-                if (c >= 0x20 && c != 0x7F) clean.append(c);
-            }
-            String sanitized = clean.toString().trim();
-            if (!sanitized.isEmpty()) sb.append(sanitized).append("\n");
-        }
-        return sb.toString().trim();
     }
 }

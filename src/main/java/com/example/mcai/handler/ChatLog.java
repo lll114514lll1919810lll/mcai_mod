@@ -6,6 +6,8 @@ import java.util.LinkedList;
 public class ChatLog {
     private static final int MAX_SIZE = 50;
     private final LinkedList<String> log = new LinkedList<>();
+    private volatile String cachedPeek = "";
+    private volatile boolean dirty = true;
     public void add(String name, String message) { add(name, message, false); }
     public void add(String name, String message, boolean isAdmin) {
         synchronized (log) {
@@ -13,8 +15,17 @@ public class ChatLog {
             String prefix = isAdmin ? "[管理员] " : "";
             log.add("[" + time + "] " + prefix + name + ": " + message);
             while (log.size() > MAX_SIZE) log.removeFirst();
+            dirty = true;
         }
     }
-    public String peek() { synchronized (log) { return String.join("\n", log); } }
-    public void clear() { synchronized (log) { log.clear(); } }
+    public String peek() {
+        synchronized (log) {
+            if (dirty) {
+                cachedPeek = String.join("\n", log);
+                dirty = false;
+            }
+            return cachedPeek;
+        }
+    }
+    public void clear() { synchronized (log) { log.clear(); dirty = true; } }
 }

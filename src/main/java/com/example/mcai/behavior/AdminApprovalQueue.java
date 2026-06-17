@@ -103,13 +103,8 @@ public class AdminApprovalQueue {
             if (item.resolved) return false;
             item.resolved = true;
         }
-        // Cancel timeout
         ScheduledFuture<?> t = timeouts.remove(item.id);
         if (t != null) t.cancel(false);
-
-        if (approved) {
-            // Callback is invoked by the caller (not here) so it has full context
-        }
         return true;
     }
 }

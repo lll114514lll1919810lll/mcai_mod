@@ -133,15 +133,16 @@ public class MCAIMod implements ModInitializer {
                             String fileName = ((Path) event.context()).toString();
                             if ("config.json".equals(fileName)) {
                                 long now = System.currentTimeMillis();
-                                // 防抖：2秒内不重复重载
                                 if (now - lastReload.get() < 2000) continue;
                                 lastReload.set(now);
                                 LOGGER.info("Config file changed, auto-reloading...");
-                                // 延迟 500ms 确保文件写入完成
                                 watcherScheduler.schedule(() -> {
                                     try {
-                                        if (server != null) {
-                                            server.execute(() -> reloadConfig());
+                                        MinecraftServer srv = server;
+                                        if (srv != null) {
+                                            srv.execute(() -> reloadConfig());
+                                        } else {
+                                            reloadConfig();
                                         }
                                     } catch (Exception e) {
                                         LOGGER.error("Auto-reload failed", e);

@@ -31,13 +31,13 @@ public class KnowledgeBase {
         private final String summaryLower;
 
         public Entry(String title, List<String> keywords, String summary, String content) {
-            this.title = title;
+            this.title = title != null ? title : "";
             this.keywords = keywords;
-            this.summary = summary;
-            this.content = content;
-            this.titleLower = title.toLowerCase(Locale.ROOT);
+            this.summary = summary != null ? summary : "";
+            this.content = content != null ? content : "";
+            this.titleLower = this.title.toLowerCase(Locale.ROOT);
             this.keywordsLower = String.join(" ", keywords != null ? keywords : List.of()).toLowerCase(Locale.ROOT);
-            this.summaryLower = summary.toLowerCase(Locale.ROOT);
+            this.summaryLower = this.summary.toLowerCase(Locale.ROOT);
         }
 
         public String title() { return title; }
@@ -69,7 +69,7 @@ public class KnowledgeBase {
                     List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
                     if (list != null) {
                         for (Entry e : list) {
-                            if (seen.add(e.title().toLowerCase(Locale.ROOT))) {
+                            if (e.title() != null && seen.add(e.title().toLowerCase(Locale.ROOT))) {
                                 all.add(e);
                             }
                         }
@@ -110,7 +110,7 @@ public class KnowledgeBase {
                                     LOGGER.warn("KB entry limit reached ({}), stopping", MAX_ENTRIES);
                                     break;
                                 }
-                                if (seen.add(e.title().toLowerCase(Locale.ROOT))) {
+                                if (e.title() != null && seen.add(e.title().toLowerCase(Locale.ROOT))) {
                                     all.add(e);
                                     added++;
                                 }

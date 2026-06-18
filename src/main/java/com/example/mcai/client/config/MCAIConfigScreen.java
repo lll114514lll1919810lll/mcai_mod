@@ -226,5 +226,8 @@ public class MCAIConfigScreen extends Screen {
     public boolean shouldCloseOnEsc() { return true; }
 
     @Override
+    public boolean canInterruptWithAnotherScreen() { return true; }
+
+    @Override
     public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
 }

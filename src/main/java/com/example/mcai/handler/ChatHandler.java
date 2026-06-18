@@ -30,6 +30,7 @@ public class ChatHandler {
     private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastAICallTime = new ConcurrentHashMap<>();
     private final AtomicInteger concurrentNonAdminCalls = new AtomicInteger(0);
+    private volatile boolean aiEnabled = true;
 
     public ChatHandler(MCAIMod mod, ChatLog chatLog, ThinkingAnimation animation,
                        PlayerContextBuilder contextBuilder, CommandExecutionService cmdExec,
@@ -43,6 +44,8 @@ public class ChatHandler {
     public MCAIMod getMod() { return mod; }
     public com.example.mcai.behavior.PlayerBehaviorTracker getBehaviorTracker() { return mod.getBehaviorTracker(); }
     public com.example.mcai.config.ModConfig getConfig() { return mod.getConfig(); }
+    public boolean isAIEnabled() { return aiEnabled; }
+    public void setAIEnabled(boolean enabled) { this.aiEnabled = enabled; }
 
     private static ExecutorService newExecutor() {
         return new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
@@ -114,7 +117,19 @@ public class ChatHandler {
                 if (sender == null) return true;
                 String text = message.decoratedContent() != null ? message.decoratedContent().getString() : (message.signedContent() != null ? message.signedContent() : "");
                 String prefix = mod.getConfig().getTriggerPrefix();
-                if (text.startsWith(prefix)) { String query = text.substring(prefix.length()).trim(); if (!query.isEmpty()) { var server = mod.getServer(); if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.ai.broadcast", sender.getScoreboardName(), query), false); handleAIQuery(sender, query); } return false; }
+                if (text.startsWith(prefix)) {
+                    String query = text.substring(prefix.length()).trim();
+                    if (!query.isEmpty()) {
+                        if (!aiEnabled) {
+                            sender.sendSystemMessage(Component.translatable("mcai.chat.disabled"));
+                            return false;
+                        }
+                        var server = mod.getServer();
+                        if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.ai.broadcast", sender.getScoreboardName(), query), false);
+                        handleAIQuery(sender, query);
+                    }
+                    return false;
+                }
                 return true;
             });
             ServerMessageEvents.GAME_MESSAGE.register((srv, msg, overlay) -> {

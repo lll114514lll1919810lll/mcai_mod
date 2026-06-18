@@ -41,6 +41,11 @@
   "mcai.cmd.score.no_console": "§c控制台无行为分",
   "mcai.cmd.reload.done": "§a[AI] 已重载，所有状态已清空",
   "mcai.cmd.kill.done": "§e[AI] 已销毁所有 AI 线程，丢弃 %d 个任务",
+  "mcai.cmd.on.done": "§a[AI] 已启用全服 AI 功能",
+  "mcai.cmd.on.broadcast": "§a[AI] AI 功能已启用",
+  "mcai.cmd.off.done": "§c[AI] 已禁用全服 AI 功能",
+  "mcai.cmd.off.broadcast": "§c[AI] AI 功能已禁用",
+  "mcai.chat.disabled": "§c[AI] AI 功能当前已禁用",
   "mcai.cmd.player_offline": "§c玩家不在线: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

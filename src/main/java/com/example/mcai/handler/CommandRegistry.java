@@ -31,6 +31,7 @@ public class CommandRegistry {
     }
     public LiteralArgumentBuilder<CommandSourceStack> createAICommand() {
         return Commands.literal("ai").then(Commands.argument("message", StringArgumentType.greedyString()).executes(ctx -> {
+            if (!chatHandler.isAIEnabled()) { ctx.getSource().sendFailure(Component.translatable("mcai.chat.disabled")); return 0; }
             ServerPlayer player = ctx.getSource().getPlayer(); String msg = StringArgumentType.getString(ctx, "message");
             if (player != null) {
                 var server = chatHandler.getServer();
@@ -121,6 +122,24 @@ public class CommandRegistry {
         return Commands.literal("aikill").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
             int discarded = chatHandler.killAIThreads();
             ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.kill.done", discarded), true); return 1;
+        });
+    }
+    public LiteralArgumentBuilder<CommandSourceStack> createOnCommand() {
+        return Commands.literal("aion").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
+            chatHandler.setAIEnabled(true);
+            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.on.done"), true);
+            var srv = chatHandler.getServer();
+            if (srv != null) srv.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.on.broadcast"), false);
+            return 1;
+        });
+    }
+    public LiteralArgumentBuilder<CommandSourceStack> createOffCommand() {
+        return Commands.literal("aioff").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
+            chatHandler.setAIEnabled(false);
+            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.off.done"), true);
+            var srv = chatHandler.getServer();
+            if (srv != null) srv.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.off.broadcast"), false);
+            return 1;
         });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {

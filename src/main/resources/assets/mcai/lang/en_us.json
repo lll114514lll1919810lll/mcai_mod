@@ -41,6 +41,11 @@
   "mcai.cmd.score.no_console": "§cConsole has no score",
   "mcai.cmd.reload.done": "§a[AI] Reloaded, all state cleared",
   "mcai.cmd.kill.done": "§e[AI] All AI threads killed, %d tasks discarded",
+  "mcai.cmd.on.done": "§a[AI] Server-wide AI enabled",
+  "mcai.cmd.on.broadcast": "§a[AI] AI has been enabled",
+  "mcai.cmd.off.done": "§c[AI] Server-wide AI disabled",
+  "mcai.cmd.off.broadcast": "§c[AI] AI has been disabled",
+  "mcai.chat.disabled": "§c[AI] AI is currently disabled",
   "mcai.cmd.player_offline": "§cPlayer not online: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

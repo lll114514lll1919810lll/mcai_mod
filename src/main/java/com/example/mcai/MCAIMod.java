@@ -76,6 +76,8 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(cmdReg.createClearCommand());
             dispatcher.register(cmdReg.createReloadCommand());
             dispatcher.register(cmdReg.createKillCommand());
+            dispatcher.register(cmdReg.createOnCommand());
+            dispatcher.register(cmdReg.createOffCommand());
             dispatcher.register(cmdReg.createScoreCommand());
             dispatcher.register(cmdReg.createTestCommand());
         });

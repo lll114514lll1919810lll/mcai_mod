@@ -120,6 +120,9 @@ public class MCAIConfigScreen extends Screen {
                 .tooltip(Tooltip.create(Component.translatable("mcai.config.reload_tip"))).build());
         addRenderableWidget(Button.builder(Component.translatable("mcai.config.cancel"), b -> onClose())
                 .bounds(cx + 5, by, 100, 20).build());
+        // 右上角关闭按钮
+        addRenderableWidget(Button.builder(Component.literal("✕"), b -> onClose())
+                .bounds(width - 30, 5, 25, 20).build());
     }
 
     private void addRow(int lx, int inX, int row, String key, EditBox field) {
@@ -208,6 +211,15 @@ public class MCAIConfigScreen extends Screen {
         scrollOffset = Math.clamp(scrollOffset - scrollY * ROW_H * 2, 0, maxS);
         rebuildWidgets();
         return true;
+    }
+
+    @Override
+    public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+        if (event.key() == 256) { // GLFW.GLFW_KEY_ESCAPE
+            onClose();
+            return true;
+        }
+        return super.keyPressed(event);
     }
 
     @Override

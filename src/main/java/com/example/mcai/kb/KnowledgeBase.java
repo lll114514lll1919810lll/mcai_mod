@@ -166,7 +166,7 @@ public class KnowledgeBase {
     }
 
     public String read(String title) {
-        if (title.isBlank()) return "标题为空";
+        if (title == null || title.isBlank()) return "标题为空";
         return readLocal(title);
     }
 
@@ -201,6 +201,7 @@ public class KnowledgeBase {
         if (!isLoaded()) return "[本地] 知识库未加载";
         String t = title.trim().toLowerCase(Locale.ROOT);
         for (Entry e : entries) {
+            if (e.title() == null) continue;
             if (e.title().toLowerCase(Locale.ROOT).equals(t)
                     || e.title().toLowerCase(Locale.ROOT).contains(t)
                     || t.contains(e.title().toLowerCase(Locale.ROOT))) {
@@ -211,9 +212,9 @@ public class KnowledgeBase {
     }
 
     private double score(Entry e, String[] tokens) {
-        String title = e.titleLower();
-        String keywords = e.keywordsLower();
-        String summary = e.summaryLower();
+        String title = e.titleLower() != null ? e.titleLower() : "";
+        String keywords = e.keywordsLower() != null ? e.keywordsLower() : "";
+        String summary = e.summaryLower() != null ? e.summaryLower() : "";
         double totalWeight = 0;
         for (String t : tokens) {
             boolean inTitle = title.contains(t);

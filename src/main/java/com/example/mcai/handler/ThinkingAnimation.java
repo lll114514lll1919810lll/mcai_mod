@@ -15,13 +15,14 @@ public class ThinkingAnimation {
         UUID id = player.getUUID(); stop(id);
         ScheduledFuture<?> f = scheduler.scheduleAtFixedRate(() -> {
             if (server == null || player.isRemoved()) { stop(id); return; }
-            String bar = switch ((int)(System.currentTimeMillis() / 400) % 4) {
-                case 0 -> "§7▌§8▌▌ §eAI 思考中...";
-                case 1 -> "§7▌▌§8▌ §eAI 思考中...";
-                case 2 -> "§7▌▌▌ §eAI 思考中...";
-                default -> "§8▌▌▌ §7AI 思考中...";
+            String dots = switch ((int)(System.currentTimeMillis() / 400) % 4) {
+                case 0 -> "§7▌§8▌▌ §e";
+                case 1 -> "§7▌▌§8▌ §e";
+                case 2 -> "§7▌▌▌ §e";
+                default -> "§8▌▌▌ §7";
             };
-            server.execute(() -> { if (player.connection != null && !player.isRemoved()) player.connection.send(new ClientboundSetActionBarTextPacket(Component.literal(bar))); });
+            Component bar = Component.literal(dots).append(Component.translatable("mcai.chat.thinking_bar"));
+            server.execute(() -> { if (player.connection != null && !player.isRemoved()) player.connection.send(new ClientboundSetActionBarTextPacket(bar)); });
         }, 0, 400, TimeUnit.MILLISECONDS);
         active.put(id, f);
     }

@@ -15,7 +15,7 @@
 1. 下载 `mcai-<version>.jar` 放入 `mods/` 目录
 2. 启动一次服务器，自动在 `config/mcai/config.json` 生成默认配置
 3. 编辑 `config/mcai/config.json`，填入你的 API Key
-4. 执行 `/aireload` 重载
+4. 配置自动热重载生效（也可手动 `/aireload`）
 ### 单人游戏
 
 模组同样支持**单人游戏**，无需专用服务端：
@@ -56,7 +56,7 @@
 | `/aireject <编号>` | 拒绝待审批指令 |
 | `/aiquery` | 查看待审批列表 |
 | `/aiclear` | 清除对话历史 |
-| `/aireload` | 重载配置（清空状态） |
+| `/aireload` | 手动重载配置（文件修改后自动重载，此命令会清空状态） |
 | `/aikb <关键词>` | 搜索知识库 |
 
 ### 审查系统
@@ -122,7 +122,7 @@
 
 ## 完整配置项
 
-文件：`config/mcai/config.json`，修改后 `/aireload` 重载。
+文件：`config/mcai/config.json`，修改后自动热重载（也可手动 `/aireload`）。
 
 | 字段 | 默认值 | 说明 |
 |------|--------|------|
@@ -134,6 +134,8 @@
 | `temperature` | 0.75 | 回复随机性 |
 | `thinkingLevel` | 1 | 思考模式 0-3 |
 | `strictMode` | true | 严格模式 |
+| `aiCooldownSeconds` | 60 | 非管理员调用冷却（秒） |
+| `aiMaxConcurrent` | 3 | 最大并发非管理员调用 |
 | `reviewIntervalMinutes` | 30 | 审查间隔（分） |
 | `yellowCardThreshold` | -30 | 黄牌阈值 |
 | `redCardThreshold` | -60 | 红牌阈值 |
@@ -141,7 +143,6 @@
 | `approvalTimeoutMinutes` | 10 | 审批超时（分） |
 | `systemPromptPath` | `""` | AI提示词文件路径 |
 | `reviewPromptPath` | `""` | 审查提示词文件路径 |
-| `promptLanguage` | `zh_cn` | 内置提示词语言 |
 
 ---
 

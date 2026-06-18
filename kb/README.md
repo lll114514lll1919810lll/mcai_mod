@@ -10,7 +10,7 @@ These knowledge base files are **NOT bundled in the JAR**. Download and place th
 
 1. 下载所需的 `.json` 文件 / Download the required `.json` files
 2. 放入 `config/mcai/kb/` 目录（首次启动会自动创建）/ Place them in `config/mcai/kb/` (auto-created on first start)
-3. 在游戏中执行 `/aireload` / Run `/aireload` in-game
+3. 自动热重载生效（或手动 `/aireload`） / Auto-reloads (or run `/aireload` manually)
 4. AI 即可查询这些知识库 / The AI can now query these knowledge bases
 
 ---

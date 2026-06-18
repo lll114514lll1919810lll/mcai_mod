@@ -63,7 +63,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 2. 放入 `mods/` 文件夹
 3. 启动服务端，自动生成配置
 4. 编辑 `config/mcai/config.json`，填入 API Key
-5. 执行 `/aireload` 重载
+5. 配置自动热重载，或执行 `/aireload` 手动重载
 ### 单人游戏使用
 
 模组同样支持**单人游戏**（无需专用服务端）：
@@ -94,7 +94,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aireject <编号>` | 拒绝待审批操作 |
 | `/aiquery` | 查看待审批列表 |
 | `/aiclear` | 清除 AI 对话历史 |
-| `/aireload` | 重载配置 |
+| `/aireload` | 手动重载配置（配置文件修改后自动重载） |
 | `/aikb <关键词>` | 搜索知识库 |
 
 ### 审查管理
@@ -110,7 +110,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 ## 配置
 
-文件位置：`config/mcai/config.json`，修改后用 `/aireload` 重载。
+文件位置：`config/mcai/config.json`，修改后自动热重载（也可手动 `/aireload`）。
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
@@ -118,12 +118,13 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `apiKey` | `""` | API 密钥 |
 | `model` | `deepseek-v4-flash` | 模型名称 |
 | `strictMode` | `true` | 严格模式 |
+| `aiCooldownSeconds` | `60` | 非管理员 AI 调用冷却（秒） |
+| `aiMaxConcurrent` | `3` | 最大并发非管理员 AI 调用 |
 | `reviewIntervalMinutes` | `30` | 审查间隔（分钟） |
 | `yellowCardThreshold` | `-30` | 黄牌阈值 |
 | `redCardThreshold` | `-60` | 红牌阈值 |
 | `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
 | `reviewPromptPath` | `""` | 审查提示词文件 |
-| `promptLanguage` | `zh_cn` | 内置提示词语言 |
 
 提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。
 
@@ -136,7 +137,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 1. 从 [kb/](kb/README.md) 目录下载 .json 文件
 2. 放入 config/mcai/kb/（首次启动自动创建）
-3. 执行 /aireload
+3. 自动热重载生效（或手动 /aireload）
 
 可用文件及许可证见 [kb/README.md](kb/README.md)。
 自爬工具：[tools/wiki_to_kb.py](tools/wiki_to_kb.py)。

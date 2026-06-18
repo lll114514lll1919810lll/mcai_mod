@@ -15,7 +15,7 @@
 1. Download `mcai-<version>.jar` and place in `mods/`
 2. Start server once to auto-generate config
 3. Edit `config/mcai/config.json`, fill in your API Key
-4. Run `/aireload` to reload
+4. Config auto-reloads (or run `/aireload` manually)
 ### Single-Player
 
 The mod works in **single-player** too - no dedicated server needed:
@@ -56,7 +56,7 @@ The mod works in **single-player** too - no dedicated server needed:
 | `/aireject <n>` | Reject pending command |
 | `/aiquery` | List pending approvals |
 | `/aiclear` | Clear chat history |
-| `/aireload` | Reload config |
+| `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/aikb <keyword>` | Search knowledge base |
 
 ### Review System
@@ -118,7 +118,7 @@ The mod works in **single-player** too - no dedicated server needed:
 
 ## Configuration
 
-File: `config/mcai/config.json`. Reload with `/aireload`.
+File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -130,6 +130,8 @@ File: `config/mcai/config.json`. Reload with `/aireload`.
 | `temperature` | `0.75` | Response randomness |
 | `thinkingLevel` | `1` | Thinking level 0-3 |
 | `strictMode` | `true` | Strict mode |
+| `aiCooldownSeconds` | `60` | Non-admin AI cooldown (seconds) |
+| `aiMaxConcurrent` | `3` | Max concurrent non-admin AI calls |
 | `reviewIntervalMinutes` | `30` | Review interval (min) |
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |
@@ -137,7 +139,6 @@ File: `config/mcai/config.json`. Reload with `/aireload`.
 | `approvalTimeoutMinutes` | `10` | Approval timeout (min) |
 | `systemPromptPath` | `""` | System prompt file path |
 | `reviewPromptPath` | `""` | Review prompt file path |
-| `promptLanguage` | `zh_cn` | Built-in prompt language |
 
 ---
 

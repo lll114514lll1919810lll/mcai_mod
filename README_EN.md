@@ -59,7 +59,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 2. Place it in `mods/` folder
 3. Start the server to auto-generate config
 4. Edit `config/mcai/config.json`, fill in your API Key
-5. Run `/aireload` to reload config
+5. Config auto-reloads; or run `/aireload` manually
 ### Single-Player Usage
 
 The mod works in **single-player** too (no dedicated server required):
@@ -90,7 +90,7 @@ The mod works in **single-player** too (no dedicated server required):
 | `/aireject <n>` | Reject pending action |
 | `/aiquery` | List pending approvals |
 | `/aiclear` | Clear AI chat history |
-| `/aireload` | Reload config |
+| `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/aikb <keyword>` | Search knowledge base |
 
 ### Review Management
@@ -106,7 +106,7 @@ The mod works in **single-player** too (no dedicated server required):
 
 ## Configuration
 
-File: `config/mcai/config.json`, reload with `/aireload`.
+File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -114,12 +114,13 @@ File: `config/mcai/config.json`, reload with `/aireload`.
 | `apiKey` | `""` | API key |
 | `model` | `deepseek-v4-flash` | Model name |
 | `strictMode` | `true` | Strict mode |
+| `aiCooldownSeconds` | `60` | Non-admin AI cooldown (seconds) |
+| `aiMaxConcurrent` | `3` | Max concurrent non-admin AI calls |
 | `reviewIntervalMinutes` | `30` | Review interval (min) |
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |
 | `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
 | `reviewPromptPath` | `""` | Review prompt file |
-| `promptLanguage` | `zh_cn` | Built-in prompt language |
 
 Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first start.
 
@@ -132,7 +133,7 @@ Place .json files in config/mcai/kb/ to extend AI knowledge:
 
 1. Download from [kb/](kb/README.md) directory
 2. Put them in config/mcai/kb/ (auto-created on first start)
-3. Run /aireload
+3. Auto-reloads (or run /aireload manually)
 
 See [kb/README.md](kb/README.md) for available files and licenses.
 DIY scraper: [tools/wiki_to_kb.py](tools/wiki_to_kb.py).

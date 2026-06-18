@@ -16,12 +16,12 @@ public class ThinkingAnimation {
         ScheduledFuture<?> f = scheduler.scheduleAtFixedRate(() -> {
             if (server == null || player.isRemoved()) { stop(id); return; }
             String dots = switch ((int)(System.currentTimeMillis() / 400) % 4) {
-                case 0 -> "§7▌§8▌▌ §e";
-                case 1 -> "§7▌▌§8▌ §e";
-                case 2 -> "§7▌▌▌ §e";
-                default -> "§8▌▌▌ §7";
+                case 0 -> "§7▌§8▌▌";
+                case 1 -> "§7▌▌§8▌";
+                case 2 -> "§7▌▌▌";
+                default -> "§8▌▌▌";
             };
-            Component bar = Component.literal(dots).append(Component.translatable("mcai.chat.thinking_bar"));
+            Component bar = Component.translatable("mcai.chat.thinking_anim", dots);
             server.execute(() -> { if (player.connection != null && !player.isRemoved()) player.connection.send(new ClientboundSetActionBarTextPacket(bar)); });
         }, 0, 400, TimeUnit.MILLISECONDS);
         active.put(id, f);

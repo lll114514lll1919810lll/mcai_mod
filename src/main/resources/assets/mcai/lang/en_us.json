@@ -40,6 +40,7 @@
   "mcai.cmd.score.rules": "§7━━━━ Rules ━━━━\n§7Initial score §f0§7, violations deduct\n§eYellow card threshold: §f%d §7(public warning)\n§cRed card threshold: §f%d §7(kick + admin approval)\n§aAuto recovery per cycle: §f+%d §7(cap at 0)\n§7━━━━━━━━━━━━━━",
   "mcai.cmd.score.no_console": "§cConsole has no score",
   "mcai.cmd.reload.done": "§a[AI] Reloaded, all state cleared",
+  "mcai.cmd.kill.done": "§e[AI] All AI threads killed, %d tasks discarded",
   "mcai.cmd.player_offline": "§cPlayer not online: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

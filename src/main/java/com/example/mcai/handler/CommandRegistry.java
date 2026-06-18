@@ -117,6 +117,12 @@ public class CommandRegistry {
             ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.reload.done"), true); return 1;
         });
     }
+    public LiteralArgumentBuilder<CommandSourceStack> createKillCommand() {
+        return Commands.literal("aikill").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
+            int discarded = chatHandler.killAIThreads();
+            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.kill.done", discarded), true); return 1;
+        });
+    }
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {
         var ps = playerNameSuggestions(); var bt = chatHandler.getMod().getBehaviorTracker();
         var crs = chatHandler.getMod().getChatReviewSystem(); var cl = chatHandler.getChatLog();

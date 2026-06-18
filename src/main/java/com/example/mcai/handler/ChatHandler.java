@@ -26,9 +26,7 @@ public class ChatHandler {
     private final CommandExecutionService cmdExec;
     private final ToolDispatcher toolDispatcher;
 
-    private final ExecutorService aiExecutor = new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
-            r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
-            (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
+    private volatile ExecutorService aiExecutor = newExecutor();
     private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastAICallTime = new ConcurrentHashMap<>();
     private final AtomicInteger concurrentNonAdminCalls = new AtomicInteger(0);
@@ -45,6 +43,23 @@ public class ChatHandler {
     public MCAIMod getMod() { return mod; }
     public com.example.mcai.behavior.PlayerBehaviorTracker getBehaviorTracker() { return mod.getBehaviorTracker(); }
     public com.example.mcai.config.ModConfig getConfig() { return mod.getConfig(); }
+
+    private static ExecutorService newExecutor() {
+        return new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
+                r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
+                (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
+    }
+
+    /** 销毁所有 AI 工作线程并重建线程池 */
+    public int killAIThreads() {
+        ExecutorService old = aiExecutor;
+        aiExecutor = newExecutor();
+        old.shutdownNow();
+        int terminated = old.shutdownNow().size();
+        concurrentNonAdminCalls.set(0);
+        MCAIMod.LOGGER.warn("AI threads killed, {} tasks discarded", terminated);
+        return terminated;
+    }
 
     /**
      * 对玩家消息进行 Prompt Injection 防护：

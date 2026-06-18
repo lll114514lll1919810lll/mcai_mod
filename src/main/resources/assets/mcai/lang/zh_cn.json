@@ -40,6 +40,7 @@
   "mcai.cmd.score.rules": "§7━━━━ 处罚规则 ━━━━\n§7初始分 §f0§7，违规扣分\n§e黄牌阈值: §f%d §7(公屏警告)\n§c红牌阈值: §f%d §7(踢出+审批)\n§a每周期恢复: §f+%d §7(上限0)\n§7━━━━━━━━━━━━━━",
   "mcai.cmd.score.no_console": "§c控制台无行为分",
   "mcai.cmd.reload.done": "§a[AI] 已重载，所有状态已清空",
+  "mcai.cmd.kill.done": "§e[AI] 已销毁所有 AI 线程，丢弃 %d 个任务",
   "mcai.cmd.player_offline": "§c玩家不在线: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

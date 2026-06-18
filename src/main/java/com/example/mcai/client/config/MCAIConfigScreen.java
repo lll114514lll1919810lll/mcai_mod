@@ -195,7 +195,7 @@ public class MCAIConfigScreen extends Screen {
                 minecraft.player.connection.sendCommand("aireload");
             }
             statusWidget.setMessage(Component.translatable("mcai.config.saved"));
-            minecraft.setScreen(parent);
+            onClose();
         } catch (IOException e) {
             statusWidget.setMessage(Component.translatable("mcai.config.save_failed", e.getMessage()));
         }
@@ -229,5 +229,9 @@ public class MCAIConfigScreen extends Screen {
     public boolean canInterruptWithAnotherScreen() { return true; }
 
     @Override
-    public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
+    public void onClose() {
+        if (minecraft != null) {
+            minecraft.setScreenAndShow(parent);
+        }
+    }
 }

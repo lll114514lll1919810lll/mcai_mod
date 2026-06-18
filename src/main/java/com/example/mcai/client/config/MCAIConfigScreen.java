@@ -223,5 +223,8 @@ public class MCAIConfigScreen extends Screen {
     }
 
     @Override
+    public boolean shouldCloseOnEsc() { return true; }
+
+    @Override
     public void onClose() { if (minecraft != null) minecraft.setScreen(parent); }
 }

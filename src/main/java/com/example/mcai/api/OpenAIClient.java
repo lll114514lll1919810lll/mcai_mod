@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.example.mcai.config.ModConfig;
+import com.example.mcai.handler.AIDebugLogger;
+import com.example.mcai.MCAIMod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,9 +158,13 @@ public class OpenAIClient {
 
             HttpResponse<String> response;
             try {
+                var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
+                if (dbg != null && dbg.isEnabled()) dbg.logAPICall(endpoint, config.getModel(), messages.size());
                 response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             } catch (Exception e) {
                 LOGGER.error("HTTP request failed: {}", e.getMessage());
+                var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
+                if (dbg != null && dbg.isEnabled()) dbg.logError("HTTP", e.getMessage());
                 return ApiResult.err(e.getMessage());
             }
 
@@ -200,6 +206,13 @@ public class OpenAIClient {
             // Check for tool_calls directly in the message
             JsonElement tcElement = msg.get("tool_calls");
             JsonArray toolCallsJson = (tcElement != null && !tcElement.isJsonNull()) ? tcElement.getAsJsonArray() : null;
+
+            var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
+            if (dbg != null && dbg.isEnabled()) {
+                dbg.logAPIResponse(response.statusCode(), choices.size(), toolCallsJson != null && toolCallsJson.size() > 0);
+                if (reasoningContent != null && !reasoningContent.isEmpty()) dbg.logThinking(reasoningContent);
+            }
+
             if (toolCallsJson != null && toolCallsJson.size() > 0) {
                 List<ToolCall> toolCalls = parseToolCalls(msg);
                 if (toolCalls.isEmpty()) {
@@ -215,9 +228,12 @@ public class OpenAIClient {
 
                 List<String> results = toolExecutor.apply(toolCalls);
                 for (int i = 0; i < toolCalls.size(); i++) {
-                    messages.add(ChatMessage.toolResult(
-                            toolCalls.get(i).id,
-                            results.size() > i ? results.get(i) : "无结果"));
+                    String result = results.size() > i ? results.get(i) : "无结果";
+                    messages.add(ChatMessage.toolResult(toolCalls.get(i).id, result));
+                    if (dbg != null && dbg.isEnabled()) {
+                        dbg.logToolCall(toolCalls.get(i).name, toolCalls.get(i).arguments);
+                        dbg.logToolResult(toolCalls.get(i).name, result);
+                    }
                 }
                 continue;
             }
@@ -225,6 +241,7 @@ public class OpenAIClient {
             String content = msg.has("content") && !msg.get("content").isJsonNull()
                     ? msg.get("content").getAsString() : "";
             if (content.isEmpty()) return ApiResult.err("empty response content");
+            if (dbg != null && dbg.isEnabled()) dbg.logAIResponse(content);
             return ApiResult.ok(content);
         }
 

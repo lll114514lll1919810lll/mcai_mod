@@ -43,6 +43,7 @@ public class MCAIMod implements ModInitializer {
     private CommandDispatcher<CommandSourceStack> commandDispatcher;
     private WatchService configWatcher;
     private ScheduledExecutorService watcherScheduler;
+    private final AIDebugLogger debugLogger = new AIDebugLogger();
 
     @Override
     public void onInitialize() {
@@ -78,6 +79,7 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(cmdReg.createKillCommand());
             dispatcher.register(cmdReg.createOnCommand());
             dispatcher.register(cmdReg.createOffCommand());
+            dispatcher.register(cmdReg.createDebugCommand());
             dispatcher.register(cmdReg.createScoreCommand());
             dispatcher.register(cmdReg.createTestCommand());
         });
@@ -205,6 +207,7 @@ public class MCAIMod implements ModInitializer {
     public ChatLog getChatLog() { return chatLog; }
     public ChatReviewSystem getChatReviewSystem() { return chatReviewSystem; }
     public PlayerBehaviorTracker getBehaviorTracker() { return behaviorTracker; }
+    public AIDebugLogger getDebugLogger() { return debugLogger; }
 
     public void reloadConfig() {
         config = ModConfig.load();

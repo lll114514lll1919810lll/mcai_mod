@@ -47,6 +47,9 @@
   "mcai.cmd.off.done": "§c[AI] Server-wide AI disabled",
   "mcai.cmd.off.broadcast": "§c[AI] AI has been disabled",
   "mcai.chat.disabled": "§c[AI] AI is currently disabled",
+  "mcai.cmd.debug.started": "§a[AI] Debug logging started: %s",
+  "mcai.cmd.debug.stopped": "§e[AI] Debug logging stopped: %s",
+  "mcai.cmd.debug.status": "§e[AI] Debug logging: %s §7File: %s",
   "mcai.cmd.player_offline": "§cPlayer not online: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

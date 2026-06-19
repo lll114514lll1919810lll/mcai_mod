@@ -142,6 +142,25 @@ public class CommandRegistry {
             return 1;
         });
     }
+    public LiteralArgumentBuilder<CommandSourceStack> createDebugCommand() {
+        var dbg = chatHandler.getMod().getDebugLogger();
+        return Commands.literal("aidebug").requires(CommandExecutionService::isAdminOrConsole)
+                .then(Commands.literal("start").executes(ctx -> {
+                    dbg.start();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.started", dbg.getCurrentLogFile()), true);
+                    return 1;
+                }))
+                .then(Commands.literal("stop").executes(ctx -> {
+                    String file = dbg.getCurrentLogFile();
+                    dbg.stop();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.stopped", file), true);
+                    return 1;
+                }))
+                .executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.status", dbg.isEnabled() ? "§a开启" : "§c关闭", dbg.getCurrentLogFile() != null ? dbg.getCurrentLogFile() : "-"), false);
+                    return 1;
+                });
+    }
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {
         var ps = playerNameSuggestions(); var bt = chatHandler.getMod().getBehaviorTracker();
         var crs = chatHandler.getMod().getChatReviewSystem(); var cl = chatHandler.getChatLog();

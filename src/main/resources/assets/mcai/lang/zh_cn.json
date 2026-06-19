@@ -47,6 +47,9 @@
   "mcai.cmd.off.done": "§c[AI] 已禁用全服 AI 功能",
   "mcai.cmd.off.broadcast": "§c[AI] AI 功能已禁用",
   "mcai.chat.disabled": "§c[AI] AI 功能当前已禁用",
+  "mcai.cmd.debug.started": "§a[AI] 调试日志已开启: %s",
+  "mcai.cmd.debug.stopped": "§e[AI] 调试日志已关闭: %s",
+  "mcai.cmd.debug.status": "§e[AI] 调试日志: %s §7文件: %s",
   "mcai.cmd.player_offline": "§c玩家不在线: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",

@@ -145,6 +145,8 @@ public class ChatHandler {
         MinecraftServer server = mod.getServer(); if (server == null) return;
         final UUID pid = player.getUUID();
         final String pname = player.getScoreboardName();
+        var dbg = mod.getDebugLogger();
+        if (dbg.isEnabled()) dbg.logQuery(pname, query);
 
         // 非管理员限频检查
         boolean isAdmin = CommandExecutionService.isAdmin(player, server);

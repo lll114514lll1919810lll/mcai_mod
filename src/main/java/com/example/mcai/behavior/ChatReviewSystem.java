@@ -31,6 +31,7 @@ public class ChatReviewSystem {
     private final AtomicBoolean reviewInProgress = new AtomicBoolean(false);
     private ScheduledFuture<?> scheduledReview;
     private volatile Component lastReviewStatus = Component.literal("");
+    private volatile boolean reviewEnabled = true;
 
     public ChatReviewSystem(MCAIMod mod, PlayerBehaviorTracker tracker) {
         this.mod = mod;
@@ -46,6 +47,8 @@ public class ChatReviewSystem {
     public MinecraftServer getServer() { return mod.getServer(); }
     public ReviewCommandRegistry getCommandRegistry() { return cmdReg; }
     public PenaltyHistory getPenaltyHistory() { return penaltyHistory; }
+    public boolean isReviewEnabled() { return reviewEnabled; }
+    public void setReviewEnabled(boolean enabled) { this.reviewEnabled = enabled; }
 
     public void start() {
         if (scheduledReview != null && !scheduledReview.isCancelled()) {
@@ -103,6 +106,10 @@ public class ChatReviewSystem {
     public Component getLastReviewStatus() { return lastReviewStatus; }
 
     private void runReview() {
+        if (!reviewEnabled) {
+            LOGGER.debug("Review disabled, skipping");
+            return;
+        }
         if (!reviewInProgress.compareAndSet(false, true)) {
             LOGGER.debug("Review already in progress, skipping");
             return;

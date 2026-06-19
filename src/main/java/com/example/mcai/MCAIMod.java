@@ -77,8 +77,7 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(cmdReg.createClearCommand());
             dispatcher.register(cmdReg.createReloadCommand());
             dispatcher.register(cmdReg.createKillCommand());
-            dispatcher.register(cmdReg.createOnCommand());
-            dispatcher.register(cmdReg.createOffCommand());
+            dispatcher.register(cmdReg.createControlCommand());
             dispatcher.register(cmdReg.createDebugCommand());
             dispatcher.register(cmdReg.createScoreCommand());
             dispatcher.register(cmdReg.createTestCommand());
@@ -92,7 +91,7 @@ public class MCAIMod implements ModInitializer {
             if (s.isDedicatedServer()) {
                 chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
                 if (commandDispatcher != null) {
-                    commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiCheckCommand());
+                    commandDispatcher.register(chatReviewSystem.getCommandRegistry().createAiReviewCommand());
                 }
                 if (config.isEnableAutoReview()) {
                     chatReviewSystem.start();

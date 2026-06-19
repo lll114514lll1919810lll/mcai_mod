@@ -20,8 +20,8 @@ public class ReviewCommandRegistry {
         this.chatReviewSystem = crs; this.approvalQueue = aq; this.reviewEngine = re;
         this.approvalIdSuggestions = (ctx, builder) -> { for (int id : approvalQueue.getUnresolvedIds()) { var item = approvalQueue.getItem(id); if (item != null) builder.suggest(id, Component.literal("§7"+item.targetPlayerName+" - "+item.reason)); else builder.suggest(id); } return builder.buildFuture(); };
     }
-    public LiteralArgumentBuilder<CommandSourceStack> createAiCheckCommand() {
-        return Commands.literal("aicheck")
+    public LiteralArgumentBuilder<CommandSourceStack> createAiReviewCommand() {
+        return Commands.literal("aireview")
                 .requires(src -> { var p = src.getPlayer(); if (p == null) return true; if (src.getServer() == null) return false; return src.getServer().getPlayerList().isOp(new NameAndId(p.getGameProfile())); })
                 .then(Commands.literal("approve").then(Commands.argument("id", IntegerArgumentType.integer(1)).suggests(approvalIdSuggestions).executes(ctx -> { int id = IntegerArgumentType.getInteger(ctx, "id"); return handleApproval(ctx.getSource(), id, true); })))
                 .then(Commands.literal("reject").then(Commands.argument("id", IntegerArgumentType.integer(1)).suggests(approvalIdSuggestions).executes(ctx -> { int id = IntegerArgumentType.getInteger(ctx, "id"); return handleApproval(ctx.getSource(), id, false); })))

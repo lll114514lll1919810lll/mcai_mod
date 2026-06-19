@@ -30,7 +30,7 @@ public class ChatHandler {
     private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastAICallTime = new ConcurrentHashMap<>();
     private final AtomicInteger concurrentNonAdminCalls = new AtomicInteger(0);
-    private volatile boolean aiEnabled = true;
+    private volatile boolean chatEnabled = true;
 
     public ChatHandler(MCAIMod mod, ChatLog chatLog, ThinkingAnimation animation,
                        PlayerContextBuilder contextBuilder, CommandExecutionService cmdExec,
@@ -44,8 +44,8 @@ public class ChatHandler {
     public MCAIMod getMod() { return mod; }
     public com.example.mcai.behavior.PlayerBehaviorTracker getBehaviorTracker() { return mod.getBehaviorTracker(); }
     public com.example.mcai.config.ModConfig getConfig() { return mod.getConfig(); }
-    public boolean isAIEnabled() { return aiEnabled; }
-    public void setAIEnabled(boolean enabled) { this.aiEnabled = enabled; }
+    public boolean isChatEnabled() { return chatEnabled; }
+    public void setChatEnabled(boolean enabled) { this.chatEnabled = enabled; }
 
     private static ExecutorService newExecutor() {
         return new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
@@ -120,7 +120,7 @@ public class ChatHandler {
                 if (text.startsWith(prefix)) {
                     String query = text.substring(prefix.length()).trim();
                     if (!query.isEmpty()) {
-                        if (!aiEnabled) {
+                        if (!chatEnabled) {
                             sender.sendSystemMessage(Component.translatable("mcai.chat.disabled"));
                             return false;
                         }

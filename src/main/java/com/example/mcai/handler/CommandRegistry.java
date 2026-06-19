@@ -31,7 +31,7 @@ public class CommandRegistry {
     }
     public LiteralArgumentBuilder<CommandSourceStack> createAICommand() {
         return Commands.literal("ai").then(Commands.argument("message", StringArgumentType.greedyString()).executes(ctx -> {
-            if (!chatHandler.isAIEnabled()) { ctx.getSource().sendFailure(Component.translatable("mcai.chat.disabled")); return 0; }
+            if (!chatHandler.isChatEnabled()) { ctx.getSource().sendFailure(Component.translatable("mcai.chat.disabled")); return 0; }
             ServerPlayer player = ctx.getSource().getPlayer(); String msg = StringArgumentType.getString(ctx, "message");
             if (player != null) {
                 var server = chatHandler.getServer();
@@ -124,23 +124,41 @@ public class CommandRegistry {
             ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.kill.done", discarded), true); return 1;
         });
     }
-    public LiteralArgumentBuilder<CommandSourceStack> createOnCommand() {
-        return Commands.literal("aion").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
-            chatHandler.setAIEnabled(true);
-            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.on.done"), true);
-            var srv = chatHandler.getServer();
-            if (srv != null) srv.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.on.broadcast"), false);
-            return 1;
-        });
-    }
-    public LiteralArgumentBuilder<CommandSourceStack> createOffCommand() {
-        return Commands.literal("aioff").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
-            chatHandler.setAIEnabled(false);
-            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.off.done"), true);
-            var srv = chatHandler.getServer();
-            if (srv != null) srv.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.off.broadcast"), false);
-            return 1;
-        });
+    public LiteralArgumentBuilder<CommandSourceStack> createControlCommand() {
+        return Commands.literal("aicontrol").requires(CommandExecutionService::isAdminOrConsole)
+                .then(Commands.literal("chat")
+                        .then(Commands.literal("on").executes(ctx -> {
+                            chatHandler.setChatEnabled(true);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.control.chat.on"), true);
+                            return 1;
+                        }))
+                        .then(Commands.literal("off").executes(ctx -> {
+                            chatHandler.setChatEnabled(false);
+                            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.control.chat.off"), true);
+                            return 1;
+                        })))
+                .then(Commands.literal("review")
+                        .then(Commands.literal("on").executes(ctx -> {
+                            var crs = chatHandler.getMod().getChatReviewSystem();
+                            if (crs != null) { crs.setReviewEnabled(true); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.control.review.on"), true); }
+                            else { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.control.review.unavailable")); }
+                            return 1;
+                        }))
+                        .then(Commands.literal("off").executes(ctx -> {
+                            var crs = chatHandler.getMod().getChatReviewSystem();
+                            if (crs != null) { crs.setReviewEnabled(false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.control.review.off"), true); }
+                            else { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.control.review.unavailable")); }
+                            return 1;
+                        })))
+                .executes(ctx -> {
+                    boolean chat = chatHandler.isChatEnabled();
+                    var crs = chatHandler.getMod().getChatReviewSystem();
+                    boolean review = crs != null && crs.isReviewEnabled();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.control.status",
+                            chat ? "§a开启" : "§c关闭",
+                            review ? "§a开启" : "§c关闭"), false);
+                    return 1;
+                });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createDebugCommand() {
         var dbg = chatHandler.getMod().getDebugLogger();

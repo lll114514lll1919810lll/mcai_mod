@@ -24,6 +24,7 @@ public class ToolDispatcher {
         for (var tc : toolCalls) {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
+                case "search_knowledge_base_ai" -> results.add(searchWithAI(parseArg(tc.arguments, "query")));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(parseArg(tc.arguments, "command"), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
@@ -41,6 +42,7 @@ public class ToolDispatcher {
         for (var tc : toolCalls) {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
+                case "search_knowledge_base_ai" -> results.add(searchWithAI(parseArg(tc.arguments, "query")));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(parseArg(tc.arguments, "command"), server) : "服务器未就绪");
                 case "get_server_status" -> results.add(getServerStatus(null));
@@ -119,6 +121,49 @@ public class ToolDispatcher {
         if (v instanceof Boolean b) return b ? "§a是" : "§c否";
         try { return Boolean.parseBoolean(v.toString()) ? "§a是" : "§c否"; } catch (Exception e) { return v != null ? v.toString() : "?"; }
     }
+    /** AI 精排搜索：粗筛 top20 候选，LLM 精排 top5 */
+    private String searchWithAI(String query) {
+        if (query == null || query.isBlank()) return "查询为空";
+        var candidates = knowledgeBase.getCandidates(query, 20);
+        if (candidates.isEmpty()) return "[AI搜索] 未找到相关条目";
+
+        // 格式化候选列表
+        List<String> formatted = new ArrayList<>();
+        for (var c : candidates) {
+            String s = c.summary.length() > 150 ? c.summary.substring(0, 150) + "..." : c.summary;
+            formatted.add(c.title + " | " + s);
+        }
+
+        // 调用 LLM 精排
+        var result = mod.getAiClient().rerankKB(query, formatted);
+        if (!result.success()) {
+            MCAIMod.LOGGER.warn("AI rerank failed, falling back to local: {}", result.error());
+            return knowledgeBase.search(query, 5);
+        }
+
+        // 解析 LLM 返回的编号
+        String response = result.value().trim();
+        StringBuilder sb = new StringBuilder("[AI搜索] 找到相关条目：\n");
+        String[] indices = response.split("[,，\\s]+");
+        int count = 0;
+        for (String idx : indices) {
+            if (count >= 5) break;
+            try {
+                int i = Integer.parseInt(idx.trim()) - 1;
+                if (i >= 0 && i < candidates.size()) {
+                    var c = candidates.get(i);
+                    count++;
+                    sb.append("[").append(count).append("] ").append(c.title).append("\n");
+                    String s = c.summary.length() > 200 ? c.summary.substring(0, 200) + "..." : c.summary;
+                    sb.append(s).append("\n\n");
+                }
+            } catch (NumberFormatException ignored) {}
+        }
+        if (count == 0) return knowledgeBase.search(query, 5);
+        sb.append("如需查看完整内容，使用 read_knowledge_base 工具传入标题。");
+        return sb.toString().trim();
+    }
+
     private static String parseArg(String json, String key) {
         try {
             var obj = GSON.fromJson(json, com.google.gson.JsonObject.class);

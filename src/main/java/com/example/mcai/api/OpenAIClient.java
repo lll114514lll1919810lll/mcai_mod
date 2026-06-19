@@ -367,6 +367,32 @@ public class OpenAIClient {
         return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
     }
 
+    /**
+     * 用 LLM 对知识库粗筛结果进行精排。
+     * 将候选条目（标题+摘要）发送给模型，让模型选出最相关的条目。
+     */
+    public ApiResult<String> rerankKB(String query, List<String> candidates) {
+        if (candidates.isEmpty()) return ApiResult.ok("无候选条目");
+
+        StringBuilder candidateList = new StringBuilder();
+        for (int i = 0; i < candidates.size(); i++) {
+            candidateList.append(i + 1).append(". ").append(candidates.get(i)).append("\n");
+        }
+
+        String prompt = "你是一个知识库搜索助手。用户搜索: \"" + query + "\"\n\n"
+                + "以下是知识库中的候选条目（编号. 标题 | 摘要）:\n"
+                + candidateList
+                + "\n请选出最相关的条目编号（最多5个），用逗号分隔，从最相关到最不相关排序。"
+                + "如果没有相关条目，返回 0。只返回编号，不要其他文字。";
+
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(new ChatMessage("user", prompt));
+
+        ApiResult<ChatSimpleResult> result = chatSimpleFull(messages);
+        if (!result.success()) return ApiResult.err(result.error());
+        return ApiResult.ok(result.value().content);
+    }
+
     private List<ToolCall> parseToolCalls(JsonObject msg) {
         List<ToolCall> calls = new ArrayList<>();
         JsonElement arrEl = msg.get("tool_calls");
@@ -388,6 +414,10 @@ public class OpenAIClient {
     private JsonArray buildToolDefinitions() {
         JsonObject kbTool = buildTool("search_knowledge_base",
                 "搜索本地知识库。可用中文或英文关键词。先调用 get_installed_mods 了解已安装的Mod，再用其modid作为命名空间搜索。如搜 create:brass_ingot 可用 \"黄铜锭\" 或 \"brass ingot\"。",
+                "query", "string", "搜索关键词（中文或英文）");
+
+        JsonObject kbAiTool = buildTool("search_knowledge_base_ai",
+                "AI精排搜索知识库。先用关键词粗筛，再用AI精排，适合复杂或模糊的搜索。比普通搜索更准确但更慢。",
                 "query", "string", "搜索关键词（中文或英文）");
 
         JsonObject readTool = buildTool("read_knowledge_base",
@@ -417,6 +447,7 @@ public class OpenAIClient {
 
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
+        tools.add(kbAiTool);
         tools.add(readTool);
         tools.add(cmdTool);
         JsonObject debugTool = new JsonObject();

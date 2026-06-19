@@ -367,32 +367,6 @@ public class OpenAIClient {
         return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
     }
 
-    /**
-     * 用 LLM 对知识库粗筛结果进行精排。
-     * 将候选条目（标题+摘要）发送给模型，让模型选出最相关的条目。
-     */
-    public ApiResult<String> rerankKB(String query, List<String> candidates) {
-        if (candidates.isEmpty()) return ApiResult.ok("无候选条目");
-
-        StringBuilder candidateList = new StringBuilder();
-        for (int i = 0; i < candidates.size(); i++) {
-            candidateList.append(i + 1).append(". ").append(candidates.get(i)).append("\n");
-        }
-
-        String prompt = "你是一个知识库搜索助手。用户搜索: \"" + query + "\"\n\n"
-                + "以下是知识库中的候选条目（编号. 标题 | 摘要）:\n"
-                + candidateList
-                + "\n请选出最相关的条目编号（最多5个），用逗号分隔，从最相关到最不相关排序。"
-                + "如果没有相关条目，返回 0。只返回编号，不要其他文字。";
-
-        List<ChatMessage> messages = new ArrayList<>();
-        messages.add(new ChatMessage("user", prompt));
-
-        ApiResult<ChatSimpleResult> result = chatSimpleFull(messages);
-        if (!result.success()) return ApiResult.err(result.error());
-        return ApiResult.ok(result.value().content);
-    }
-
     private List<ToolCall> parseToolCalls(JsonObject msg) {
         List<ToolCall> calls = new ArrayList<>();
         JsonElement arrEl = msg.get("tool_calls");
@@ -414,10 +388,6 @@ public class OpenAIClient {
     private JsonArray buildToolDefinitions() {
         JsonObject kbTool = buildTool("search_knowledge_base",
                 "搜索本地知识库。可用中文或英文关键词。先调用 get_installed_mods 了解已安装的Mod，再用其modid作为命名空间搜索。如搜 create:brass_ingot 可用 \"黄铜锭\" 或 \"brass ingot\"。",
-                "query", "string", "搜索关键词（中文或英文）");
-
-        JsonObject kbAiTool = buildTool("search_knowledge_base_ai",
-                "AI精排搜索知识库。先用关键词粗筛，再用AI精排，适合复杂或模糊的搜索。比普通搜索更准确但更慢。",
                 "query", "string", "搜索关键词（中文或英文）");
 
         JsonObject readTool = buildTool("read_knowledge_base",
@@ -447,7 +417,6 @@ public class OpenAIClient {
 
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
-        tools.add(kbAiTool);
         tools.add(readTool);
         tools.add(cmdTool);
         JsonObject debugTool = new JsonObject();
@@ -470,6 +439,34 @@ public class OpenAIClient {
         tools.add(rulesTool);
         tools.add(debugTool);
         tools.add(modsTool);
+
+        JsonObject effectsTool = new JsonObject();
+        effectsTool.addProperty("type", "function");
+        JsonObject effectsFn = new JsonObject();
+        effectsFn.addProperty("name", "get_player_effects");
+        effectsFn.addProperty("description", "获取玩家当前的药水效果，包括效果名称、等级、剩余时间。无需参数。");
+        effectsFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        effectsTool.add("function", effectsFn);
+        tools.add(effectsTool);
+
+        JsonObject advTool = new JsonObject();
+        advTool.addProperty("type", "function");
+        JsonObject advFn = new JsonObject();
+        advFn.addProperty("name", "get_player_advancements");
+        advFn.addProperty("description", "获取玩家的进度完成情况，包括已完成数量和正在进行的进度。无需参数。");
+        advFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        advTool.add("function", advFn);
+        tools.add(advTool);
+
+        JsonObject invTool = new JsonObject();
+        invTool.addProperty("type", "function");
+        JsonObject invFn = new JsonObject();
+        invFn.addProperty("name", "get_player_inventory");
+        invFn.addProperty("description", "获取玩家物品栏内容，包括主手、副手、装备和背包中的所有物品及其数量和耐久。无需参数。");
+        invFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        invTool.add("function", invFn);
+        tools.add(invTool);
+
         return tools;
     }
 

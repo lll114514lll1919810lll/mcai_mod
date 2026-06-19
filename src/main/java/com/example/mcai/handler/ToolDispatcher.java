@@ -24,13 +24,15 @@ public class ToolDispatcher {
         for (var tc : toolCalls) {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
-                case "search_knowledge_base_ai" -> results.add(searchWithAI(parseArg(tc.arguments, "query")));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(parseArg(tc.arguments, "command"), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
                 case "get_game_rules" -> results.add(getGameRules(player));
                 case "get_debug_info" -> results.add(getDebugInfo(player));
                 case "get_installed_mods" -> results.add(getInstalledMods());
+                case "get_player_effects" -> results.add(getPlayerEffects(player));
+                case "get_player_advancements" -> results.add(getPlayerAdvancements(player));
+                case "get_player_inventory" -> results.add(getPlayerInventory(player));
                 default -> results.add("未知工具: " + tc.name);
             }
         }
@@ -42,13 +44,15 @@ public class ToolDispatcher {
         for (var tc : toolCalls) {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
-                case "search_knowledge_base_ai" -> results.add(searchWithAI(parseArg(tc.arguments, "query")));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(parseArg(tc.arguments, "command"), server) : "服务器未就绪");
                 case "get_server_status" -> results.add(getServerStatus(null));
                 case "get_game_rules" -> results.add("控制台无法获取游戏规则");
                 case "get_debug_info" -> results.add("控制台无法获取调试信息");
                 case "get_installed_mods" -> results.add(getInstalledMods());
+                case "get_player_effects" -> results.add("控制台无法获取药水效果");
+                case "get_player_advancements" -> results.add("控制台无法获取进度");
+                case "get_player_inventory" -> results.add("控制台无法获取物品栏");
                 default -> results.add("未知工具: " + tc.name);
             }
         }
@@ -116,54 +120,93 @@ public class ToolDispatcher {
         sb.append("§7提示: Minecraft物品ID格式为 §e<命名空间>:<物品名>§7，如 minecraft:diamond_sword。Mod物品需使用其modid作为命名空间。");
         return sb.toString();
     }
+    private String getPlayerEffects(ServerPlayer player) {
+        if (player == null) return "玩家不存在";
+        var effects = player.getActiveEffects();
+        if (effects.isEmpty()) return player.getScoreboardName() + " 没有药水效果";
+        StringBuilder sb = new StringBuilder(player.getScoreboardName() + " 的药水效果:\n");
+        for (var effect : effects) {
+            var instance = effect;
+            var potion = instance.getEffect();
+            String name = potion.value().getDescriptionId();
+            int amplifier = instance.getAmplifier();
+            int duration = instance.getDuration() / 20;
+            String ambient = instance.isAmbient() ? "环境" : "";
+            String visible = instance.isVisible() ? "" : "隐藏";
+            String details = !ambient.isEmpty() || !visible.isEmpty() ? " (" + ambient + (ambient.isEmpty() ? "" : ",") + visible + ")" : "";
+            sb.append(String.format("- %s 等级%d 剩余%d秒%s\n", name, amplifier + 1, duration, details));
+        }
+        return sb.toString().trim();
+    }
+    private String getPlayerAdvancements(ServerPlayer player) {
+        if (player == null) return "玩家不存在";
+        var advancements = player.getAdvancements();
+        var allAdvs = mod.getServer().getAdvancements().getAllAdvancements();
+        StringBuilder sb = new StringBuilder(player.getScoreboardName() + " 的进度:\n");
+        int done = 0, total = 0;
+        StringBuilder incomplete = new StringBuilder();
+        for (var adv : allAdvs) {
+            if (!adv.id().getNamespace().equals("minecraft")) continue;
+            total++;
+            var progress = advancements.getOrStartProgress(adv);
+            if (progress.isDone()) {
+                done++;
+            } else {
+                int criteria = 0;
+                for (var c : progress.getCompletedCriteria()) criteria++;
+                int allCriteria = adv.value().requirements().size();
+                if (allCriteria > 0) {
+                    incomplete.append("- ").append(adv.id().getPath()).append(" ").append(criteria).append("/").append(allCriteria).append("\n");
+                }
+            }
+        }
+        sb.append("已完成: ").append(done).append("/").append(total).append("\n");
+        if (incomplete.length() > 0) {
+            sb.append("进行中的进度:\n");
+            String inc = incomplete.toString();
+            if (inc.length() > 1500) inc = inc.substring(0, 1500) + "...(更多省略)";
+            sb.append(inc);
+        }
+        return sb.toString().trim();
+    }
+    private String getPlayerInventory(ServerPlayer player) {
+        if (player == null) return "玩家不存在";
+        var inv = player.getInventory();
+        StringBuilder sb = new StringBuilder(player.getScoreboardName() + " 的物品栏:\n");
+        sb.append("主手: ").append(formatItem(player.getMainHandItem())).append("\n");
+        sb.append("副手: ").append(formatItem(player.getOffhandItem())).append("\n");
+        sb.append("装备:\n");
+        sb.append("  头盔: ").append(formatItem(inv.getItem(39))).append("\n");
+        sb.append("  胸甲: ").append(formatItem(inv.getItem(38))).append("\n");
+        sb.append("  护腿: ").append(formatItem(inv.getItem(37))).append("\n");
+        sb.append("  靴子: ").append(formatItem(inv.getItem(36))).append("\n");
+        sb.append("背包:\n");
+        boolean hasItems = false;
+        for (int i = 0; i < 36; i++) {
+            var item = inv.getItem(i);
+            if (!item.isEmpty()) {
+                sb.append("  [").append(i).append("] ").append(formatItem(item)).append("\n");
+                hasItems = true;
+            }
+        }
+        if (!hasItems) sb.append("  (空)\n");
+        return sb.toString().trim();
+    }
+    private static String formatItem(net.minecraft.world.item.ItemStack stack) {
+        if (stack.isEmpty()) return "空";
+        String name = stack.getHoverName().getString();
+        int count = stack.getCount();
+        int durability = stack.getMaxDamage() > 0 ? stack.getMaxDamage() - stack.getDamageValue() : -1;
+        if (durability >= 0) {
+            return String.format("%s x%d (耐久%d/%d)", name, count, durability, stack.getMaxDamage());
+        }
+        return count > 1 ? name + " x" + count : name;
+    }
     private static int intVal(Object v) { if (v instanceof Number n) return n.intValue(); return 0; }
     private static String yn(Object v) {
         if (v instanceof Boolean b) return b ? "§a是" : "§c否";
         try { return Boolean.parseBoolean(v.toString()) ? "§a是" : "§c否"; } catch (Exception e) { return v != null ? v.toString() : "?"; }
     }
-    /** AI 精排搜索：粗筛 top20 候选，LLM 精排 top5 */
-    private String searchWithAI(String query) {
-        if (query == null || query.isBlank()) return "查询为空";
-        var candidates = knowledgeBase.getCandidates(query, 20);
-        if (candidates.isEmpty()) return "[AI搜索] 未找到相关条目";
-
-        // 格式化候选列表
-        List<String> formatted = new ArrayList<>();
-        for (var c : candidates) {
-            String s = c.summary.length() > 150 ? c.summary.substring(0, 150) + "..." : c.summary;
-            formatted.add(c.title + " | " + s);
-        }
-
-        // 调用 LLM 精排
-        var result = mod.getAiClient().rerankKB(query, formatted);
-        if (!result.success()) {
-            MCAIMod.LOGGER.warn("AI rerank failed, falling back to local: {}", result.error());
-            return knowledgeBase.search(query, 5);
-        }
-
-        // 解析 LLM 返回的编号
-        String response = result.value().trim();
-        StringBuilder sb = new StringBuilder("[AI搜索] 找到相关条目：\n");
-        String[] indices = response.split("[,，\\s]+");
-        int count = 0;
-        for (String idx : indices) {
-            if (count >= 5) break;
-            try {
-                int i = Integer.parseInt(idx.trim()) - 1;
-                if (i >= 0 && i < candidates.size()) {
-                    var c = candidates.get(i);
-                    count++;
-                    sb.append("[").append(count).append("] ").append(c.title).append("\n");
-                    String s = c.summary.length() > 200 ? c.summary.substring(0, 200) + "..." : c.summary;
-                    sb.append(s).append("\n\n");
-                }
-            } catch (NumberFormatException ignored) {}
-        }
-        if (count == 0) return knowledgeBase.search(query, 5);
-        sb.append("如需查看完整内容，使用 read_knowledge_base 工具传入标题。");
-        return sb.toString().trim();
-    }
-
     private static String parseArg(String json, String key) {
         try {
             var obj = GSON.fromJson(json, com.google.gson.JsonObject.class);

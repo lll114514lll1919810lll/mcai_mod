@@ -165,31 +165,6 @@ public class KnowledgeBase {
         return searchLocal(query, maxResults);
     }
 
-    /** 返回粗筛候选列表（标题 + 摘要），供 LLM 精排 */
-    public List<Candidate> getCandidates(String query, int maxCandidates) {
-        if (query.isBlank() || !isLoaded()) return List.of();
-        String[] tokens = tokenize(query);
-        if (tokens.length == 0) return List.of();
-        String queryLower = query.toLowerCase(Locale.ROOT).trim();
-        return entries.parallelStream()
-                .map(e -> new Candidate(e, score(e, tokens, queryLower)))
-                .filter(c -> c.score >= 0.15)
-                .sorted((a, b) -> Double.compare(b.score, a.score))
-                .limit(maxCandidates)
-                .collect(Collectors.toList());
-    }
-
-    public static class Candidate {
-        public final String title;
-        public final String summary;
-        public final double score;
-        Candidate(Entry e, double score) {
-            this.title = e.title() != null ? e.title() : "";
-            this.summary = e.summary() != null ? e.summary() : "";
-            this.score = score;
-        }
-    }
-
     public String read(String title) {
         if (title == null || title.isBlank()) return "标题为空";
         return readLocal(title);

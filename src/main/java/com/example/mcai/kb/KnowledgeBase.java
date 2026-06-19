@@ -175,9 +175,10 @@ public class KnowledgeBase {
         String[] tokens = tokenize(query);
         if (tokens.length == 0) return "[本地] 未找到相关信息";
 
+        String queryLower = query.toLowerCase(Locale.ROOT).trim();
         var scored = entries.parallelStream()
-                .map(e -> new AbstractMap.SimpleEntry<>(e, score(e, tokens)))
-                .filter(e -> e.getValue() > 0)
+                .map(e -> new AbstractMap.SimpleEntry<>(e, score(e, tokens, queryLower)))
+                .filter(e -> e.getValue() >= 0.2)
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .limit(maxResults)
                 .collect(Collectors.toList());
@@ -211,10 +212,15 @@ public class KnowledgeBase {
         return "[本地] 未找到条目: " + title;
     }
 
-    private double score(Entry e, String[] tokens) {
+    private double score(Entry e, String[] tokens, String queryLower) {
         String title = e.titleLower() != null ? e.titleLower() : "";
         String keywords = e.keywordsLower() != null ? e.keywordsLower() : "";
         String summary = e.summaryLower() != null ? e.summaryLower() : "";
+
+        // 精确标题匹配直接返回最高分
+        if (title.equals(queryLower)) return 1.0;
+        if (title.contains(queryLower)) return 0.9;
+
         double totalWeight = 0;
         for (String t : tokens) {
             boolean inTitle = title.contains(t);

@@ -23,7 +23,7 @@ public class ToolDispatcher {
         List<String> results = new ArrayList<>();
         for (var tc : toolCalls) {
             switch (tc.name) {
-                case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 5));
+                case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(parseArg(tc.arguments, "command"), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
@@ -40,7 +40,7 @@ public class ToolDispatcher {
         List<String> results = new ArrayList<>();
         for (var tc : toolCalls) {
             switch (tc.name) {
-                case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 5));
+                case "search_knowledge_base" -> results.add(knowledgeBase.search(parseArg(tc.arguments, "query"), 10));
                 case "read_knowledge_base" -> results.add(knowledgeBase.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(parseArg(tc.arguments, "command"), server) : "服务器未就绪");
                 case "get_server_status" -> results.add(getServerStatus(null));

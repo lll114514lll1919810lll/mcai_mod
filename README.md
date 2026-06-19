@@ -161,7 +161,6 @@ cd mcai_mod
 ## 链接
 
 - [服主使用手册](USER_GUIDE.md)
-- [开发总结](MCAI_MOD_SUMMARY.md)
 - [English version](README_EN.md)
 - [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
 

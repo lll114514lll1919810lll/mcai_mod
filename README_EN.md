@@ -157,9 +157,7 @@ Requires JDK 25.
 ## Links
 
 - [用户手册 / User Guide (中文)](USER_GUIDE.md)
-- [开发总结 / Developer Notes (中文)](MCAI_MOD_SUMMARY.md)
 - [English User Guide](USER_GUIDE_EN.md)
-- [English Developer Notes](MCAI_MOD_SUMMARY_EN.md)
 - [Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
 
 ## License

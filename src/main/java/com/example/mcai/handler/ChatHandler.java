@@ -217,19 +217,27 @@ public class ChatHandler {
     }
 
     private boolean handleResponse(ServerPlayer player, String response) {
-        response = response.trim(); MinecraftServer server = mod.getServer(); String pname = player.getScoreboardName();
-        if (!response.startsWith("/") || !mod.getConfig().isEnableCommandExecution()) {
-            if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.chat.reply", pname + "§b " + response), false);
-            chatLog.add("AI → " + pname, response); return true;
+        response = response.trim();
+        MinecraftServer server = mod.getServer();
+        String pname = player.getScoreboardName();
+
+        // 安全策略：AI 不允许直接在聊天文本中输出以 / 开头的命令来执行。
+        // 所有命令执行必须通过 execute_minecraft_command 工具走审批流程。
+        if (response.startsWith("/") && mod.getConfig().isEnableCommandExecution()) {
+            String cmd = response.lines().findFirst().orElse("").substring(1).trim();
+            MCAIMod.LOGGER.warn("AI attempted to output command as text: /{}. Refused; expected tool call.", cmd);
+            if (server != null) {
+                server.getPlayerList().broadcastSystemMessage(
+                        Component.translatable("mcai.chat.blocked_text_command"), false);
+            }
+            chatLog.add("AI → " + pname, "[blocked] /" + cmd);
+            return true;
         }
-        String cmd = response.lines().findFirst().orElse("").substring(1).trim();
-        if (cmd.isEmpty()) { if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.chat.reply", pname + "§b " + response), false); return true; }
-        if (server == null) return true;
-        if (cmdExec.needsApproval(cmd)) { String result = cmdExec.executeCommand(cmd, player); player.sendSystemMessage(Component.translatable("mcai.cmd.exec.approval_pending", result)); return false; }
-        String result = cmdExec.executeAsOp(cmd, server, player);
-        if (result != null && !result.isEmpty() && !result.equals("Command executed")) server.getPlayerList().broadcastSystemMessage(Component.literal("§7[AI] → §e/" + cmd + " §7(" + result + ")"), false);
-        else server.getPlayerList().broadcastSystemMessage(Component.literal("§7[AI] → §e/" + cmd), false);
-        chatLog.add("AI → " + pname, "/" + cmd + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
+
+        if (server != null) {
+            server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.chat.reply", pname + "§b " + response), false);
+        }
+        chatLog.add("AI → " + pname, response);
         return true;
     }
 

@@ -2,6 +2,7 @@ package com.example.mcai.handler;
 import com.example.mcai.kb.KnowledgeBase;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -14,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 public class CommandRegistry {
     private final ChatHandler chatHandler;
     private final CommandExecutionService cmdExec;
@@ -24,8 +24,15 @@ public class CommandRegistry {
         this.chatHandler = chatHandler; this.cmdExec = cmdExec; this.knowledgeBase = kb;
         this.pendingIdSuggestions = (ctx, builder) -> {
             ServerPlayer p = ctx.getSource().getPlayer();
-            if (p != null) { var cmds = this.cmdExec.getPendingCommands(p.getUUID()); if (cmds != null) { for (int i = 1; i <= cmds.size(); i++) builder.suggest(i); } }
-            else { int total = 0; for (var e : this.cmdExec.getAllPendingCommands().entrySet()) { for (int i = 0; i < e.getValue().size(); i++) { total++; builder.suggest(total); } } }
+            if (p != null) {
+                for (var pending : this.cmdExec.getPendingCommands(p.getUUID())) {
+                    builder.suggest(String.valueOf(pending.id), Component.literal(pending.command));
+                }
+            } else {
+                for (var pending : this.cmdExec.getAllPendingCommands()) {
+                    builder.suggest(String.valueOf(pending.id), Component.literal(pending.requesterName + ": " + pending.command));
+                }
+            }
             return builder.buildFuture();
         };
     }
@@ -58,20 +65,19 @@ public class CommandRegistry {
         return Commands.literal("aiquery").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
             ServerPlayer player = ctx.getSource().getPlayer();
             if (player != null) {
-                List<String> cmds = cmdExec.getPendingCommands(player.getUUID());
-                if (cmds == null || cmds.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
+                var cmds = cmdExec.getPendingCommands(player.getUUID());
+                if (cmds.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.title", cmds.size()), false);
-                for (int i = 0; i < cmds.size(); i++) { final int n = i+1; final String c = cmds.get(i); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", n, c), false); }
+                for (var pending : cmds) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", pending.id, pending.command), false);
+                }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.hint"), false);
             } else {
                 var all = cmdExec.getAllPendingCommands();
                 if (all.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.title_all"), false);
-                final AtomicInteger total = new AtomicInteger(0);
-                for (var e : all.entrySet()) {
-                    final String fn; var srv = chatHandler.getServer();
-                    if (srv != null) { var p = srv.getPlayerList().getPlayer(e.getKey()); fn = p != null ? p.getScoreboardName() : "?"; } else { fn = "?"; }
-                    for (int i = 0; i < e.getValue().size(); i++) { final int ft = total.incrementAndGet(); final String c = e.getValue().get(i); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", ft, fn, c), false); }
+                for (var pending : all) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", pending.id, pending.requesterName, pending.command), false);
                 }
             }
             return 1;
@@ -79,18 +85,24 @@ public class CommandRegistry {
     }
     public LiteralArgumentBuilder<CommandSourceStack> createAcceptCommand() {
         return Commands.literal("aiaccept").requires(CommandExecutionService::isAdminOrConsole)
-                .then(Commands.argument("number", IntegerArgumentType.integer(1)).suggests(pendingIdSuggestions).executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayer(); int num = IntegerArgumentType.getInteger(ctx, "number");
+                .then(Commands.argument("id", LongArgumentType.longArg(1)).suggests(pendingIdSuggestions).executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayer();
+                    long id = LongArgumentType.getLong(ctx, "id");
                     if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.no_console")); return 0; }
-                    int r = cmdExec.approveCommand(player, num); if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.invalid")); return r;
+                    int r = cmdExec.approveCommand(player, id);
+                    if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.invalid"));
+                    return r;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.usage")); return 0; });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createRejectCommand() {
         return Commands.literal("aireject").requires(CommandExecutionService::isAdminOrConsole)
-                .then(Commands.argument("number", IntegerArgumentType.integer(1)).suggests(pendingIdSuggestions).executes(ctx -> {
-                    ServerPlayer player = ctx.getSource().getPlayer(); int num = IntegerArgumentType.getInteger(ctx, "number");
+                .then(Commands.argument("id", LongArgumentType.longArg(1)).suggests(pendingIdSuggestions).executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayer();
+                    long id = LongArgumentType.getLong(ctx, "id");
                     if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.no_console")); return 0; }
-                    int r = cmdExec.rejectCommand(player, num); if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.invalid")); return r;
+                    int r = cmdExec.rejectCommand(player, id);
+                    if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.invalid"));
+                    return r;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.usage")); return 0; });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createClearCommand() {

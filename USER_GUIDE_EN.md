@@ -7,7 +7,7 @@
 ## Installation
 
 ### Requirements
-- Minecraft **Fabric server 26.1.2**
+- Minecraft **Fabric server 26.2**
 - JDK 25
 - A **DeepSeek API Key** ([platform.deepseek.com](https://platform.deepseek.com))
 
@@ -20,14 +20,14 @@
 
 The mod works in **single-player** too - no dedicated server needed:
 
-1. Install **Fabric client** (same version 26.1.2 as the server)
+1. Install **Fabric client** (same version 26.2 as the server)
 2. Place the JAR in `.minecraft/mods/` folder
 3. Launch the game and enter a single-player world
 4. Config auto-generated at `config/mcai/config.json` (game root directory)
 5. All commands are available; you are the world owner with full permissions
 6. (Optional) Install [Mod Menu](https://modrinth.com/mod/modmenu) for in-game config editing
 
-> Note: The behavior review system is auto-disabled in single-player, and `/aicheck` no longer works.
+> Note: The behavior review system is auto-disabled in single-player, and `/aireview` no longer works.
 
 ```json
 {
@@ -58,16 +58,19 @@ The mod works in **single-player** too - no dedicated server needed:
 | `/aiclear` | Clear chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/aikb <keyword>` | Search knowledge base |
+| `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
+| `/aikill` | Destroy all AI threads |
+| `/aidebug start/stop` | Debug logging |
 
 ### Review System
 
 | Command | Description |
 |---------|-------------|
-| `/aicheck start` | Trigger manual review |
-| `/aicheck approve <id>` | Approve kick |
-| `/aicheck reject <id>` | Reject kick |
-| `/aicheck last` | View last review result |
-| `/aicheck last reasoning` | View AI reasoning |
+| `/aireview start` | Trigger manual review |
+| `/aireview approve <id>` | Approve kick |
+| `/aireview reject <id>` | Reject kick |
+| `/aireview last` | View last review result |
+| `/aireview last reasoning` | View AI reasoning |
 
 ### Test Commands (OP only)
 

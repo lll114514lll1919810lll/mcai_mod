@@ -47,7 +47,7 @@ src/main/java/com/example/mcai/
 ├── behavior/
 │   ├── ChatReviewSystem.java - 自动行为审查（30分钟周期）
 │   ├── ReviewEngine.java     - AI 审查处理
-│   ├── ReviewCommandRegistry.java - /aicheck 命令
+│   ├── ReviewCommandRegistry.java - /aireview 命令
 │   ├── PlayerBehaviorTracker.java - 玩家行为评分
 │   ├── PenaltyEvent.java     - 处罚记录
 │   ├── PenaltyHistory.java   - 处罚历史

@@ -5,7 +5,7 @@
 # MCAI - Minecraft AI 助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Fabric](https://img.shields.io/badge/Fabric-26.1.2-blue.svg)](https://fabricmc.net/)
+[![Fabric](https://img.shields.io/badge/Fabric-26.2-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/technologies/downloads/)
 
 </div>
@@ -54,7 +54,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 ## 安装
 
 ### 你需要准备
-- Minecraft **Fabric 服务端 26.1.2**
+- Minecraft **Fabric 服务端 26.2**
 - [Java](https://www.oracle.com/java/technologies/downloads/) 25
 - 一个 [DeepSeek API Key](https://platform.deepseek.com)
 
@@ -68,7 +68,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 模组同样支持**单人游戏**（无需专用服务端）：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.1.2）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.2）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人世界
 4. 配置文件和命令与服务端完全一致
@@ -96,15 +96,18 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aiclear` | 清除 AI 对话历史 |
 | `/aireload` | 手动重载配置（配置文件修改后自动重载） |
 | `/aikb <关键词>` | 搜索知识库 |
+| `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
+| `/aikill` | 销毁所有 AI 线程 |
+| `/aidebug start/stop` | 调试日志 |
 
 ### 审查管理
 | 命令 | 说明 |
 |------|------|
-| `/aicheck start` | 手动触发审查 |
-| `/aicheck approve <id>` | 批准踢出 |
-| `/aicheck reject <id>` | 拒绝踢出 |
-| `/aicheck last` | 查看上次审查结果 |
-| `/aicheck last reasoning` | 查看 AI 推理过程 |
+| `/aireview start` | 手动触发审查 |
+| `/aireview approve <id>` | 批准踢出 |
+| `/aireview reject <id>` | 拒绝踢出 |
+| `/aireview last` | 查看上次审查结果 |
+| `/aireview last reasoning` | 查看 AI 推理过程 |
 
 ---
 

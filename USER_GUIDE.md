@@ -7,7 +7,7 @@
 ## 安装
 
 ### 前提条件
-- Minecraft **Fabric 服务端 26.1.2**
+- Minecraft **Fabric 服务端 26.2**
 - JDK 25
 - 一个 **DeepSeek API Key**（[platform.deepseek.com](https://platform.deepseek.com)）
 
@@ -20,14 +20,14 @@
 
 模组同样支持**单人游戏**，无需专用服务端：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.1.2）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.2）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人存档
 4. 配置自动生成于 `config/mcai/config.json`（游戏根目录）
 5. 所有命令均可使用，你是 owner 拥有最高权限
 6. （可选）安装 [Mod Menu](https://modrinth.com/mod/modmenu) 可在游戏内直接修改配置
 
-> 注意：单机模式下行为审查系统自动关闭。`/aicheck` 命令不可用。
+> 注意：单机模式下行为审查系统自动关闭。`/aireview` 命令不可用。
 
 ```json
 {
@@ -58,16 +58,19 @@
 | `/aiclear` | 清除对话历史 |
 | `/aireload` | 手动重载配置（文件修改后自动重载，此命令会清空状态） |
 | `/aikb <关键词>` | 搜索知识库 |
+| `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
+| `/aikill` | 销毁所有 AI 线程 |
+| `/aidebug start/stop` | 调试日志 |
 
 ### 审查系统
 
 | 命令 | 说明 |
 |------|------|
-| `/aicheck start` | 手动触发审查 |
-| `/aicheck approve <id>` | 批准踢出 |
-| `/aicheck reject <id>` | 拒绝踢出 |
-| `/aicheck last` | 查看上次审查结果 |
-| `/aicheck last reasoning` | 查看 AI 推理过程 |
+| `/aireview start` | 手动触发审查 |
+| `/aireview approve <id>` | 批准踢出 |
+| `/aireview reject <id>` | 拒绝踢出 |
+| `/aireview last` | 查看上次审查结果 |
+| `/aireview last reasoning` | 查看 AI 推理过程 |
 
 ### 测试辅助（OP 专用）
 

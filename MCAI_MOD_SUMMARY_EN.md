@@ -12,7 +12,7 @@ MCAI is a Fabric server-side mod that connects to OpenAI-compatible APIs. It rea
 
 | MC Version | Mappings | Artifact |
 |-----------|----------|----------|
-| 26.1.2 | Mojang | `mcai-<version>.jar` |
+| 26.2 | Mojang | `mcai-<version>.jar` |
 
 ---
 
@@ -34,9 +34,9 @@ root (1)         — MCAIMod (111 lines)
 
 | Param | Value |
 |-------|-------|
-| `minecraft_version` | 26.1.2 |
+| `minecraft_version` | 26.2 |
 | `loader_version` | 0.19.2 |
-| `fabric_version` | 0.149.1+26.1.2 |
+| `fabric_version` | 0.149.1+26.2 |
 | `loom_version` | 1.14.1 |
 | `Java` | 25 |
 | `Gradle` | 9.5.1 |

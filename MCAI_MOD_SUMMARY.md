@@ -12,7 +12,7 @@ MCAI 是一个 Fabric 服务端模组，接入 OpenAI 兼容 API（DeepSeek）�
 
 | MC 版本 | 映射 | 产物 |
 |---------|------|------|
-| 26.1.2 | Mojang | `mcai-<version>.jar` |
+| 26.2 | Mojang | `mcai-<version>.jar` |
 
 ---
 
@@ -34,9 +34,9 @@ root (1)         — MCAIMod (111行)
 
 | 参数 | 值 |
 |------|-----|
-| `minecraft_version` | 26.1.2 |
+| `minecraft_version` | 26.2 |
 | `loader_version` | 0.19.2 |
-| `fabric_version` | 0.149.1+26.1.2 |
+| `fabric_version` | 0.149.1+26.2 |
 | `loom_version` | 1.14.1 |
 | `Java` | 25 |
 | `Gradle` | 9.5.1 |

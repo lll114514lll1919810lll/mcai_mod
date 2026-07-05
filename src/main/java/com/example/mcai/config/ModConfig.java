@@ -144,6 +144,12 @@ public class ModConfig {
     private int approvalTimeoutMinutes = 10;
     private boolean enableAutoReview = true;
 
+    // ── 在线 Wiki 搜索 ──
+    /** 是否启用 Minecraft Wiki 在线搜索（默认关闭，需服主手动开启） */
+    private boolean enableOnlineWiki = false;
+    /** 在线 Wiki 语言：zh_cn=中文站，en_us=英文站 */
+    private String wikiLanguage = "zh_cn";
+
     /** 严格模式下免审批的绝对安全命令（只读，无副作用） */
     private List<String> safeCommands = new ArrayList<>(List.of(
             "locate", "seed", "list", "help",
@@ -265,4 +271,9 @@ public class ModConfig {
     public boolean isEnableAutoReview() { return enableAutoReview; }
     public int getAiCooldownSeconds() { return aiCooldownSeconds; }
     public int getAiMaxConcurrent() { return aiMaxConcurrent; }
+
+    public boolean isEnableOnlineWiki() { return enableOnlineWiki; }
+    public void setEnableOnlineWiki(boolean enableOnlineWiki) { this.enableOnlineWiki = enableOnlineWiki; }
+    public String getWikiLanguage() { return wikiLanguage; }
+    public void setWikiLanguage(String wikiLanguage) { this.wikiLanguage = wikiLanguage; }
 }

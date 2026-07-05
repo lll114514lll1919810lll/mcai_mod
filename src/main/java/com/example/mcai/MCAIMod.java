@@ -12,6 +12,8 @@ import com.example.mcai.config.ModConfig;
 import com.example.mcai.api.OpenAIClient;
 import com.example.mcai.handler.*;
 import com.example.mcai.kb.KnowledgeBase;
+import com.example.mcai.kb.SearchRouter;
+import com.example.mcai.kb.WikiSearchProvider;
 import com.example.mcai.behavior.PlayerBehaviorTracker;
 import com.example.mcai.behavior.ChatReviewSystem;
 
@@ -37,6 +39,7 @@ public class MCAIMod implements ModInitializer {
     private ChatHandler chatHandler;
     private CommandRegistry cmdReg;
     private volatile KnowledgeBase knowledgeBase;
+    private volatile SearchRouter searchRouter;
     private volatile PlayerBehaviorTracker behaviorTracker;
     private volatile ChatReviewSystem chatReviewSystem;
     private volatile MinecraftServer server;
@@ -55,15 +58,16 @@ public class MCAIMod implements ModInitializer {
         knowledgeBase = new KnowledgeBase();
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
+        searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
         aiClient = new OpenAIClient(config);
 
         chatLog = new ChatLog();
         animation = new ThinkingAnimation();
         contextBuilder = new PlayerContextBuilder();
         cmdExec = new CommandExecutionService(this);
-        toolDispatcher = new ToolDispatcher(knowledgeBase, cmdExec, this);
+        toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
         chatHandler = new ChatHandler(this, chatLog, animation, contextBuilder, cmdExec, toolDispatcher);
-        cmdReg = new CommandRegistry(chatHandler, cmdExec, knowledgeBase);
+        cmdReg = new CommandRegistry(chatHandler, cmdExec, searchRouter);
 
         behaviorTracker = new PlayerBehaviorTracker(config);
 
@@ -105,6 +109,7 @@ public class MCAIMod implements ModInitializer {
             if (behaviorTracker != null) behaviorTracker.saveImmediate();
             if (watcherScheduler != null) watcherScheduler.shutdownNow();
             if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
+            if (searchRouter != null) searchRouter.shutdown();
         });
 
         chatHandler.registerChatInterceptor();
@@ -203,6 +208,7 @@ public class MCAIMod implements ModInitializer {
     public ModConfig getConfig() { return config; }
     public OpenAIClient getAiClient() { return aiClient; }
     public KnowledgeBase getKnowledgeBase() { return knowledgeBase; }
+    public SearchRouter getSearchRouter() { return searchRouter; }
     public MinecraftServer getServer() { return server; }
     public ChatHandler getChatHandler() { return chatHandler; }
     public ChatLog getChatLog() { return chatLog; }
@@ -218,6 +224,10 @@ public class MCAIMod implements ModInitializer {
         aiClient = new OpenAIClient(config);
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
+        if (searchRouter != null) {
+            searchRouter.shutdown();
+        }
+        searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
         if (chatReviewSystem != null) {
             chatReviewSystem.reloadConfig(config);
         }

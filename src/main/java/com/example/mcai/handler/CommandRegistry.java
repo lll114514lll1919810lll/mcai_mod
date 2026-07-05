@@ -1,5 +1,6 @@
 package com.example.mcai.handler;
 import com.example.mcai.kb.KnowledgeBase;
+import com.example.mcai.kb.SearchProvider;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -18,9 +19,9 @@ import java.util.UUID;
 public class CommandRegistry {
     private final ChatHandler chatHandler;
     private final CommandExecutionService cmdExec;
-    private final KnowledgeBase knowledgeBase;
+    private final SearchProvider knowledgeBase;
     private final SuggestionProvider<CommandSourceStack> pendingIdSuggestions;
-    public CommandRegistry(ChatHandler chatHandler, CommandExecutionService cmdExec, KnowledgeBase kb) {
+    public CommandRegistry(ChatHandler chatHandler, CommandExecutionService cmdExec, SearchProvider kb) {
         this.chatHandler = chatHandler; this.cmdExec = cmdExec; this.knowledgeBase = kb;
         this.pendingIdSuggestions = (ctx, builder) -> {
             ServerPlayer p = ctx.getSource().getPlayer();
@@ -57,7 +58,7 @@ public class CommandRegistry {
     public LiteralArgumentBuilder<CommandSourceStack> createWikiCommand() {
         return Commands.literal("aikb").requires(CommandExecutionService::isAdminOrConsole)
                 .then(Commands.argument("query", StringArgumentType.greedyString()).executes(ctx -> {
-                    String q = StringArgumentType.getString(ctx, "query"); String r = knowledgeBase.search(q, 5);
+                    String q = StringArgumentType.getString(ctx, "query"); String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 5));
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.kb.result", r), false); return 1;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.kb.usage")); return 0; });
     }

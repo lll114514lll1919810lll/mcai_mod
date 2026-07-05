@@ -12,7 +12,10 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class KnowledgeBase {
+/**
+ * 本地 JSON 知识库。既是传统入口，也是 SearchProvider 实现。
+ */
+public class KnowledgeBase implements SearchProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-KB");
     private static final Gson GSON = new GsonBuilder().create();
     private static final String BUNDLED_PATH = "assets/mcai/kb/zh_wiki.json";
@@ -47,6 +50,26 @@ public class KnowledgeBase {
         String titleLower() { return titleLower; }
         String keywordsLower() { return keywordsLower; }
         String summaryLower() { return summaryLower; }
+    }
+
+    @Override
+    public String name() { return "local"; }
+
+    @Override
+    public boolean isAvailable() { return isLoaded(); }
+
+    @Override
+    public SearchResult search(String query, int maxResults) {
+        if (query.isBlank()) return SearchResult.empty(name(), true);
+        List<SearchResult.Item> items = searchItems(query, maxResults);
+        if (items.isEmpty()) return SearchResult.empty(name(), true);
+        return new SearchResult(name(), items, true);
+    }
+
+    @Override
+    public String read(String title) {
+        if (title == null || title.isBlank()) return "标题为空";
+        return readLocal(title);
     }
 
     public void load(Path externalDir) {
@@ -160,42 +183,25 @@ public class KnowledgeBase {
     public boolean isLoaded() { return !entries.isEmpty(); }
     public int size() { return entries.size(); }
 
-    public String search(String query, int maxResults) {
-        if (query.isBlank()) return "查询为空";
-        return searchLocal(query, maxResults);
+    /** 保留传统字符串返回入口，用于 /aikb 等旧命令（现在内部已使用 SearchResult）。 */
+    public String searchText(String query, int maxResults) {
+        SearchResult result = search(query, maxResults);
+        return formatSearchResult(result);
     }
 
-    public String read(String title) {
-        if (title == null || title.isBlank()) return "标题为空";
-        return readLocal(title);
-    }
-
-    private String searchLocal(String query, int maxResults) {
-        if (!isLoaded()) return "[本地] 知识库未加载";
+    private List<SearchResult.Item> searchItems(String query, int maxResults) {
+        if (!isLoaded()) return List.of();
         String[] tokens = tokenize(query);
-        if (tokens.length == 0) return "[本地] 未找到相关信息";
+        if (tokens.length == 0) return List.of();
 
         String queryLower = query.toLowerCase(Locale.ROOT).trim();
-        var scored = entries.parallelStream()
+        return entries.parallelStream()
                 .map(e -> new AbstractMap.SimpleEntry<>(e, score(e, tokens, queryLower)))
                 .filter(e -> e.getValue() >= 0.2)
                 .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
                 .limit(maxResults)
+                .map(e -> new SearchResult.Item(e.getKey().title(), e.getKey().summary(), "", e.getValue()))
                 .collect(Collectors.toList());
-
-        if (scored.isEmpty()) return "[本地] 未找到相关信息";
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("[本地] 找到 ").append(scored.size()).append(" 条相关条目：\n");
-        for (int i = 0; i < scored.size(); i++) {
-            Entry e = scored.get(i).getKey();
-            sb.append("[").append(i + 1).append("] ").append(e.title()).append("\n");
-            String s = e.summary();
-            if (s.length() > 200) s = s.substring(0, 200) + "...";
-            sb.append(s).append("\n\n");
-        }
-        sb.append("如需查看完整内容，使用 read_knowledge_base 工具传入标题。");
-        return sb.toString().trim();
     }
 
     private String readLocal(String title) {
@@ -203,9 +209,8 @@ public class KnowledgeBase {
         String t = title.trim().toLowerCase(Locale.ROOT);
         for (Entry e : entries) {
             if (e.title() == null) continue;
-            if (e.title().toLowerCase(Locale.ROOT).equals(t)
-                    || e.title().toLowerCase(Locale.ROOT).contains(t)
-                    || t.contains(e.title().toLowerCase(Locale.ROOT))) {
+            String lower = e.title().toLowerCase(Locale.ROOT);
+            if (lower.equals(t) || lower.contains(t) || t.contains(lower)) {
                 return "[本地] 【" + e.title() + "】\n" + e.content();
             }
         }
@@ -222,10 +227,10 @@ public class KnowledgeBase {
         if (title.contains(queryLower)) return 0.9;
 
         double totalWeight = 0;
-        for (String t : tokens) {
-            boolean inTitle = title.contains(t);
-            boolean inKeywords = !keywords.isEmpty() && keywords.contains(t);
-            boolean inSummary = summary.contains(t);
+        for (String tok : tokens) {
+            boolean inTitle = title.contains(tok);
+            boolean inKeywords = !keywords.isEmpty() && keywords.contains(tok);
+            boolean inSummary = summary.contains(tok);
             if (inTitle) totalWeight += 3.0;
             if (inKeywords) totalWeight += 2.0;
             if (inSummary) totalWeight += 1.0;
@@ -261,5 +266,24 @@ public class KnowledgeBase {
         for (int i = 0; i < cjk.length() - 1; i++) {
             out.add(cjk.substring(i, i + 2));
         }
+    }
+
+    public static String formatSearchResult(SearchResult result) {
+        if (result == null || result.isEmpty()) {
+            return "[" + result.provider + "] 未找到相关信息";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("[").append(result.provider).append("] 找到 ").append(result.items.size()).append(" 条相关条目：\n");
+        for (int i = 0; i < result.items.size(); i++) {
+            SearchResult.Item item = result.items.get(i);
+            sb.append("[").append(i + 1).append("] ").append(item.title);
+            if (!item.url.isEmpty()) sb.append(" §7(").append(item.url).append(")");
+            sb.append("\n");
+            String s = item.summary;
+            if (s.length() > 200) s = s.substring(0, 200) + "...";
+            sb.append(s).append("\n\n");
+        }
+        sb.append("如需查看完整内容，使用 read_knowledge_base 工具传入标题。");
+        return sb.toString().trim();
     }
 }

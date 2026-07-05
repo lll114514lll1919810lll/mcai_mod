@@ -87,9 +87,9 @@ The mod works in **single-player** too (no dedicated server required):
 ### Admin Commands
 | Command | Description |
 |---------|-------------|
-| `/aiaccept <n>` | Approve pending action |
-| `/aireject <n>` | Reject pending action |
-| `/aiquery` | List pending approvals |
+| `/aiaccept <id>` | Approve pending action |
+| `/aireject <id>` | Reject pending action |
+| `/aiquery` | List pending approvals (shows unique ids) |
 | `/aiclear` | Clear AI chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/aikb <keyword>` | Search knowledge base |

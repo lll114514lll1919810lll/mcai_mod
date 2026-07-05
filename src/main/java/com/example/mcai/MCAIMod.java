@@ -103,8 +103,8 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
             if (chatReviewSystem != null) chatReviewSystem.stop();
             if (behaviorTracker != null) behaviorTracker.saveImmediate();
-            if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
             if (watcherScheduler != null) watcherScheduler.shutdownNow();
+            if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
         });
 
         chatHandler.registerChatInterceptor();
@@ -170,6 +170,8 @@ public class MCAIMod implements ModInitializer {
                         }
                     } catch (InterruptedException e) {
                         break;
+                    } catch (ClosedWatchServiceException e) {
+                        break; // 正常关闭，静默退出
                     } catch (Exception e) {
                         LOGGER.error("Config watcher error", e);
                     }

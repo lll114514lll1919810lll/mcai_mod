@@ -25,8 +25,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | 和 AI 聊天 | `/ai <问题>` 或 `!ai <问题>` |
 | 让 AI 执行命令 | `/ai 给我一把钻石剑`（管理员审批） |
 | 查看行为分 | `/aiscore` |
-| 搜索知识库 | `/aikb 附魔` |
-| 管理员审批 | `/aiaccept 1` 批准 / `/aireject 1` 拒绝 |
+| 搜索知识库 | `/aikb 附魔`（可启用在线 Wiki） |
+| 管理员审批 | `/aiaccept <id>` 批准 / `/aireject <id>` 拒绝 |
 
 ---
 
@@ -47,7 +47,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 ### 游戏知识库
 - 内置中文 Minecraft Wiki 核心条目
-- 优先在线搜索，失败时回退到本地知识库
+- 可启用 `enableOnlineWiki` 在线搜索 minecraft.wiki / zh.minecraft.wiki
+- 在线优先，失败或关闭时回退到本地知识库
 
 ---
 
@@ -128,6 +129,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `redCardThreshold` | `-60` | 红牌阈值 |
 | `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
 | `reviewPromptPath` | `""` | 审查提示词文件 |
+| `enableOnlineWiki` | `false` | 是否启用 Minecraft Wiki 在线搜索 |
+| `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
 
 提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。
 

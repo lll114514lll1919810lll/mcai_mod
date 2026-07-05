@@ -52,9 +52,9 @@ The mod works in **single-player** too - no dedicated server needed:
 
 | Command | Description |
 |---------|-------------|
-| `/aiaccept <n>` | Approve pending command |
-| `/aireject <n>` | Reject pending command |
-| `/aiquery` | List pending approvals |
+| `/aiaccept <id>` | Approve pending command |
+| `/aireject <id>` | Reject pending command |
+| `/aiquery` | List pending approvals (shows unique ids) |
 | `/aiclear` | Clear chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/aikb <keyword>` | Search knowledge base |
@@ -140,10 +140,30 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `redCardThreshold` | `-60` | Red card threshold |
 | `scoreRecoveryPerInterval` | `5` | Score recovery per cycle |
 | `approvalTimeoutMinutes` | `10` | Approval timeout (min) |
+| `enableOnlineWiki` | `false` | Enable Minecraft Wiki online search |
+| `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
 | `systemPromptPath` | `""` | System prompt file path |
 | `reviewPromptPath` | `""` | Review prompt file path |
 
 ---
+
+## Online Wiki Search
+
+By default the knowledge base uses built-in local JSON. Enabling online Wiki makes the AI search minecraft.wiki / zh.minecraft.wiki first, and automatically fall back to the local knowledge base on timeout or failure.
+
+Edit `config/mcai/config.json`:
+
+```json
+{
+  "enableOnlineWiki": true,
+  "wikiLanguage": "zh_cn"
+}
+```
+
+- `enableOnlineWiki`: `true` to enable online Wiki, `false` for local KB only
+- `wikiLanguage`: `zh_cn` for Chinese Wiki, `en_us` for English Wiki
+
+> Note: enabling this sends search requests to minecraft.wiki. Make sure your server has internet access and follows the wiki usage policy.
 
 ## File Structure
 

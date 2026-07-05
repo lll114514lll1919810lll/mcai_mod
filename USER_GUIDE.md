@@ -52,9 +52,9 @@
 
 | 命令 | 说明 |
 |------|------|
-| `/aiaccept <编号>` | 批准待审批指令 |
-| `/aireject <编号>` | 拒绝待审批指令 |
-| `/aiquery` | 查看待审批列表 |
+| `/aiaccept <id>` | 批准待审批指令 |
+| `/aireject <id>` | 拒绝待审批指令 |
+| `/aiquery` | 查看待审批列表（显示全局唯一 id） |
 | `/aiclear` | 清除对话历史 |
 | `/aireload` | 手动重载配置（文件修改后自动重载，此命令会清空状态） |
 | `/aikb <关键词>` | 搜索知识库 |
@@ -144,10 +144,30 @@
 | `redCardThreshold` | -60 | 红牌阈值 |
 | `scoreRecoveryPerInterval` | 5 | 每周期恢复分数 |
 | `approvalTimeoutMinutes` | 10 | 审批超时（分） |
+| `enableOnlineWiki` | `false` | 是否启用 Minecraft Wiki 在线搜索 |
+| `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
 | `systemPromptPath` | `""` | AI提示词文件路径 |
 | `reviewPromptPath` | `""` | 审查提示词文件路径 |
 
 ---
+
+## 在线 Wiki 搜索
+
+默认情况下知识库使用内置的本地 JSON。开启在线 Wiki 后，AI 会优先搜索 minecraft.wiki / zh.minecraft.wiki 上的最新原版内容，超时或失败时自动回退到本地知识库。
+
+在 `config/mcai/config.json` 中修改：
+
+```json
+{
+  "enableOnlineWiki": true,
+  "wikiLanguage": "zh_cn"
+}
+```
+
+- `enableOnlineWiki`：`true` 开启在线 Wiki，`false` 只用本地知识库
+- `wikiLanguage`：`zh_cn` 使用中文 Wiki，`en_us` 使用英文 Wiki
+
+> 注意：开启后会向 minecraft.wiki 发送搜索请求，请确保服务器可以访问互联网，并遵守 Wiki 的使用政策。
 
 ## 文件结构
 

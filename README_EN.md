@@ -19,8 +19,8 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 | Chat with AI | `/ai <question>` or `!ai <question>` |
 | AI executes commands | `/ai give me a diamond sword` (admin approval) |
 | Check behavior score | `/aiscore` |
-| Search wiki | `/aikb enchantment` |
-| Admin approve | `/aiaccept 1` approve / `/aireject 1` reject |
+| Search wiki | `/aikb enchantment` (online Wiki available) |
+| Admin approve | `/aiaccept <id>` approve / `/aireject <id>` reject |
 
 ---
 
@@ -43,7 +43,8 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 
 ### Game Knowledge Base
 - Built-in Chinese Minecraft Wiki entries
-- Online search with local fallback
+- Optional `enableOnlineWiki` to search minecraft.wiki / zh.minecraft.wiki
+- Online-first; falls back to local KB when disabled or offline
 
 ---
 
@@ -124,6 +125,8 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `redCardThreshold` | `-60` | Red card threshold |
 | `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
 | `reviewPromptPath` | `""` | Review prompt file |
+| `enableOnlineWiki` | `false` | Enable Minecraft Wiki online search |
+| `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
 
 Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first start.
 

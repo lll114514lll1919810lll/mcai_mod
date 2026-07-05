@@ -40,6 +40,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 - Dangerous commands (op, ban, kick) require manual admin approval
 - 3-minute timeout auto-cancels pending approvals
 - Strict mode: only whitelisted safe commands skip approval
+- AI text starting with `/` is blocked; all commands must go through the Tool system and the unified approval flow
 
 ### Game Knowledge Base
 - Built-in Chinese Minecraft Wiki entries
@@ -117,16 +118,22 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `apiEndpoint` | `https://api.deepseek.com` | API endpoint |
 | `apiKey` | `""` | API key |
 | `model` | `deepseek-v4-flash` | Model name |
+| `triggerPrefix` | `!ai` | Chat trigger prefix |
+| `maxTokens` | 2048 | Max response tokens |
+| `temperature` | 0.75 | Response randomness (0-1) |
+| `thinkingLevel` | 1 | Thinking level 0-3 |
 | `strictMode` | `true` | Strict mode |
 | `aiCooldownSeconds` | `60` | Non-admin AI cooldown (seconds) |
 | `aiMaxConcurrent` | `3` | Max concurrent non-admin AI calls |
 | `reviewIntervalMinutes` | `30` | Review interval (min) |
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |
-| `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
-| `reviewPromptPath` | `""` | Review prompt file |
+| `scoreRecoveryPerInterval` | `5` | Score recovery per cycle |
+| `approvalTimeoutMinutes` | `10` | Approval timeout (min) |
 | `enableOnlineWiki` | `false` | Enable Minecraft Wiki online search |
 | `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
+| `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
+| `reviewPromptPath` | `""` | Review prompt file |
 
 Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first start.
 

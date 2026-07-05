@@ -44,6 +44,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 ### 安全审批
 - 危险命令需要管理员手动批准，3 分钟超时自动取消
 - 严格模式下仅白名单安全命令免审批
+- AI 直接输出以 `/` 开头的文本命令会被拦截，所有命令必须通过 Tool 执行，走统一审批流程
 
 ### 游戏知识库
 - 内置中文 Minecraft Wiki 核心条目
@@ -121,16 +122,22 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `apiEndpoint` | `https://api.deepseek.com` | API 地址 |
 | `apiKey` | `""` | API 密钥 |
 | `model` | `deepseek-v4-flash` | 模型名称 |
+| `triggerPrefix` | `!ai` | 聊天触发前缀 |
+| `maxTokens` | 2048 | AI 回复最大 token |
+| `temperature` | 0.75 | 回复随机性（0-1） |
+| `thinkingLevel` | 1 | 思考模式 0-3 |
 | `strictMode` | `true` | 严格模式 |
 | `aiCooldownSeconds` | `60` | 非管理员 AI 调用冷却（秒） |
 | `aiMaxConcurrent` | `3` | 最大并发非管理员 AI 调用 |
 | `reviewIntervalMinutes` | `30` | 审查间隔（分钟） |
 | `yellowCardThreshold` | `-30` | 黄牌阈值 |
 | `redCardThreshold` | `-60` | 红牌阈值 |
-| `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
-| `reviewPromptPath` | `""` | 审查提示词文件 |
+| `scoreRecoveryPerInterval` | `5` | 每周期恢复分数 |
+| `approvalTimeoutMinutes` | 10 | 审批超时（分） |
 | `enableOnlineWiki` | `false` | 是否启用 Minecraft Wiki 在线搜索 |
 | `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
+| `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
+| `reviewPromptPath` | `""` | 审查提示词文件 |
 
 提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。
 

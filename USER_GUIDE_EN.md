@@ -116,6 +116,7 @@ The mod works in **single-player** too - no dedicated server needed:
 - Dangerous commands (op, ban, kick etc.) require admin approval
 - AI blocks waiting for approval; 3-min timeout auto-cancels
 - Strict mode: only whitelisted safe commands skip approval
+- AI text output starting with `/` is automatically blocked and will not execute. All commands must go through the AI Tool system, ensuring the unified approval flow
 
 ---
 

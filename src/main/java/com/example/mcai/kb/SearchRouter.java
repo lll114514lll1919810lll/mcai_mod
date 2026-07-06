@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 
 /**
  * 知识库搜索路由器。
- * 策略：本地优先 → Wiki 在线兜底 → 可选通用搜索；超时自动降级。
+ * 策略：Wiki 在线优先 → 本地兜底；可选通用搜索；超时自动降级。
  */
 public class SearchRouter implements SearchProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-SearchRouter");
@@ -130,4 +130,5 @@ public class SearchRouter implements SearchProvider {
 
     public SearchProvider getLocalProvider() { return localProvider; }
     public SearchProvider getWikiProvider() { return wikiProvider; }
+    public ExecutorService getExecutor() { return executor; }
 }

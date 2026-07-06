@@ -1,6 +1,7 @@
 package com.example.mcai.handler;
 import com.example.mcai.kb.KnowledgeBase;
 import com.example.mcai.kb.SearchProvider;
+import com.example.mcai.kb.SearchRouter;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -58,8 +59,23 @@ public class CommandRegistry {
     public LiteralArgumentBuilder<CommandSourceStack> createWikiCommand() {
         return Commands.literal("aikb").requires(CommandExecutionService::isAdminOrConsole)
                 .then(Commands.argument("query", StringArgumentType.greedyString()).executes(ctx -> {
-                    String q = StringArgumentType.getString(ctx, "query"); String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 5));
-                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.kb.result", r), false); return 1;
+                    String q = StringArgumentType.getString(ctx, "query");
+                    var src = ctx.getSource();
+                    var srv = src.getServer();
+                    if (srv == null) { src.sendFailure(Component.literal("Server not ready")); return 0; }
+                    src.sendSuccess(() -> Component.translatable("mcai.chat.thinking"), false);
+                    var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
+                    java.util.concurrent.ExecutorService asyncPool = router != null ? router.getExecutor() : null;
+                    Runnable searchTask = () -> {
+                        String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 5));
+                        srv.execute(() -> src.sendSuccess(() -> Component.translatable("mcai.cmd.kb.result", r), false));
+                    };
+                    if (asyncPool != null) {
+                        asyncPool.execute(searchTask);
+                    } else {
+                        searchTask.run();
+                    }
+                    return 1;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.kb.usage")); return 0; });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createQueryCommand() {

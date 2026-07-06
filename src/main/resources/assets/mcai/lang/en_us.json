@@ -7,6 +7,7 @@
 
   "mcai.chat.prefix": "[AI]",
   "mcai.chat.thinking": "§7[AI] Thinking...",
+  "mcai.chat.searching": "§7[AI] Searching...",
   "mcai.chat.thinking_anim": "%s §eAI Thinking...",
   "mcai.chat.reply": "§b[AI] %s",
   "mcai.chat.error": "§c[AI] %s",

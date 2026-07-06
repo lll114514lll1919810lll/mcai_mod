@@ -72,7 +72,7 @@ public class CommandRegistry {
                     var src = ctx.getSource();
                     var srv = src.getServer();
                     if (srv == null) { src.sendFailure(Component.literal("Server not ready")); return 0; }
-                    src.sendSuccess(() -> Component.translatable("mcai.chat.thinking"), false);
+                    src.sendSuccess(() -> Component.translatable("mcai.chat.searching"), false);
                     var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
                     java.util.concurrent.ExecutorService asyncPool = router != null ? router.getExecutor() : null;
                     Runnable searchTask = () -> {

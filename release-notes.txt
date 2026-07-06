@@ -1,0 +1,39 @@
+## What's New
+
+### Command Chain
+- AI can now batch multiple commands into a single approval unit
+- New tool: `execute_command_chain` with configurable intervals
+- Admin approves once to execute all commands
+
+### Player Cancel
+- New command: `/aicancel [id/all]`
+- Players can cancel their own pending commands
+- AI receives cancellation notice and won't retry
+
+### UI Improvements
+- Clickable buttons (Approve/Reject/Cancel) in approval notifications
+- Fixed i18n color codes in approval messages
+- Fixed premature 'invalid ID' error when approving chains
+
+### Resource Pack
+- Added `mcai-lang-pack.zip` for clients without mod installed
+- Provides translations for AI-related messages
+- Can be configured as server-required resource pack
+
+### Documentation
+- Updated README with new features
+- Added dual-client mod installation recommendation
+
+## Installation
+1. Download `mcai-26.1.2-1.5.1.jar` to `mods/` folder
+2. (Optional) Download `mcai-lang-pack.zip` for clients without mod
+3. Restart server or run `/aireload`
+
+## Server Resource Pack Configuration
+Add to `server.properties`:
+```
+resource-pack=https://github.com/lll114514lll1919810lll/mcai_mod/releases/download/v1.5.2/mcai-lang-pack.zip
+resource-pack-sha1=3f6340c64ab2bc4a87f6d1df3cd840a5f3c98ebe
+resource-pack-prompt=MCAI language pack for AI message translations
+resource-pack-required=false
+```

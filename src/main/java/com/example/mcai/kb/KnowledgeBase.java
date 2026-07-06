@@ -269,7 +269,10 @@ public class KnowledgeBase implements SearchProvider {
     }
 
     public static String formatSearchResult(SearchResult result) {
-        if (result == null || result.isEmpty()) {
+        if (result == null) {
+            return "[unknown] 未找到相关信息";
+        }
+        if (result.isEmpty()) {
             return "[" + result.provider + "] 未找到相关信息";
         }
         StringBuilder sb = new StringBuilder();

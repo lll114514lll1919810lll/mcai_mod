@@ -18,9 +18,11 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 |------|-----|
 | Chat with AI | `/ai <question>` or `!ai <question>` |
 | AI executes commands | `/ai give me a diamond sword` (admin approval) |
+| AI batch commands | `/ai build a redstone circuit` (command chain, one approval) |
 | Check behavior score | `/aiscore` |
 | Search wiki | `/aikb enchantment` (online Wiki available) |
 | Admin approve | `/aiaccept <id>` approve / `/aireject <id>` reject |
+| Cancel pending | `/aicancel` cancel latest / `/aicancel all` cancel all |
 
 ---
 
@@ -41,6 +43,8 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 - 3-minute timeout auto-cancels pending approvals
 - Strict mode: only whitelisted safe commands skip approval
 - AI text starting with `/` is blocked; all commands must go through the Tool system and the unified approval flow
+- **Command Chain**: AI can batch multiple commands into a single approval unit (`execute_command_chain`), admin approves once to execute all, with configurable intervals between commands
+- **Player Cancel**: Players can use `/aicancel` to cancel their own pending commands; AI receives cancellation notice and won't retry the same command
 
 ### Game Knowledge Base
 - Built-in Chinese Minecraft Wiki entries

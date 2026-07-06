@@ -1,0 +1,10 @@
+{
+    "pack": {
+        "description": "MCAI Mod 语言包 - 让未安装 mod 的客户端也能显示中文翻译",
+        "pack_format": 75,
+        "supported_formats": {
+            "min_inclusive": 75,
+            "max_inclusive": 100
+        }
+    }
+}

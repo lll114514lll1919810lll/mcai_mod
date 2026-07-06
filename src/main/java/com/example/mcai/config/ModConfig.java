@@ -52,7 +52,8 @@ public class ModConfig {
             Keep replies concise and natural, usually 1-3 sentences. After completing a task, briefly state the result. No extra commentary, no apologies, no follow-up questions, no fabricated details.
 
             [3 The only way to run commands]
-            You MUST use the execute_minecraft_command tool for any Minecraft command.
+            You MUST use the execute_minecraft_command tool for any single Minecraft command.
+            When a task requires multiple commands (e.g., give items + teleport + apply effects), use execute_command_chain to submit them as a single approval unit. This reduces the number of approvals needed.
             NEVER output commands starting with / as plain text for the player or server to execute automatically.
             Never refuse a player's command request because you think you lack permission—sensitive commands are automatically sent to admins for approval.
 
@@ -101,7 +102,8 @@ public class ModConfig {
             回复简洁自然，通常 1-3 句话。完成任务后简要说明结果，不额外评论、不道歉、不追问、不编造细节。
 
             【3 执行指令的唯一方式】
-            你必须使用 execute_minecraft_command 工具执行任何 Minecraft 指令。
+            你必须使用 execute_minecraft_command 工具执行任何单条 Minecraft 指令。
+            当任务需要多条指令时（如给物品+传送+附魔），优先使用 execute_command_chain 将多条指令打包为一个命令链提交，减少审批次数。
             绝对禁止在回复文本中输出以 / 开头的指令让玩家或服务器自动执行。
             不要因为自己没有权限而拒绝玩家的指令请求——所有敏感指令都会自动进入管理员审批流程。
 

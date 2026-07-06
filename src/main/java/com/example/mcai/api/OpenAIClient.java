@@ -415,6 +415,42 @@ public class OpenAIClient {
                 "在服务器上执行一条 Minecraft 指令。玩家提出的任何指令请求都可以用此工具执行（如给物品、传送、修改游戏规则等），不需要你判断权限——所有指令会自动送去管理员审批，审批通过后才会执行。只管调用工具，把结果告诉玩家即可。",
                 "command", "string", "要执行的指令，不要带开头的 /");
 
+        // Command chain tool - for multi-command tasks
+        JsonObject chainTool = new JsonObject();
+        chainTool.addProperty("type", "function");
+        JsonObject chainFn = new JsonObject();
+        chainFn.addProperty("name", "execute_command_chain");
+        chainFn.addProperty("description",
+                "将多条 Minecraft 指令打包为一个命令链提交。所有指令作为一个审批单元，管理员一次审批即可全部执行。" +
+                "支持设置命令间执行间隔。当任务需要多条指令时（如给物品+传送+附魔），优先使用此工具减少审批次数。" +
+                "命令链提交后会阻塞等待审批结果，执行完成后返回所有命令的结果汇总。");
+        JsonObject chainParams = new JsonObject();
+        chainParams.addProperty("type", "object");
+        JsonObject chainProps = new JsonObject();
+
+        // commands array parameter
+        JsonObject commandsParam = new JsonObject();
+        commandsParam.addProperty("type", "array");
+        JsonObject itemsObj = new JsonObject();
+        itemsObj.addProperty("type", "string");
+        itemsObj.addProperty("description", "一条指令，不要带开头的 /");
+        commandsParam.add("items", itemsObj);
+        commandsParam.addProperty("description", "要按顺序执行的指令列表，不要带开头的 /。最多10条。");
+        chainProps.add("commands", commandsParam);
+
+        // interval parameter (optional)
+        JsonObject intervalParam = new JsonObject();
+        intervalParam.addProperty("type", "integer");
+        intervalParam.addProperty("description", "命令之间的等待秒数，默认0（立即执行）。例如设为1表示每条命令间隔1秒。最大10秒。");
+        chainProps.add("interval", intervalParam);
+
+        chainParams.add("properties", chainProps);
+        JsonArray chainReq = new JsonArray();
+        chainReq.add("commands");
+        chainParams.add("required", chainReq);
+        chainFn.add("parameters", chainParams);
+        chainTool.add("function", chainFn);
+
 
         JsonObject statusTool = new JsonObject();
         statusTool.addProperty("type", "function");
@@ -436,6 +472,7 @@ public class OpenAIClient {
         tools.add(kbTool);
         tools.add(readTool);
         tools.add(cmdTool);
+        tools.add(chainTool);
         JsonObject debugTool = new JsonObject();
         debugTool.addProperty("type", "function");
         JsonObject debugFn = new JsonObject();

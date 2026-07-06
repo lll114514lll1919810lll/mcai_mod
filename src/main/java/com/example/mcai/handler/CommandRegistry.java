@@ -30,9 +30,15 @@ public class CommandRegistry {
                 for (var pending : this.cmdExec.getPendingCommands(p.getUUID())) {
                     builder.suggest(String.valueOf(pending.id), Component.literal(pending.command));
                 }
+                for (var chain : this.cmdExec.getPlayerPendingChains(p.getUUID())) {
+                    builder.suggest(String.valueOf(chain.id), Component.literal("[链] " + chain.commands.size() + "条命令"));
+                }
             } else {
                 for (var pending : this.cmdExec.getAllPendingCommands()) {
                     builder.suggest(String.valueOf(pending.id), Component.literal(pending.requesterName + ": " + pending.command));
+                }
+                for (var chain : this.cmdExec.getAllPendingChains()) {
+                    builder.suggest(String.valueOf(chain.id), Component.literal(chain.requesterName + ": [链] " + chain.commands.size() + "条命令"));
                 }
             }
             return builder.buildFuture();
@@ -43,6 +49,9 @@ public class CommandRegistry {
             if (!chatHandler.isChatEnabled()) { ctx.getSource().sendFailure(Component.translatable("mcai.chat.disabled")); return 0; }
             ServerPlayer player = ctx.getSource().getPlayer(); String msg = StringArgumentType.getString(ctx, "message");
             if (player != null) {
+                // Check cooldown BEFORE broadcasting
+                Component cooldownError = chatHandler.checkPlayerCanUseAI(player);
+                if (cooldownError != null) { ctx.getSource().sendFailure(cooldownError); return 0; }
                 var server = chatHandler.getServer();
                 if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.ai.broadcast", player.getScoreboardName(), msg), false);
                 chatHandler.getChatLog().add(player.getScoreboardName(), msg);
@@ -67,7 +76,7 @@ public class CommandRegistry {
                     var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
                     java.util.concurrent.ExecutorService asyncPool = router != null ? router.getExecutor() : null;
                     Runnable searchTask = () -> {
-                        String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 5));
+                        String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 7));
                         srv.execute(() -> src.sendSuccess(() -> Component.translatable("mcai.cmd.kb.result", r), false));
                     };
                     if (asyncPool != null) {
@@ -83,18 +92,57 @@ public class CommandRegistry {
             ServerPlayer player = ctx.getSource().getPlayer();
             if (player != null) {
                 var cmds = cmdExec.getPendingCommands(player.getUUID());
-                if (cmds.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
-                ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.title", cmds.size()), false);
-                for (var pending : cmds) {
-                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", pending.id, pending.command), false);
+                var chains = cmdExec.getPlayerPendingChains(player.getUUID());
+                if (cmds.isEmpty() && chains.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
+                int total = cmds.size() + chains.size();
+                ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.title", total), false);
+                // Show single commands
+                if (!cmds.isEmpty()) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.single_header"), false);
+                    for (var pending : cmds) {
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", pending.id, pending.command), false);
+                    }
+                }
+                // Show chains
+                if (!chains.isEmpty()) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.chain_header"), false);
+                    for (var chain : chains) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("§6  [#").append(chain.id).append("] ").append(chain.commands.size()).append("条命令");
+                        if (chain.intervalSeconds > 0) sb.append(" (间隔").append(chain.intervalSeconds).append("秒)");
+                        sb.append("\n");
+                        for (int i = 0; i < chain.commands.size(); i++) {
+                            sb.append("§7    ").append(i + 1).append(". §e/").append(chain.commands.get(i)).append("\n");
+                        }
+                        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString().trim()), false);
+                    }
                 }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.hint"), false);
             } else {
                 var all = cmdExec.getAllPendingCommands();
-                if (all.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
+                var allChains = cmdExec.getAllPendingChains();
+                if (all.isEmpty() && allChains.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.none"), false); return 0; }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.title_all"), false);
-                for (var pending : all) {
-                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", pending.id, pending.requesterName, pending.command), false);
+                // Show single commands
+                if (!all.isEmpty()) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.single_header"), false);
+                    for (var pending : all) {
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", pending.id, pending.requesterName, pending.command), false);
+                    }
+                }
+                // Show chains
+                if (!allChains.isEmpty()) {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.chain_header"), false);
+                    for (var chain : allChains) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("§6  [#").append(chain.id).append("] §f").append(chain.requesterName).append(" §7- ").append(chain.commands.size()).append("条命令");
+                        if (chain.intervalSeconds > 0) sb.append(" (间隔").append(chain.intervalSeconds).append("秒)");
+                        sb.append("\n");
+                        for (int i = 0; i < chain.commands.size(); i++) {
+                            sb.append("§7    ").append(i + 1).append(". §e/").append(chain.commands.get(i)).append("\n");
+                        }
+                        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString().trim()), false);
+                    }
                 }
             }
             return 1;
@@ -106,7 +154,11 @@ public class CommandRegistry {
                     ServerPlayer player = ctx.getSource().getPlayer();
                     long id = LongArgumentType.getLong(ctx, "id");
                     if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.no_console")); return 0; }
+                    // Try single command first, then chain
                     int r = cmdExec.approveCommand(player, id);
+                    if (r == 0) {
+                        r = cmdExec.approveChain(player, id);
+                    }
                     if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.invalid"));
                     return r;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.accept.usage")); return 0; });
@@ -117,10 +169,37 @@ public class CommandRegistry {
                     ServerPlayer player = ctx.getSource().getPlayer();
                     long id = LongArgumentType.getLong(ctx, "id");
                     if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.no_console")); return 0; }
+                    // Try single command first, then chain
                     int r = cmdExec.rejectCommand(player, id);
+                    if (r == 0) {
+                        r = cmdExec.rejectChain(player, id);
+                    }
                     if (r == 0) ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.invalid"));
                     return r;
                 })).executes(ctx -> { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.reject.usage")); return 0; });
+    }
+
+    public LiteralArgumentBuilder<CommandSourceStack> createCancelCommand() {
+        return Commands.literal("aicancel")
+                // /aicancel <id> - cancel specific command
+                .then(Commands.argument("id", LongArgumentType.longArg(1)).suggests(pendingIdSuggestions).executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayer();
+                    if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.cancel.no_console")); return 0; }
+                    long id = LongArgumentType.getLong(ctx, "id");
+                    return cmdExec.cancelByPlayer(player, id);
+                }))
+                // /aicancel all - cancel all pending commands
+                .then(Commands.literal("all").executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayer();
+                    if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.cancel.no_console")); return 0; }
+                    return cmdExec.cancelAllByPlayer(player);
+                }))
+                // /aicancel - cancel latest pending command
+                .executes(ctx -> {
+                    ServerPlayer player = ctx.getSource().getPlayer();
+                    if (player == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.cancel.no_console")); return 0; }
+                    return cmdExec.cancelLatestByPlayer(player);
+                });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createClearCommand() {
         return Commands.literal("aiclear").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {

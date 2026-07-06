@@ -27,6 +27,7 @@ public class ToolDispatcher {
                 case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(parseArg(tc.arguments, "command"), player));
+                case "execute_command_chain" -> results.add(cmdExec.submitChain(parseArgArray(tc.arguments, "commands"), parseArgInt(tc.arguments, "interval", 0), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
                 case "get_game_rules" -> results.add(getGameRules(player));
                 case "get_debug_info" -> results.add(getDebugInfo(player));
@@ -47,6 +48,24 @@ public class ToolDispatcher {
                 case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
                 case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(parseArg(tc.arguments, "command"), server) : "服务器未就绪");
+                case "execute_command_chain" -> {
+                    if (server == null) {
+                        results.add("服务器未就绪");
+                    } else {
+                        List<String> cmds = parseArgArray(tc.arguments, "commands");
+                        int interval = parseArgInt(tc.arguments, "interval", 0);
+                        StringBuilder summary = new StringBuilder();
+                        summary.append("命令链执行完毕 (").append(cmds.size()).append(" 条):\n");
+                        for (int i = 0; i < cmds.size(); i++) {
+                            if (i > 0 && interval > 0) {
+                                try { Thread.sleep(interval * 1000L); } catch (InterruptedException e) { break; }
+                            }
+                            String result = cmdExec.executeAsOp(cmds.get(i), server);
+                            summary.append("  ").append(i + 1).append(". /").append(cmds.get(i)).append(" → ").append(result).append("\n");
+                        }
+                        results.add(summary.toString());
+                    }
+                }
                 case "get_server_status" -> results.add(getServerStatus(null));
                 case "get_game_rules" -> results.add("控制台无法获取游戏规则");
                 case "get_debug_info" -> results.add("控制台无法获取调试信息");
@@ -220,5 +239,38 @@ public class ToolDispatcher {
             MCAIMod.LOGGER.warn("Invalid tool argument JSON: {}", json.length() > 100 ? json.substring(0, 100) + "..." : json);
         }
         return "";
+    }
+
+    private static List<String> parseArgArray(String json, String key) {
+        List<String> result = new ArrayList<>();
+        try {
+            var obj = GSON.fromJson(json, com.google.gson.JsonObject.class);
+            if (obj != null && obj.has(key)) {
+                var elem = obj.get(key);
+                if (elem.isJsonArray()) {
+                    for (var e : elem.getAsJsonArray()) {
+                        if (e.isJsonPrimitive()) result.add(e.getAsString());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            MCAIMod.LOGGER.warn("Invalid tool argument JSON for array: {}", json.length() > 100 ? json.substring(0, 100) + "..." : json);
+        }
+        return result;
+    }
+
+    private static int parseArgInt(String json, String key, int defaultValue) {
+        try {
+            var obj = GSON.fromJson(json, com.google.gson.JsonObject.class);
+            if (obj != null && obj.has(key)) {
+                var elem = obj.get(key);
+                if (elem.isJsonPrimitive() && elem.getAsJsonPrimitive().isNumber()) {
+                    return elem.getAsInt();
+                }
+            }
+        } catch (Exception e) {
+            MCAIMod.LOGGER.warn("Invalid tool argument JSON for int: {}", json.length() > 100 ? json.substring(0, 100) + "..." : json);
+        }
+        return defaultValue;
     }
 }

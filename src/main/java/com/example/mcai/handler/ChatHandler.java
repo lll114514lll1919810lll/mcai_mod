@@ -124,6 +124,12 @@ public class ChatHandler {
                             sender.sendSystemMessage(Component.translatable("mcai.chat.disabled"));
                             return false;
                         }
+                        // Check cooldown BEFORE broadcasting
+                        Component cooldownError = checkPlayerCanUseAI(sender);
+                        if (cooldownError != null) {
+                            sender.sendSystemMessage(cooldownError);
+                            return false;
+                        }
                         var server = mod.getServer();
                         if (server != null) server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.cmd.ai.broadcast", sender.getScoreboardName(), query), false);
                         handleAIQuery(sender, query);
@@ -140,6 +146,30 @@ public class ChatHandler {
     }
 
     public void onPlayerDisconnect(ServerPlayer player) { UUID id = player.getUUID(); history.remove(id); cmdExec.cleanupPlayer(id); lastAICallTime.remove(id); }
+
+    /**
+     * 检查非管理员玩家是否可以使用 AI（冷却 + 并发限制）。
+     * 返回 null 表示可以使用，否则返回错误消息 Component。
+     */
+    public Component checkPlayerCanUseAI(ServerPlayer player) {
+        MinecraftServer server = mod.getServer();
+        if (server == null) return Component.translatable("mcai.chat.exception", "Server not ready");
+        if (CommandExecutionService.isAdmin(player, server)) return null; // 管理员不受限
+
+        int cooldown = mod.getConfig().getAiCooldownSeconds();
+        if (cooldown > 0) {
+            long last = lastAICallTime.getOrDefault(player.getUUID(), 0L);
+            long elapsed = (System.currentTimeMillis() - last) / 1000;
+            if (elapsed < cooldown) {
+                return Component.translatable("mcai.chat.cooldown", cooldown - elapsed);
+            }
+        }
+        int maxConcurrent = mod.getConfig().getAiMaxConcurrent();
+        if (maxConcurrent > 0 && concurrentNonAdminCalls.get() >= maxConcurrent) {
+            return Component.translatable("mcai.chat.concurrent_limit");
+        }
+        return null;
+    }
 
     public void handleAIQuery(ServerPlayer player, String query) {
         MinecraftServer server = mod.getServer(); if (server == null) return;

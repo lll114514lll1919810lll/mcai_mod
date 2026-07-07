@@ -27,9 +27,21 @@ public class OpenAIClient {
     private final ModConfig config;
     private final HttpClient httpClient;
     private final JsonArray toolDefinitions;
+    /** 构造时解析的 API 配置（支持 review 系统使用独立模型） */
+    private final String resolvedEndpoint;
+    private final String resolvedApiKey;
+    private final String resolvedModel;
 
     public OpenAIClient(ModConfig config) {
+        this(config, config.getApiEndpoint(), config.getApiKey(), config.getModel());
+    }
+
+    /** 使用指定的 endpoint/key/model 创建客户端（用于 review 系统独立模型） */
+    public OpenAIClient(ModConfig config, String endpoint, String apiKey, String model) {
         this.config = config;
+        this.resolvedEndpoint = endpoint;
+        this.resolvedApiKey = apiKey;
+        this.resolvedModel = model;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
@@ -110,7 +122,7 @@ public class OpenAIClient {
 
     public ApiResult<String> chat(List<ChatMessage> messages,
                                    Function<List<ToolCall>, List<String>> toolExecutor) {
-        String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";
+        String endpoint = resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions";
         int maxTurns = config.getMaxToolCalls();
         long startTime = System.currentTimeMillis();
         long totalTimeoutMs = 5 * 60 * 1000L; // 5 minutes total timeout
@@ -120,21 +132,7 @@ public class OpenAIClient {
                 LOGGER.warn("Tool call loop timed out after {}ms, forcing final response", totalTimeoutMs);
                 break;
             }
-            JsonObject body = new JsonObject();
-            body.addProperty("model", config.getModel());
-            body.addProperty("max_tokens", config.getMaxTokens());
-            body.addProperty("temperature", config.getTemperature());
-
-            int tl = config.getThinkingLevel();
-            if (tl >= 1) {
-                JsonObject t = new JsonObject();
-                t.addProperty("type", "enabled");
-                body.add("thinking", t);
-                if (tl >= 3) {
-                    body.addProperty("reasoning_effort", "max");
-                }
-            }
-
+            JsonObject body = buildBaseRequestBody();
             JsonArray msgArray = new JsonArray();
             for (ChatMessage msg : messages) {
                 msgArray.add(msg.toJson());
@@ -151,7 +149,7 @@ public class OpenAIClient {
                     .timeout(Duration.ofSeconds(60))
                     .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
 
-            String key = config.getApiKey();
+            String key = resolvedApiKey;
             if (!key.isEmpty()) {
                 builder.header("Authorization", "Bearer " + key);
             }
@@ -159,7 +157,7 @@ public class OpenAIClient {
             HttpResponse<String> response;
             try {
                 var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
-                if (dbg != null && dbg.isEnabled()) dbg.logAPICall(endpoint, config.getModel(), messages.size());
+                if (dbg != null && dbg.isEnabled()) dbg.logAPICall(endpoint, resolvedModel, messages.size());
                 response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
             } catch (Exception e) {
                 LOGGER.error("HTTP request failed: {}", e.getMessage());
@@ -249,12 +247,7 @@ public class OpenAIClient {
         messages.add(new ChatMessage("user",
                 "本轮工具调用次数已用完。请基于已有信息给出最终回答，然后结束对话。不要尝试再次调用工具。"));
         // Final call without tool definitions
-        JsonObject body = new JsonObject();
-        body.addProperty("model", config.getModel());
-        body.addProperty("max_tokens", config.getMaxTokens());
-        body.addProperty("temperature", config.getTemperature());
-        int tl = config.getThinkingLevel();
-        if (tl >= 1) { JsonObject t = new JsonObject(); t.addProperty("type", "enabled"); body.add("thinking", t); if (tl >= 3) body.addProperty("reasoning_effort", "max"); }
+        JsonObject body = buildBaseRequestBody();
         JsonArray msgArray = new JsonArray();
         for (ChatMessage msg : messages) msgArray.add(msg.toJson());
         body.add("messages", msgArray);
@@ -300,29 +293,39 @@ public class OpenAIClient {
      * Supports thinking mode if configured. Returns both content and reasoning_content.
      */
     public ApiResult<ChatSimpleResult> chatSimpleFull(List<ChatMessage> messages) {
-        String endpoint = config.getApiEndpoint().replaceAll("/+$", "") + "/chat/completions";
+        String endpoint = resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions";
 
-        JsonObject body = new JsonObject();
-        body.addProperty("model", config.getModel());
-        body.addProperty("max_tokens", config.getMaxTokens());
-        body.addProperty("temperature", config.getTemperature());
-
-        int tl = config.getThinkingLevel();
-        if (tl >= 1) {
-            JsonObject t = new JsonObject();
-            t.addProperty("type", "enabled");
-            body.add("thinking", t);
-            if (tl >= 3) {
-                body.addProperty("reasoning_effort", "max");
-            }
-        }
-
+        JsonObject body = buildBaseRequestBody();
         JsonArray msgArray = new JsonArray();
         for (ChatMessage msg : messages) {
             msgArray.add(msg.toJson());
         }
         body.add("messages", msgArray);
 
+        return executeChatCompletion(endpoint, body);
+    }
+
+    /**
+     * 构建请求体。兼容模式下只发送 model/messages，避免本地 LM Studio 等不支持的字段导致 400。
+     * 普通模式下按完整 OpenAI 字段发送。
+     */
+    private JsonObject buildBaseRequestBody() {
+        JsonObject body = new JsonObject();
+        body.addProperty("model", resolvedModel);
+        if (config.isCompatibilityMode()) {
+            return body;
+        }
+        body.addProperty("max_tokens", config.getMaxTokens());
+        body.addProperty("temperature", config.getTemperature());
+        int tl = config.getThinkingLevel();
+        addThinkingParams(body, tl);
+        return body;
+    }
+
+    /**
+     * 发送 chat/completions 请求并解析最简响应（仅兼容模式/审查系统使用）。
+     */
+    private ApiResult<ChatSimpleResult> executeChatCompletion(String endpoint, JsonObject body) {
         String bodyJson = GSON.toJson(body);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -331,7 +334,7 @@ public class OpenAIClient {
                 .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
 
-        String key = config.getApiKey();
+        String key = resolvedApiKey;
         if (!key.isEmpty()) {
             builder.header("Authorization", "Bearer " + key);
         }
@@ -426,6 +429,7 @@ public class OpenAIClient {
                 "命令链提交后会阻塞等待审批结果，执行完成后返回所有命令的结果汇总。");
         JsonObject chainParams = new JsonObject();
         chainParams.addProperty("type", "object");
+        chainParams.addProperty("additionalProperties", false);
         JsonObject chainProps = new JsonObject();
 
         // commands array parameter
@@ -457,7 +461,7 @@ public class OpenAIClient {
         JsonObject statusFn = new JsonObject();
         statusFn.addProperty("name", "get_server_status");
         statusFn.addProperty("description", "获取服务器实时状态：当前游戏时间和日期、天气（晴/雨/雷暴）、所在生物群系、服务器负载（TPS/MSPT）。无需参数，自动使用当前玩家的位置。");
-        statusFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        statusFn.add("parameters", emptyParameters());
         statusTool.add("function", statusFn);
 
         JsonObject rulesTool = new JsonObject();
@@ -465,7 +469,7 @@ public class OpenAIClient {
         JsonObject rulesFn = new JsonObject();
         rulesFn.addProperty("name", "get_game_rules");
         rulesFn.addProperty("description", "获取服务器游戏规则状态，包括昼夜循环、火焰蔓延、生物破坏、死亡不掉落、生物生成、天气循环、命令方块输出等关键规则。无需参数。");
-        rulesFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        rulesFn.add("parameters", emptyParameters());
         rulesTool.add("function", rulesFn);
 
         JsonArray tools = new JsonArray();
@@ -478,7 +482,7 @@ public class OpenAIClient {
         JsonObject debugFn = new JsonObject();
         debugFn.addProperty("name", "get_debug_info");
         debugFn.addProperty("description", "获取玩家当前位置的F3调试信息：光照等级（方块光/天空光）、所在区块坐标、注视的方块或实体、区域难度。无需参数。");
-        debugFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        debugFn.add("parameters", emptyParameters());
         debugTool.add("function", debugFn);
 
         JsonObject modsTool = new JsonObject();
@@ -486,7 +490,7 @@ public class OpenAIClient {
         JsonObject modsFn = new JsonObject();
         modsFn.addProperty("name", "get_installed_mods");
         modsFn.addProperty("description", "获取服务器上安装的所有Mod列表及其版本号。了解安装了哪些Mod后，你就能知道物品的命名空间格式（如 create:brass_ingot、thermal:copper_gear），从而在搜索知识库或执行指令时使用正确的Mod物品ID。无需参数。");
-        modsFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        modsFn.add("parameters", emptyParameters());
         modsTool.add("function", modsFn);
 
         tools.add(statusTool);
@@ -499,7 +503,7 @@ public class OpenAIClient {
         JsonObject effectsFn = new JsonObject();
         effectsFn.addProperty("name", "get_player_effects");
         effectsFn.addProperty("description", "获取玩家当前的药水效果，包括效果名称、等级、剩余时间。无需参数。");
-        effectsFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        effectsFn.add("parameters", emptyParameters());
         effectsTool.add("function", effectsFn);
         tools.add(effectsTool);
 
@@ -508,7 +512,7 @@ public class OpenAIClient {
         JsonObject advFn = new JsonObject();
         advFn.addProperty("name", "get_player_advancements");
         advFn.addProperty("description", "获取玩家的进度完成情况，包括已完成数量和正在进行的进度。无需参数。");
-        advFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        advFn.add("parameters", emptyParameters());
         advTool.add("function", advFn);
         tools.add(advTool);
 
@@ -517,11 +521,20 @@ public class OpenAIClient {
         JsonObject invFn = new JsonObject();
         invFn.addProperty("name", "get_player_inventory");
         invFn.addProperty("description", "获取玩家物品栏内容，包括主手、副手、装备和背包中的所有物品及其数量和耐久。无需参数。");
-        invFn.add("parameters", GSON.fromJson("{\"type\": \"object\"}", JsonObject.class));
+        invFn.add("parameters", emptyParameters());
         invTool.add("function", invFn);
         tools.add(invTool);
 
         return tools;
+    }
+
+    /** 返回严格的空 parameters 对象，包含 properties 和 required，避免 LM Studio 等校验失败 */
+    private static JsonObject emptyParameters() {
+        JsonObject params = new JsonObject();
+        params.addProperty("type", "object");
+        params.add("properties", new JsonObject());
+        params.add("required", new JsonArray());
+        return params;
     }
 
     private static JsonObject buildTool(String name, String desc,
@@ -533,6 +546,7 @@ public class OpenAIClient {
         fn.addProperty("description", desc);
         JsonObject params = new JsonObject();
         params.addProperty("type", "object");
+        params.addProperty("additionalProperties", false);
         JsonObject props = new JsonObject();
         JsonObject p = new JsonObject();
         p.addProperty("type", paramType);
@@ -545,5 +559,29 @@ public class OpenAIClient {
         fn.add("parameters", params);
         t.add("function", fn);
         return t;
+    }
+
+    /** 判断模型是否使用 agnes 风格的思考参数（chat_template_kwargs.enable_thinking） */
+    private boolean isAgnesThinkingModel() {
+        return "agnes-2.0-flash".equals(resolvedModel);
+    }
+
+    /** 根据模型类型向请求体添加思考模式参数 */
+    private void addThinkingParams(JsonObject body, int thinkingLevel) {
+        if (thinkingLevel < 1) return;
+        if (isAgnesThinkingModel()) {
+            // agnes-2.0-flash 使用 chat_template_kwargs.enable_thinking
+            JsonObject kwargs = new JsonObject();
+            kwargs.addProperty("enable_thinking", true);
+            body.add("chat_template_kwargs", kwargs);
+        } else {
+            // DeepSeek 风格：thinking.type = "enabled"
+            JsonObject t = new JsonObject();
+            t.addProperty("type", "enabled");
+            body.add("thinking", t);
+            if (thinkingLevel >= 3) {
+                body.addProperty("reasoning_effort", "max");
+            }
+        }
     }
 }

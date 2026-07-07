@@ -31,6 +31,7 @@ public class MCAIMod implements ModInitializer {
 
     private volatile ModConfig config;
     private volatile OpenAIClient aiClient;
+    private volatile OpenAIClient reviewClient;
     private ChatLog chatLog;
     private ThinkingAnimation animation;
     private PlayerContextBuilder contextBuilder;
@@ -60,6 +61,7 @@ public class MCAIMod implements ModInitializer {
                 .getConfigDir().resolve("mcai/kb"));
         searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
         aiClient = new OpenAIClient(config);
+        reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
 
         chatLog = new ChatLog();
         animation = new ThinkingAnimation();
@@ -67,7 +69,7 @@ public class MCAIMod implements ModInitializer {
         cmdExec = new CommandExecutionService(this);
         toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
         chatHandler = new ChatHandler(this, chatLog, animation, contextBuilder, cmdExec, toolDispatcher);
-        cmdReg = new CommandRegistry(chatHandler, cmdExec, searchRouter);
+        cmdReg = new CommandRegistry(chatHandler, cmdExec);
 
         behaviorTracker = new PlayerBehaviorTracker(config);
 
@@ -81,6 +83,7 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(cmdReg.createCancelCommand());
             dispatcher.register(cmdReg.createClearCommand());
             dispatcher.register(cmdReg.createReloadCommand());
+            dispatcher.register(cmdReg.createResetPromptsCommand());
             dispatcher.register(cmdReg.createKillCommand());
             dispatcher.register(cmdReg.createControlCommand());
             dispatcher.register(cmdReg.createDebugCommand());
@@ -116,8 +119,9 @@ public class MCAIMod implements ModInitializer {
         chatHandler.registerChatInterceptor();
         startConfigWatcher();
 
-        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, KB: {} chunks",
-                config.getTriggerPrefix(), config.getApiEndpoint(),
+        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, model: {}, review model: {} ({}), KB: {} chunks",
+                config.getTriggerPrefix(), config.getApiEndpoint(), config.getModel(),
+                config.getReviewModel(), config.hasSeparateReviewModel() ? "independent" : "shared",
                 knowledgeBase.size());
     }
 
@@ -208,6 +212,7 @@ public class MCAIMod implements ModInitializer {
     public static MCAIMod getInstance() { return instance; }
     public ModConfig getConfig() { return config; }
     public OpenAIClient getAiClient() { return aiClient; }
+    public OpenAIClient getReviewClient() { return reviewClient; }
     public KnowledgeBase getKnowledgeBase() { return knowledgeBase; }
     public SearchRouter getSearchRouter() { return searchRouter; }
     public MinecraftServer getServer() { return server; }
@@ -223,6 +228,7 @@ public class MCAIMod implements ModInitializer {
         config.getSystemPrompt();
         config.getReviewPrompt();
         aiClient = new OpenAIClient(config);
+        reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
         knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
                 .getConfigDir().resolve("mcai/kb"));
         if (searchRouter != null) {

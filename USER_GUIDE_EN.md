@@ -57,6 +57,7 @@ The mod works in **single-player** too - no dedicated server needed:
 | `/aiquery` | List pending approvals (shows unique ids) |
 | `/aiclear` | Clear chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
+| `/airesetprompts` | Reset prompt files to current built-in defaults |
 | `/aikb <keyword>` | Search knowledge base |
 | `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
 | `/aikill` | Destroy all AI threads |
@@ -145,6 +146,10 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
 | `systemPromptPath` | `""` | System prompt file path |
 | `reviewPromptPath` | `""` | Review prompt file path |
+| `reviewApiEndpoint` | `""` | Review system API endpoint, empty=follow chat config |
+| `reviewApiKey` | `""` | Review system API key, empty=follow chat config |
+| `reviewModel` | `""` | Review system model, empty=follow chat config |
+| `compatibilityMode` | `false` | Compatibility mode: send only basic fields for local APIs like LM Studio |
 
 ---
 
@@ -192,6 +197,15 @@ Remove from `safeCommands` whitelist or add to `requireApprovalCommands`.
 
 **Q: Can I use other API providers?**
 Yes. Change `apiEndpoint` to any OpenAI-compatible endpoint.
+
+**Q: Prompt files differ from the built-in prompts?**
+Default prompt files are created on first start. After updating the mod, run `/airesetprompts` to sync them to the current built-in versions.
+
+**Q: Getting 400 when connecting to LM Studio?**
+LM Studio is strict about some OpenAI extension fields (`max_tokens`, `temperature`, `thinking`). Enable `compatibilityMode: true` to send only basic fields.
+
+**Q: Use a different model for review?**
+Set `reviewApiEndpoint` / `reviewApiKey` / `reviewModel`. Leave empty to follow the chat system config.
 
 **Q: Cost?**
 DeepSeek flash is very cheap. Review calls every 30 min. Daily use costs pennies.

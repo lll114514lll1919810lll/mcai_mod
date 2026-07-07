@@ -57,6 +57,7 @@
 | `/aiquery` | 查看待审批列表（显示全局唯一 id） |
 | `/aiclear` | 清除对话历史 |
 | `/aireload` | 手动重载配置（文件修改后自动重载，此命令会清空状态） |
+| `/airesetprompts` | 重置提示词文件为当前内置默认 |
 | `/aikb <关键词>` | 搜索知识库 |
 | `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
 | `/aikill` | 销毁所有 AI 线程 |
@@ -149,6 +150,10 @@
 | `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
 | `systemPromptPath` | `""` | AI提示词文件路径 |
 | `reviewPromptPath` | `""` | 审查提示词文件路径 |
+| `reviewApiEndpoint` | `""` | 审查系统独立 API 地址，空=跟随聊天系统 |
+| `reviewApiKey` | `""` | 审查系统独立 API 密钥，空=跟随聊天系统 |
+| `reviewModel` | `""` | 审查系统独立模型，空=跟随聊天系统 |
+| `compatibilityMode` | `false` | 兼容模式，开启后只发送基础字段，适配 LM Studio 等本地 API |
 
 ---
 
@@ -196,6 +201,15 @@
 
 **Q: 能用其他 API 吗？**
 能，改 `apiEndpoint` 为任何 OpenAI 兼容接口。
+
+**Q: 提示词文件和代码里不一致？**
+首次启动会释放默认提示词文件。后续 mod 更新后如需同步内置最新版本，执行 `/airesetprompts` 即可。
+
+**Q: 接 LM Studio 为什么报 400？**
+LM Studio 对部分 OpenAI 扩展字段（如 `max_tokens`、`temperature`、`thinking`）校验严格。开启 `compatibilityMode: true` 可只发送基础字段。
+
+**Q: 审查系统想用不同模型？**
+配置 `reviewApiEndpoint` / `reviewApiKey` / `reviewModel`，留空则跟随聊天系统。
 
 **Q: 消耗大吗？**
 DeepSeek flash 很便宜，每月几块钱。审查 30 分钟才调用一次。

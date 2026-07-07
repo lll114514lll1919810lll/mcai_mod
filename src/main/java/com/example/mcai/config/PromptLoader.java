@@ -34,4 +34,18 @@ public class PromptLoader {
         }
         return defaultContent;
     }
+
+    /** 强制重置提示词文件为当前内置默认内容 */
+    public static boolean reset(String fileName, String defaultContent) {
+        Path path = FabricLoader.getInstance().getConfigDir().resolve("mcai/" + fileName);
+        try {
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, defaultContent, StandardCharsets.UTF_8);
+            LOGGER.info("Reset prompt file: {}", path);
+            return true;
+        } catch (Exception e) {
+            LOGGER.warn("Failed to reset prompt file {}", path, e);
+            return false;
+        }
+    }
 }

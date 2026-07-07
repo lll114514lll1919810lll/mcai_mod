@@ -25,7 +25,7 @@ public class ReviewCommandRegistry {
                 .requires(src -> { var p = src.getPlayer(); if (p == null) return true; if (src.getServer() == null) return false; return src.getServer().getPlayerList().isOp(new NameAndId(p.getGameProfile())); })
                 .then(Commands.literal("approve").then(Commands.argument("id", IntegerArgumentType.integer(1)).suggests(approvalIdSuggestions).executes(ctx -> { int id = IntegerArgumentType.getInteger(ctx, "id"); return handleApproval(ctx.getSource(), id, true); })))
                 .then(Commands.literal("reject").then(Commands.argument("id", IntegerArgumentType.integer(1)).suggests(approvalIdSuggestions).executes(ctx -> { int id = IntegerArgumentType.getInteger(ctx, "id"); return handleApproval(ctx.getSource(), id, false); })))
-                .then(Commands.literal("start").executes(ctx -> { ServerPlayer p = ctx.getSource().getPlayer(); if (p == null) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.review.status.no_console"), false); return 0; } chatReviewSystem.triggerManualReview(p); return Command.SINGLE_SUCCESS; }))
+                .then(Commands.literal("start").executes(ctx -> { chatReviewSystem.triggerManualReview(ctx.getSource().getPlayer()); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.review.started"), false); return Command.SINGLE_SUCCESS; }))
                 .then(Commands.literal("last").executes(ctx -> showLastReview(ctx.getSource())).then(Commands.literal("reasoning").executes(ctx -> showLastReasoning(ctx.getSource()))))
                 .executes(ctx -> showHelp(ctx.getSource()));
     }

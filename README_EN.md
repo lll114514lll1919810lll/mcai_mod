@@ -97,6 +97,7 @@ The mod works in **single-player** too (no dedicated server required):
 | `/aiquery` | List pending approvals (shows unique ids) |
 | `/aiclear` | Clear AI chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
+| `/airesetprompts` | Reset prompt files to current built-in defaults |
 | `/aikb <keyword>` | Search knowledge base |
 | `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
 | `/aikill` | Destroy all AI threads |
@@ -129,6 +130,7 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `strictMode` | `true` | Strict mode |
 | `aiCooldownSeconds` | `60` | Non-admin AI cooldown (seconds) |
 | `aiMaxConcurrent` | `3` | Max concurrent non-admin AI calls |
+| `compatibilityMode` | `false` | Compatibility mode: send only basic fields for local APIs like LM Studio |
 | `reviewIntervalMinutes` | `30` | Review interval (min) |
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |
@@ -138,8 +140,11 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
 | `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
 | `reviewPromptPath` | `""` | Review prompt file |
+| `reviewApiEndpoint` | `""` | Review system API endpoint, empty=follow chat config |
+| `reviewApiKey` | `""` | Review system API key, empty=follow chat config |
+| `reviewModel` | `""` | Review system model, empty=follow chat config |
 
-Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first start.
+Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first start. Run `/airesetprompts` to force-sync them to the current built-in versions.
 
 ---
 

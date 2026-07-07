@@ -81,21 +81,22 @@ public class CommandExecutionService {
     public String executeCommand(String command, ServerPlayer player) {
         MinecraftServer server = mod.getServer();
         if (server == null) return "server not ready";
+        final String normalizedCommand = normalizeCommand(command);
 
-        String root = command.split("\\s+")[0].toLowerCase();
+        String root = normalizedCommand.split("\\s+")[0].toLowerCase();
         if (FORBIDDEN_COMMANDS.contains(root)) {
             return "forbidden: mod internal command";
         }
 
-        if (player != null && needsApproval(command)) {
-            PendingCommand pending = addPendingCommand(player, command);
+        if (player != null && needsApproval(normalizedCommand)) {
+            PendingCommand pending = addPendingCommand(player, normalizedCommand);
             notifyAdminsPending(pending, server);
             try {
                 String result = pending.future.get(3, TimeUnit.MINUTES);
                 return result != null ? result : "§7Command executed";
             } catch (java.util.concurrent.TimeoutException e) {
                 removePending(pending.id);
-                return "§7[Approval timeout] No admin approved in 3 minutes, cancelled: /" + command;
+                return "§7[Approval timeout] No admin approved in 3 minutes, cancelled: /" + normalizedCommand;
             } catch (Exception e) {
                 removePending(pending.id);
                 return "§7[Approval error] " + e.getMessage();
@@ -106,12 +107,12 @@ public class CommandExecutionService {
         String playerName = player != null ? player.getScoreboardName() : "console";
         server.execute(() -> {
             try {
-                String result = player != null ? executeAsOp(command, server, player) : executeAsOp(command, server);
+                String result = player != null ? executeAsOp(normalizedCommand, server, player) : executeAsOp(normalizedCommand, server);
                 server.getPlayerList().broadcastSystemMessage(
-                        Component.translatable("mcai.cmd.exec.broadcast_direct", playerName, command, result.isEmpty() ? "" : result),
+                        Component.translatable("mcai.cmd.exec.broadcast_direct", playerName, normalizedCommand, result.isEmpty() ? "" : result),
                         false
                 );
-                mod.getChatLog().add("AI → " + playerName, "/" + command + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
+                mod.getChatLog().add("AI → " + playerName, "/" + normalizedCommand + (result.isEmpty() || "Command executed".equals(result) ? "" : " (" + result + ")"));
                 future.complete(result.isEmpty() ? "Command executed" : result);
             } catch (Exception e) {
                 future.complete("Execution failed: " + e.getMessage());
@@ -136,6 +137,7 @@ public class CommandExecutionService {
 
     private String executeAsOp(String command, MinecraftServer server, net.minecraft.server.level.ServerLevel level,
                                net.minecraft.core.BlockPos pos, net.minecraft.world.phys.Vec2 rot) {
+        command = normalizeCommand(command);
         try {
             StringBuilder out = new StringBuilder();
             var src = new CommandSourceStack(new CommandSource() {
@@ -293,6 +295,12 @@ public class CommandExecutionService {
         if (intervalSeconds < 0 || intervalSeconds > MAX_CHAIN_INTERVAL) {
             return "§c命令间隔必须在 0-" + MAX_CHAIN_INTERVAL + " 秒之间";
         }
+
+        List<String> normalized = new ArrayList<>(commands.size());
+        for (String cmd : commands) {
+            normalized.add(normalizeCommand(cmd));
+        }
+        commands = normalized;
 
         // Check forbidden commands
         for (String cmd : commands) {
@@ -782,5 +790,15 @@ public class CommandExecutionService {
             if (p.getScoreboardName().equalsIgnoreCase(name)) return p;
         }
         return null;
+    }
+
+    /** 移除命令字符串开头的 /，兼容 AI 多带斜杠的情况 */
+    public static String normalizeCommand(String command) {
+        if (command == null) return "";
+        String trimmed = command.trim();
+        while (trimmed.startsWith("/")) {
+            trimmed = trimmed.substring(1).trim();
+        }
+        return trimmed;
     }
 }

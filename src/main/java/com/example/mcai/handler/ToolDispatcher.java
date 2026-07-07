@@ -14,6 +14,8 @@ import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.LightLayer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.example.mcai.handler.CommandExecutionService.normalizeCommand;
 public class ToolDispatcher {
     private static final Gson GSON = new GsonBuilder().create();
     private final SearchProvider searchProvider;
@@ -26,8 +28,8 @@ public class ToolDispatcher {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
-                case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(parseArg(tc.arguments, "command"), player));
-                case "execute_command_chain" -> results.add(cmdExec.submitChain(parseArgArray(tc.arguments, "commands"), parseArgInt(tc.arguments, "interval", 0), player));
+                case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(normalizeCommand(parseArg(tc.arguments, "command")), player));
+                case "execute_command_chain" -> results.add(cmdExec.submitChain(normalizeCommands(parseArgArray(tc.arguments, "commands")), parseArgInt(tc.arguments, "interval", 0), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
                 case "get_game_rules" -> results.add(getGameRules(player));
                 case "get_debug_info" -> results.add(getDebugInfo(player));
@@ -47,12 +49,12 @@ public class ToolDispatcher {
             switch (tc.name) {
                 case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
-                case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(parseArg(tc.arguments, "command"), server) : "服务器未就绪");
+                case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(normalizeCommand(parseArg(tc.arguments, "command")), server) : "服务器未就绪");
                 case "execute_command_chain" -> {
                     if (server == null) {
                         results.add("服务器未就绪");
                     } else {
-                        List<String> cmds = parseArgArray(tc.arguments, "commands");
+                        List<String> cmds = normalizeCommands(parseArgArray(tc.arguments, "commands"));
                         int interval = parseArgInt(tc.arguments, "interval", 0);
                         StringBuilder summary = new StringBuilder();
                         summary.append("命令链执行完毕 (").append(cmds.size()).append(" 条):\n");
@@ -223,6 +225,15 @@ public class ToolDispatcher {
         return count > 1 ? name + " x" + count : name;
     }
     private static int intVal(Object v) { if (v instanceof Number n) return n.intValue(); return 0; }
+
+    private static List<String> normalizeCommands(List<String> commands) {
+        List<String> result = new ArrayList<>(commands.size());
+        for (String cmd : commands) {
+            result.add(normalizeCommand(cmd));
+        }
+        return result;
+    }
+
     private static String yn(Object v) {
         if (v instanceof Boolean b) return b ? "§a是" : "§c否";
         try { return Boolean.parseBoolean(v.toString()) ? "§a是" : "§c否"; } catch (Exception e) { return v != null ? v.toString() : "?"; }

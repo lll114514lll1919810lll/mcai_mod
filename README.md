@@ -121,6 +121,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aicancel [id/all]` | 取消待审批命令（玩家可用，管理员也可用） |
 | `/aiclear` | 清除 AI 对话历史 |
 | `/aireload` | 手动重载配置（配置文件修改后自动重载） |
+| `/airesetprompts` | 重置提示词文件为当前内置默认 |
 | `/aikb <关键词>` | 搜索知识库 |
 | `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
 | `/aikill` | 销毁所有 AI 线程 |
@@ -153,6 +154,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `strictMode` | `true` | 严格模式 |
 | `aiCooldownSeconds` | `60` | 非管理员 AI 调用冷却（秒） |
 | `aiMaxConcurrent` | `3` | 最大并发非管理员 AI 调用 |
+| `compatibilityMode` | `false` | 兼容模式，开启后只发送基础字段，适配 LM Studio 等本地 API |
 | `reviewIntervalMinutes` | `30` | 审查间隔（分钟） |
 | `yellowCardThreshold` | `-30` | 黄牌阈值 |
 | `redCardThreshold` | `-60` | 红牌阈值 |
@@ -162,8 +164,11 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
 | `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
 | `reviewPromptPath` | `""` | 审查提示词文件 |
+| `reviewApiEndpoint` | `""` | 审查系统独立 API 地址，空=跟随聊天系统 |
+| `reviewApiKey` | `""` | 审查系统独立 API 密钥，空=跟随聊天系统 |
+| `reviewModel` | `""` | 审查系统独立模型，空=跟随聊天系统 |
 
-提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。
+提示词文件 `system_prompt.txt` / `review_prompt.txt` 首次启动自动创建。运行 `/airesetprompts` 可强制同步到当前内置最新版本。
 
 ---
 

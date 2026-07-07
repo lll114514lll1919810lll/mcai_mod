@@ -37,7 +37,8 @@ public class MCAIConfigScreen extends Screen {
     private EditBox sysPromptPathField, reviewPromptPathField;
     private EditBox reviewIntervalField, yellowCardField, redCardField;
     private EditBox scoreRecoveryField, approvalTimeoutField;
-    private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn;
+    private EditBox reviewApiEndpointField, reviewApiKeyField, reviewModelField;
+    private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn, compatBtn;
 
     public MCAIConfigScreen(Screen parent) {
         super(Component.translatable("mcai.config.title"));
@@ -93,6 +94,7 @@ public class MCAIConfigScreen extends Screen {
         addRow(lx, inX, r, "mcai.config.context_chars",  ctxField        = n(inX, ry(r), gi("contextMaxChars", 20000))); r++;
         addRow(lx, inX, r, "mcai.config.thinking_level", thinkingField   = n(inX, ry(r), gi("thinkingLevel", 1))); r++;
         addRow(lx, inX, r, "mcai.config.tool_calls",     toolCallsField  = n(inX, ry(r), gi("maxToolCalls", 15))); r++;
+        tg(lx, inX, fw, r, "mcai.config.compatibility_mode", gb("compatibilityMode", false), b -> compatBtn = b); r++;
 
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.review"), font)); r++;
@@ -105,6 +107,9 @@ public class MCAIConfigScreen extends Screen {
         addRow(lx, inX, r, "mcai.config.red_card",        redCardField         = n(inX, ry(r), gi("redCardThreshold", -60))); r++;
         addRow(lx, inX, r, "mcai.config.score_recovery",  scoreRecoveryField   = n(inX, ry(r), gi("scoreRecoveryPerInterval", 5))); r++;
         addRow(lx, inX, r, "mcai.config.approval_timeout", approvalTimeoutField = n(inX, ry(r), gi("approvalTimeoutMinutes", 10))); r++;
+        addRow(lx, inX, r, "mcai.config.review_endpoint", reviewApiEndpointField = ft(inX, ry(r), kw, gs("reviewApiEndpoint", ""), "mcai.config.tip.review_endpoint")); r++;
+        addRow(lx, inX, r, "mcai.config.review_apikey", reviewApiKeyField     = ft(inX, ry(r), kw, gs("reviewApiKey", ""), "mcai.config.tip.review_apikey")); r++;
+        addRow(lx, inX, r, "mcai.config.review_model",  reviewModelField      = f(inX, ry(r), fw, gs("reviewModel", ""))); r++;
 
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.prompts"), font)); r++;
@@ -178,6 +183,7 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("contextMaxChars", pi(ctxField.getValue(), 20000));
             o.addProperty("thinkingLevel", pi(thinkingField.getValue(), 1));
             o.addProperty("maxToolCalls", pi(toolCallsField.getValue(), 15));
+            o.addProperty("compatibilityMode", toggleStates.getOrDefault(compatBtn, false));
             o.addProperty("enableChatInterception", toggleStates.getOrDefault(chatBtn, true));
             o.addProperty("enableCommandExecution", toggleStates.getOrDefault(cmdBtn, true));
             o.addProperty("strictMode", toggleStates.getOrDefault(strictBtn, true));
@@ -187,6 +193,9 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("redCardThreshold", pi(redCardField.getValue(), -60));
             o.addProperty("scoreRecoveryPerInterval", pi(scoreRecoveryField.getValue(), 5));
             o.addProperty("approvalTimeoutMinutes", pi(approvalTimeoutField.getValue(), 10));
+            o.addProperty("reviewApiEndpoint", reviewApiEndpointField.getValue());
+            o.addProperty("reviewApiKey", reviewApiKeyField.getValue());
+            o.addProperty("reviewModel", reviewModelField.getValue());
             o.addProperty("systemPromptPath", sysPromptPathField.getValue());
             o.addProperty("reviewPromptPath", reviewPromptPathField.getValue());
             try (Writer w = Files.newBufferedWriter(configPath)) { GSON.toJson(o, w); }
@@ -205,7 +214,7 @@ public class MCAIConfigScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
-        int totalH = 28 * ROW_H;
+        int totalH = 32 * ROW_H;
         int visibleH = height - 50;
         double maxS = Math.max(0, totalH - visibleH);
         scrollOffset = Math.clamp(scrollOffset - scrollY * ROW_H * 2, 0, maxS);

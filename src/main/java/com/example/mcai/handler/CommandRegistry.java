@@ -20,10 +20,9 @@ import java.util.UUID;
 public class CommandRegistry {
     private final ChatHandler chatHandler;
     private final CommandExecutionService cmdExec;
-    private final SearchProvider knowledgeBase;
     private final SuggestionProvider<CommandSourceStack> pendingIdSuggestions;
-    public CommandRegistry(ChatHandler chatHandler, CommandExecutionService cmdExec, SearchProvider kb) {
-        this.chatHandler = chatHandler; this.cmdExec = cmdExec; this.knowledgeBase = kb;
+    public CommandRegistry(ChatHandler chatHandler, CommandExecutionService cmdExec) {
+        this.chatHandler = chatHandler; this.cmdExec = cmdExec;
         this.pendingIdSuggestions = (ctx, builder) -> {
             ServerPlayer p = ctx.getSource().getPlayer();
             if (p != null) {
@@ -73,6 +72,7 @@ public class CommandRegistry {
                     var srv = src.getServer();
                     if (srv == null) { src.sendFailure(Component.literal("Server not ready")); return 0; }
                     src.sendSuccess(() -> Component.translatable("mcai.chat.searching"), false);
+                    SearchProvider knowledgeBase = chatHandler.getMod().getSearchRouter();
                     var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
                     java.util.concurrent.ExecutorService asyncPool = router != null ? router.getExecutor() : null;
                     Runnable searchTask = () -> {
@@ -224,6 +224,14 @@ public class CommandRegistry {
         return Commands.literal("aireload").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
             chatHandler.reloadAll();
             ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.reload.done"), true); return 1;
+        });
+    }
+    public LiteralArgumentBuilder<CommandSourceStack> createResetPromptsCommand() {
+        return Commands.literal("airesetprompts").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
+            boolean ok = chatHandler.getMod().getConfig().resetPromptFiles();
+            chatHandler.getMod().reloadConfig();
+            ctx.getSource().sendSuccess(() -> ok ? Component.translatable("mcai.cmd.resetprompts.done") : Component.translatable("mcai.cmd.resetprompts.fail"), true);
+            return ok ? 1 : 0;
         });
     }
     public LiteralArgumentBuilder<CommandSourceStack> createKillCommand() {

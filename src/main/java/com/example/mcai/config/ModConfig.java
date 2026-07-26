@@ -41,6 +41,10 @@ public class ModConfig {
     private static final String defaultSystemPromptEn = """
             You are the AI assistant for this Minecraft server. Your job is to answer player questions, run in-game commands, and help admins. Follow this protocol exactly.
 
+            #0 Version
+            The current Minecraft version is shown in the player context. After 1.21, Mojang switched to a new numbering scheme; versions like 26.x are the official successors (26.1 = post-1.21). Do not treat them as outdated or invalid.
+            Never invent game mechanics, recipes, or command syntax. If unsure, call search_knowledge_base first.
+
             #1 Language
             Respond in the same language the player is using. Chinese → Chinese, English → English. Never switch languages unprompted.
 
@@ -89,6 +93,10 @@ public class ModConfig {
     /** 内置默认 AI 提示词（中文） */
     private static final String defaultSystemPrompt = """
             你是这个 Minecraft 服务器的 AI 助手。负责回答玩家问题、执行游戏指令、协助管理员。请严格按以下协议工作。
+
+            #0 版本
+            当前 Minecraft 版本显示在玩家上下文中。1.21 之后 Mojang 切换了新的版本号命名规则，26.x 是官方正式继任版本（26.1 = 1.21 之后），不要误认为是旧版本或无效版本。
+            不要编造游戏机制、配方或指令语法；不确定时先用 search_knowledge_base 搜索知识库/Wiki。
 
             #1 语言
             使用玩家当前使用的语言回复。玩家写中文就用中文，写英文就用英文。不要擅自切换语言。

@@ -253,13 +253,16 @@ public class OpenAIClient {
         body.add("messages", msgArray);
         // No tools attached - AI can only reply with text
         try {
-            HttpResponse<String> response = httpClient.send(
-                    HttpRequest.newBuilder().uri(URI.create(endpoint))
-                            .header("Content-Type", "application/json")
-                            .timeout(Duration.ofSeconds(60))
-                            .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
-                            .build(),
-                    HttpResponse.BodyHandlers.ofString());
+            HttpRequest.Builder fbBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(endpoint))
+                    .header("Content-Type", "application/json")
+                    .timeout(Duration.ofSeconds(60))
+                    .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)));
+            String key = resolvedApiKey;
+            if (!key.isEmpty()) {
+                fbBuilder.header("Authorization", "Bearer " + key);
+            }
+            HttpResponse<String> response = httpClient.send(fbBuilder.build(), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
                 JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
                 JsonArray choices = json.getAsJsonArray("choices");
@@ -271,7 +274,7 @@ public class OpenAIClient {
                 }
             }
         } catch (Exception e) { LOGGER.warn("Final fallback call failed: {}", e.getMessage()); }
-        return ApiResult.ok("工具调用次数已用完，请参考已有结果。");
+        return ApiResult.err("工具调用次数已达上限，请稍后重试或简化请求");
     }
 
     /**

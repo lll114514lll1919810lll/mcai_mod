@@ -2,14 +2,14 @@
 
 ## Project
 
-MCAI — Minecraft Fabric mod (MC 26.2, Java 25, Mojang mappings) that integrates DeepSeek or other AI into the game for chat, command execution, knowledge base search, and automated player behavior review.
+MCAI — Minecraft Fabric mod (MC 26.3-snapshot-5, Java 25, Mojang mappings) that integrates DeepSeek or other AI into the game for chat, command execution, knowledge base search, and automated player behavior review.
 
 **Branch**: `main` is the active and only branch. Previous multi-version branches (master, mc-1.21.11, mc-26.1.2) were merged into `main` and deleted. Do not recreate them.
 
 ## Build
 
 ```bash
-.\gradlew.bat build    # Produces build/libs/mcai-26.2.jar
+.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-1.6.0.jar
 ```
 
 Requires **JDK 25** (see `gradle.properties` — `java.toolchain.languageVersion = 25`).
@@ -59,7 +59,7 @@ src/main/java/com/example/mcai/
 - **Knowledge base files** (`kb/*.json`) are NOT bundled in the JAR — they live in `kb/` with license files and are deployed separately by server admins to `config/mcai/kb/`
 - **Config lives at runtime** in `config/mcai/` — never commit files from that directory
 
-## Mojang 26.2 API Gotchas
+## Mojang 26.3 API Gotchas
 
 - `ResourceLocation`/`Identifier` class location changed — not at `net.minecraft.util` or `net.minecraft.resources`
 - `CustomPacketPayload.type()` not `writeId()`
@@ -114,8 +114,9 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 ## Known Pitfalls
 
 - **Mojang ↔ Yarn Incompatibility**: Compiles but crashes at runtime with `NoClassDefFoundError`. Solved by dropping multi-version support.
-- **ModMenu Version**: MC 26.2 requires `modmenu:20.0.0-alpha.1` or newer (Mojang build).
+- **ModMenu Version**: MC 26.3 requires `modmenu:20.0.1` or newer (Mojang build).
 - **Gradle Version**: Gradle 9.5.1 + Java 25, no compatibility issues.
+- **MC 26.3 SDL3 Migration**: 26.3 Snapshot 4 switched from GLFW to SDL3 for window management and input. `KeyEvent` and `Screen.keyPressed()` still work, but key codes may differ from GLFW scancodes.
 - **MC 26.2 API Change**: `Minecraft.setScreen()` removed, use `Minecraft.setScreenAndShow()` instead. Config screen must override `canInterruptWithAnotherScreen()` to return true.
 
 ## Build Checklist

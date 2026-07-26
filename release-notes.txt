@@ -1,39 +1,42 @@
-## What's New
+## What's New in v1.6.0
 
-### Command Chain
-- AI can now batch multiple commands into a single approval unit
-- New tool: `execute_command_chain` with configurable intervals
-- Admin approves once to execute all commands
+### Bug Fixes
+- Fixed tool call limit messages being incorrectly output as AI responses (now properly handled as errors via `mcai.chat.error`)
+- Fixed fallback API calls missing `Authorization` header, which caused 401 errors
+- Fixed i18n color codes not being re-applied after `%s`/`%d` placeholders in approval messages
+- Fixed premature "invalid ID" error when approving command chains
 
-### Player Cancel
-- New command: `/aicancel [id/all]`
-- Players can cancel their own pending commands
-- AI receives cancellation notice and won't retry
+### Internationalization
+- Replaced hardcoded visible text with `Component.translatable` across `ReviewEngine.java`, `CommandRegistry.java`, and other files
+- All user-facing strings now use proper i18n keys (e.g., `mcai.review.status.empty`, `mcai.cmd.suggest.chain`)
 
-### UI Improvements
-- Clickable buttons (Approve/Reject/Cancel) in approval notifications
-- Fixed i18n color codes in approval messages
-- Fixed premature 'invalid ID' error when approving chains
+### New Features
+- **Cancel hints**: When AI requests approval, the requester now receives a clickable hint with `/aicancel [ID]` to cancel pending commands/chains
+- **Version awareness**: System prompts now include information about the 26.x version naming convention to prevent AI from misidentifying the game version
+- **Console review support**: Console can now trigger behavior reviews
+- **Prompt management**: Added `/airesetprompts` command (admin-only) to reset system and review prompt files
 
-### Resource Pack
-- Added `mcai-lang-pack.zip` for clients without mod installed
-- Provides translations for AI-related messages
-- Can be configured as server-required resource pack
+### Improvements
+- Optimized system and review prompts for more efficient AI operation
+- Search results increased from 5 to 7 for `/aikb` command
+- Command normalization for more reliable execution after `/aireload`
 
-### Documentation
-- Updated README with new features
-- Added dual-client mod installation recommendation
+### Compatibility
+- Built for Minecraft 26.1.2 (supports 26.1 ~ 26.2)
+- Fabric Loader 0.19.2, Fabric API 0.149.1+26.1.2
+- ModMenu 20.0.0-alpha.1+
+- Java 25 required
 
 ## Installation
-1. Download `mcai-26.1.2-1.5.1.jar` to `mods/` folder
+1. Download `mcai-26.1.2-1.6.0.jar` to `mods/` folder
 2. (Optional) Download `mcai-lang-pack.zip` for clients without mod
 3. Restart server or run `/aireload`
 
 ## Server Resource Pack Configuration
 Add to `server.properties`:
 ```
-resource-pack=https://github.com/lll114514lll1919810lll/mcai_mod/releases/download/v1.5.2/mcai-lang-pack.zip
-resource-pack-sha1=3f6340c64ab2bc4a87f6d1df3cd840a5f3c98ebe
+resource-pack=https://github.com/lll114514lll1919810lll/mcai_mod/releases/download/v1.6.0/mcai-lang-pack.zip
+resource-pack-sha1=3d5022ba65a31ee19fbbe265bd28c1097e35e95e
 resource-pack-prompt=MCAI language pack for AI message translations
 resource-pack-required=false
 ```

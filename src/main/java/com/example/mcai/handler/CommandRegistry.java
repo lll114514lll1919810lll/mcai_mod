@@ -12,6 +12,7 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
@@ -30,14 +31,14 @@ public class CommandRegistry {
                     builder.suggest(String.valueOf(pending.id), Component.literal(pending.command));
                 }
                 for (var chain : this.cmdExec.getPlayerPendingChains(p.getUUID())) {
-                    builder.suggest(String.valueOf(chain.id), Component.literal("[链] " + chain.commands.size() + "条命令"));
+                    builder.suggest(String.valueOf(chain.id), Component.translatable("mcai.cmd.suggest.chain", chain.commands.size()));
                 }
             } else {
                 for (var pending : this.cmdExec.getAllPendingCommands()) {
                     builder.suggest(String.valueOf(pending.id), Component.literal(pending.requesterName + ": " + pending.command));
                 }
                 for (var chain : this.cmdExec.getAllPendingChains()) {
-                    builder.suggest(String.valueOf(chain.id), Component.literal(chain.requesterName + ": [链] " + chain.commands.size() + "条命令"));
+                    builder.suggest(String.valueOf(chain.id), Component.translatable("mcai.cmd.suggest.chain_all", chain.requesterName, chain.commands.size()));
                 }
             }
             return builder.buildFuture();
@@ -70,7 +71,7 @@ public class CommandRegistry {
                     String q = StringArgumentType.getString(ctx, "query");
                     var src = ctx.getSource();
                     var srv = src.getServer();
-                    if (srv == null) { src.sendFailure(Component.literal("Server not ready")); return 0; }
+                    if (srv == null) { src.sendFailure(Component.translatable("mcai.cmd.server_not_ready")); return 0; }
                     src.sendSuccess(() -> Component.translatable("mcai.chat.searching"), false);
                     SearchProvider knowledgeBase = chatHandler.getMod().getSearchRouter();
                     var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
@@ -107,14 +108,19 @@ public class CommandRegistry {
                 if (!chains.isEmpty()) {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.chain_header"), false);
                     for (var chain : chains) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("§6  [#").append(chain.id).append("] ").append(chain.commands.size()).append("条命令");
-                        if (chain.intervalSeconds > 0) sb.append(" (间隔").append(chain.intervalSeconds).append("秒)");
-                        sb.append("\n");
-                        for (int i = 0; i < chain.commands.size(); i++) {
-                            sb.append("§7    ").append(i + 1).append(". §e/").append(chain.commands.get(i)).append("\n");
-                        }
-                        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString().trim()), false);
+                        final long chainId = chain.id;
+                        final int cmdCount = chain.commands.size();
+                        final int interval = chain.intervalSeconds;
+                        final List<String> cmdList = chain.commands;
+                        ctx.getSource().sendSuccess(() -> {
+                            MutableComponent header = Component.translatable("mcai.cmd.query.chain_line", chainId, cmdCount);
+                            if (interval > 0) header = header.append(Component.translatable("mcai.cmd.query.chain_interval", interval));
+                            MutableComponent msg = header.append("\n");
+                            for (int i = 0; i < cmdList.size(); i++) {
+                                msg = msg.append(Component.translatable("mcai.cmd.query.chain_item", i + 1, cmdList.get(i)).append("\n"));
+                            }
+                            return msg;
+                        }, false);
                     }
                 }
                 ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.hint"), false);
@@ -134,14 +140,20 @@ public class CommandRegistry {
                 if (!allChains.isEmpty()) {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.chain_header"), false);
                     for (var chain : allChains) {
-                        StringBuilder sb = new StringBuilder();
-                        sb.append("§6  [#").append(chain.id).append("] §f").append(chain.requesterName).append(" §7- ").append(chain.commands.size()).append("条命令");
-                        if (chain.intervalSeconds > 0) sb.append(" (间隔").append(chain.intervalSeconds).append("秒)");
-                        sb.append("\n");
-                        for (int i = 0; i < chain.commands.size(); i++) {
-                            sb.append("§7    ").append(i + 1).append(". §e/").append(chain.commands.get(i)).append("\n");
-                        }
-                        ctx.getSource().sendSuccess(() -> Component.literal(sb.toString().trim()), false);
+                        final long chainId = chain.id;
+                        final String requester = chain.requesterName;
+                        final int cmdCount = chain.commands.size();
+                        final int interval = chain.intervalSeconds;
+                        final List<String> cmdList = chain.commands;
+                        ctx.getSource().sendSuccess(() -> {
+                            MutableComponent header = Component.translatable("mcai.cmd.query.chain_line_all", chainId, requester, cmdCount);
+                            if (interval > 0) header = header.append(Component.translatable("mcai.cmd.query.chain_interval", interval));
+                            MutableComponent msg = header.append("\n");
+                            for (int i = 0; i < cmdList.size(); i++) {
+                                msg = msg.append(Component.translatable("mcai.cmd.query.chain_item", i + 1, cmdList.get(i)).append("\n"));
+                            }
+                            return msg;
+                        }, false);
                     }
                 }
             }
@@ -304,7 +316,7 @@ public class CommandRegistry {
                 .then(Commands.literal("reset").then(Commands.argument("player", StringArgumentType.word()).suggests(ps).executes(ctx -> { String n = StringArgumentType.getString(ctx, "player"); UUID id = lookupPlayer(n); if (id == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.player_offline", n)); return 0; } bt.resetScore(id); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.reset_result", n), false); return Command.SINGLE_SUCCESS; })))
                 .then(Commands.literal("set").then(Commands.argument("player", StringArgumentType.word()).suggests(ps).then(Commands.argument("score", IntegerArgumentType.integer(-100, 0)).executes(ctx -> { String n = StringArgumentType.getString(ctx, "player"); UUID id = lookupPlayer(n); if (id == null) { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.player_offline", n)); return 0; } int s = IntegerArgumentType.getInteger(ctx, "score"); bt.setScore(id, s); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.set_result", n, s), false); return Command.SINGLE_SUCCESS; }))))
                 .then(Commands.literal("review").executes(ctx -> { if (crs != null) { ServerPlayer p = ctx.getSource().getPlayer(); crs.triggerManualReview(p); } else { ctx.getSource().sendFailure(Component.translatable("mcai.cmd.test.review_unavailable")); } return Command.SINGLE_SUCCESS; }))
-                .then(Commands.literal("chatlog").executes(ctx -> { String log = cl.peek(); if (log.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.chatlog_empty"), false); } else { ctx.getSource().sendSuccess(() -> Component.literal("§e==== 聊天记录 ====\n§7"+log), false); } return Command.SINGLE_SUCCESS; }))
+                .then(Commands.literal("chatlog").executes(ctx -> { String log = cl.peek(); if (log.isEmpty()) { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.chatlog_empty"), false); } else { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.chatlog_output", log), false); } return Command.SINGLE_SUCCESS; }))
                 .executes(ctx -> { ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.title"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.score"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.penalty"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.reset"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.set"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.review"), false); ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.test.chatlog"), false); return Command.SINGLE_SUCCESS; });
     }
     private SuggestionProvider<CommandSourceStack> playerNameSuggestions() { return (ctx, builder) -> { var srv = chatHandler.getServer(); if (srv != null) { for (var p : srv.getPlayerList().getPlayers()) builder.suggest(p.getScoreboardName()); } return builder.buildFuture(); }; }

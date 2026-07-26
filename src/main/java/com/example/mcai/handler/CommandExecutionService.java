@@ -698,6 +698,18 @@ public class CommandExecutionService {
             );
             mod.getChatLog().add("系统", chain.requesterName + " 请求命令链 #" + chain.id + " (" + chain.commands.size() + "条命令) (审批中)");
 
+            // Send clickable cancel hint to the requester
+            ServerPlayer requester = server.getPlayerList().getPlayer(chain.requesterId);
+            if (requester != null) {
+                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", chain.id)
+                        .withStyle(style -> style
+                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + chain.id))
+                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_chain")))
+                        );
+                requester.sendSystemMessage(cancelHint);
+            }
+
             // Send clickable instructions to admins
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 if (isAdminPlayer(p, server)) {
@@ -738,6 +750,19 @@ public class CommandExecutionService {
                     false
             );
             mod.getChatLog().add("系统", pending.requesterName + " 请求 /" + pending.command + " (审批中 #" + pending.id + ")");
+
+            // Send clickable cancel hint to the requester
+            ServerPlayer requester = server.getPlayerList().getPlayer(pending.requesterId);
+            if (requester != null) {
+                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", pending.id)
+                        .withStyle(style -> style
+                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + pending.id))
+                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_command")))
+                        );
+                requester.sendSystemMessage(cancelHint);
+            }
+
             for (ServerPlayer p : server.getPlayerList().getPlayers()) {
                 if (isAdminPlayer(p, server)) {
                     Component approveBtn = Component.translatable("mcai.cmd.button.approve")

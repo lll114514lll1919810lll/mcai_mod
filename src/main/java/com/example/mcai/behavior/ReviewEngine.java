@@ -26,7 +26,7 @@ public class ReviewEngine {
     public Component run() {
         penaltyHistory.advanceCycle(); lastRawResponse = ""; lastReasoning = "";
         String reviewPrompt = mod.getConfig().getReviewPrompt();
-        String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return Component.literal("§e聊天记录为空，跳过审查");
+        String chatSnapshot = mod.getChatLog().peek(); if (chatSnapshot.isEmpty()) return Component.translatable("mcai.review.status.empty");
         StringBuilder roster = new StringBuilder("当前在线玩家:\n"); var srv = mod.getServer();
         if (srv != null) { for (ServerPlayer p : srv.getPlayerList().getPlayers()) { roster.append("- ").append(p.getScoreboardName()).append(isAdmin(p, srv) ? " (管理员)" : " (普通玩家)").append("\n"); } }
         roster.append("\n=== CHAT LOG START ===\n").append(ChatHandler.sanitizeChatLogForPrompt(chatSnapshot)).append("\n=== CHAT LOG END ===\n");
@@ -66,7 +66,7 @@ public class ReviewEngine {
             if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
             penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.translatable("mcai.review.status.no_violations");
         }
-        if (srv == null) return Component.literal("§c服务器未就绪");
+        if (srv == null) return Component.translatable("mcai.review.status.server_not_ready");
         StringBuilder redCardActions = new StringBuilder(); Map<String, Integer> cyclePenalties = new HashMap<>();
         for (PlayerViolation v : violations) {
             UUID playerId = findPlayerUUID(v.playerName, srv); if (playerId == null) { LOGGER.warn("Player {} not found", v.playerName); continue; }

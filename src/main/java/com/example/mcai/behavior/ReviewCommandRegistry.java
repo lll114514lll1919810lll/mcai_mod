@@ -18,7 +18,7 @@ public class ReviewCommandRegistry {
     private final SuggestionProvider<CommandSourceStack> approvalIdSuggestions;
     public ReviewCommandRegistry(ChatReviewSystem crs, AdminApprovalQueue aq, ReviewEngine re) {
         this.chatReviewSystem = crs; this.approvalQueue = aq; this.reviewEngine = re;
-        this.approvalIdSuggestions = (ctx, builder) -> { for (int id : approvalQueue.getUnresolvedIds()) { var item = approvalQueue.getItem(id); if (item != null) builder.suggest(id, Component.literal("§7"+item.targetPlayerName+" - "+item.reason)); else builder.suggest(id); } return builder.buildFuture(); };
+        this.approvalIdSuggestions = (ctx, builder) -> { for (int id : approvalQueue.getUnresolvedIds()) { var item = approvalQueue.getItem(id); if (item != null) builder.suggest(id, Component.translatable("mcai.review.suggest.item", item.targetPlayerName, item.reason)); else builder.suggest(id); } return builder.buildFuture(); };
     }
     public LiteralArgumentBuilder<CommandSourceStack> createAiReviewCommand() {
         return Commands.literal("aireview")

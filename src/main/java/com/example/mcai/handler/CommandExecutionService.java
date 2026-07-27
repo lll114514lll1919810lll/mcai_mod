@@ -43,13 +43,22 @@ public class CommandExecutionService {
         public final String command;
         public final long createdAt;
         public final CompletableFuture<String> future = new CompletableFuture<>();
+        /** 请求者上下文（审批执行时使用，而非管理员上下文） */
+        public final net.minecraft.server.level.ServerLevel requesterLevel;
+        public final net.minecraft.core.BlockPos requesterPos;
+        public final net.minecraft.world.phys.Vec2 requesterRot;
 
-        public PendingCommand(long id, UUID requesterId, String requesterName, String command) {
+        public PendingCommand(long id, UUID requesterId, String requesterName, String command,
+                              net.minecraft.server.level.ServerLevel level,
+                              net.minecraft.core.BlockPos pos, net.minecraft.world.phys.Vec2 rot) {
             this.id = id;
             this.requesterId = requesterId;
             this.requesterName = requesterName;
             this.command = command;
             this.createdAt = System.currentTimeMillis();
+            this.requesterLevel = level;
+            this.requesterPos = pos;
+            this.requesterRot = rot;
         }
     }
 
@@ -171,7 +180,9 @@ public class CommandExecutionService {
         MinecraftServer server = mod.getServer();
         String result = "Command executed";
         if (server != null) {
-            result = executeAsOp(pending.command, server, admin);
+            // 使用请求者的上下文执行命令，而非管理员上下文
+            result = executeAsOp(pending.command, server, pending.requesterLevel,
+                    pending.requesterPos, pending.requesterRot);
         }
         admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.approved", id, pending.command));
         if (!pending.future.isDone()) {
@@ -194,7 +205,8 @@ public class CommandExecutionService {
 
     private PendingCommand addPendingCommand(ServerPlayer player, String command) {
         long id = idGenerator.getAndIncrement();
-        PendingCommand pending = new PendingCommand(id, player.getUUID(), player.getScoreboardName(), command);
+        PendingCommand pending = new PendingCommand(id, player.getUUID(), player.getScoreboardName(), command,
+                (net.minecraft.server.level.ServerLevel) player.level(), player.blockPosition(), player.getRotationVector());
         pendingById.put(id, pending);
         pendingByPlayer.computeIfAbsent(player.getUUID(), k -> ConcurrentHashMap.newKeySet()).add(id);
         return pending;

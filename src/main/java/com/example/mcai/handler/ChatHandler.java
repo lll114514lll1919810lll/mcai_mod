@@ -57,7 +57,6 @@ public class ChatHandler {
     public int killAIThreads() {
         ExecutorService old = aiExecutor;
         aiExecutor = newExecutor();
-        old.shutdownNow();
         int terminated = old.shutdownNow().size();
         concurrentNonAdminCalls.set(0);
         MCAIMod.LOGGER.warn("AI threads killed, {} tasks discarded", terminated);
@@ -204,7 +203,8 @@ public class ChatHandler {
         MCAIMod.LOGGER.info("AI query from {}: {}", pname, query);
         animation.start(player, server);
         final boolean finalIsAdmin = isAdmin;
-        aiExecutor.execute(() -> {
+        try {
+            aiExecutor.submit(() -> {
             try {
                 String context = contextBuilder.build(player, mod.getServer());
                 String userContent = context + "\n\n" + sanitizeForPrompt(pname, query);
@@ -224,7 +224,19 @@ public class ChatHandler {
                 } else { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.error", result.error())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI error handler error", ex); } }); }
             } catch (Exception e) { MCAIMod.LOGGER.error("AI query failed", e); MinecraftServer server2 = mod.getServer(); if (server2 != null) { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.exception", e.getMessage())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI exception handler error", ex); } }); } }
             finally { if (!finalIsAdmin) concurrentNonAdminCalls.decrementAndGet(); }
-        });
+            });
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // 任务被拒绝（线程池满），回滚计数器和冷却时间
+            if (!finalIsAdmin) {
+                concurrentNonAdminCalls.decrementAndGet();
+                lastAICallTime.remove(pid);
+            }
+            MCAIMod.LOGGER.warn("AI executor rejected task for {}", pname);
+            server.execute(() -> {
+                animation.done(player);
+                player.sendSystemMessage(Component.translatable("mcai.chat.concurrent_limit"));
+            });
+        }
     }
 
     public void handleConsoleAIQuery(CommandSourceStack src, String query) {

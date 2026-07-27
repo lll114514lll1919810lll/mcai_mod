@@ -235,6 +235,7 @@ public class MCAIMod implements ModInitializer {
             searchRouter.shutdown();
         }
         searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
+        toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
         if (chatReviewSystem != null) {
             chatReviewSystem.reloadConfig(config);
         }

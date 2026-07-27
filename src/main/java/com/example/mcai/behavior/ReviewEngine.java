@@ -62,7 +62,11 @@ public class ReviewEngine {
         }
 
         if (violations.isEmpty()) {
-            mod.getChatLog().clear(); int recovered = recoverScores();
+            // 使用同步块避免与 AI 查询线程同时操作聊天记录
+            synchronized (mod.getChatLog()) {
+                mod.getChatLog().clear();
+            }
+            int recovered = recoverScores();
             if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
             penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.translatable("mcai.review.status.no_violations");
         }
@@ -73,7 +77,7 @@ public class ReviewEngine {
             ServerPlayer targetPlayer = srv.getPlayerList().getPlayer(playerId);
             if (targetPlayer != null && isAdmin(targetPlayer, srv)) { LOGGER.info("Skipping admin {}", v.playerName); continue; }
             int cumulative = cyclePenalties.getOrDefault(v.playerName, 0) + v.severity;
-            if (cumulative < -60) { LOGGER.warn("Cumulative penalty {} for {} exceeds -60 cap", cumulative, v.playerName); continue; }
+            if (cumulative < mod.getConfig().getRedCardThreshold()) { LOGGER.warn("Cumulative penalty {} for {} exceeds red card threshold {}, skipping", cumulative, v.playerName, mod.getConfig().getRedCardThreshold()); continue; }
             cyclePenalties.put(v.playerName, cumulative);
             int newScore = tracker.addScore(playerId, v.severity);
             LOGGER.info("Player {} score {} -> {} ({})", v.playerName, v.severity, newScore, v.description);
@@ -91,7 +95,10 @@ public class ReviewEngine {
                 penaltyHistory.addEvent(new PenaltyEvent(v.playerName, v.description, v.severity, newScore, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
             }
         }
-        mod.getChatLog().clear(); int recovered = recoverScores();
+        synchronized (mod.getChatLog()) {
+            mod.getChatLog().clear();
+        }
+        int recovered = recoverScores();
         if (recovered > 0) penaltyHistory.addEvent(new PenaltyEvent("系统", recovered+"名玩家行为分已恢复", 0, 0, PenaltyEvent.PenaltyAction.SCORE_ONLY, -1, penaltyHistory.getCurrentCycle()));
         String status = "§a审查完成，处理 "+violations.size()+" 项违规"; if (redCardActions.length() > 0) status += " §c[红牌: "+redCardActions+"]";
         penaltyHistory.save(); penaltyHistory.purgeOld(); return Component.literal(status);
@@ -139,7 +146,11 @@ public class ReviewEngine {
         List<PlayerViolation> result = new ArrayList<>();
         try { String c = json.trim(); if (c.startsWith("```")) { int s = c.indexOf('\n'); int e = c.lastIndexOf("```"); if (s > 0 && e > s) c = c.substring(s, e).trim(); }
             JsonObject obj = GSON.fromJson(c, JsonObject.class); if (obj == null || !obj.has("violations")) return result; JsonArray arr = obj.getAsJsonArray("violations");
-            for (JsonElement el : arr) { JsonObject v = el.getAsJsonObject(); if (!v.has("player_name") || !v.has("description")) continue; String name = v.get("player_name").getAsString().trim(); if (!name.matches("[a-zA-Z0-9_]{3,16}")) { LOGGER.warn("Invalid player name: {}", name); continue; } String desc = v.get("description").getAsString().trim(); if (desc.length() > 200) desc = desc.substring(0, 200); int severity = v.has("severity") ? v.get("severity").getAsInt() : -10; if (severity > -10) severity = -10; else if (severity > -20) severity = -10; else if (severity > -30) severity = -20; else severity = -30; String action = v.has("suggested_action") ? v.get("suggested_action").getAsString() : "none"; if (!"none".equals(action) && !"warn".equals(action) && !"kick".equals(action)) action = "none"; result.add(new PlayerViolation(name, desc, severity, action)); }
+            for (JsonElement el : arr) { JsonObject v = el.getAsJsonObject(); if (!v.has("player_name") || !v.has("description")) continue; String name = v.get("player_name").getAsString().trim(); if (!name.matches("[a-zA-Z0-9_]{3,16}")) { LOGGER.warn("Invalid player name: {}", name); continue; } String desc = v.get("description").getAsString().trim(); if (desc.length() > 200) desc = desc.substring(0, 200); int severity = v.has("severity") ? v.get("severity").getAsInt() : -10;
+            // 将 AI 返回的原始分数分档到三档：-10(轻微) / -20(中度) / -30(严重)
+            if (severity >= -10) severity = -10;
+            else if (severity >= -20) severity = -20;
+            else severity = -30; String action = v.has("suggested_action") ? v.get("suggested_action").getAsString() : "none"; if (!"none".equals(action) && !"warn".equals(action) && !"kick".equals(action)) action = "none"; result.add(new PlayerViolation(name, desc, severity, action)); }
         } catch (Exception e) { LOGGER.error("Failed to parse review violations", e); }
         return result;
     }

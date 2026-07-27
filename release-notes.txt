@@ -1,25 +1,15 @@
-## What's New in v1.6.0
+## What's New in v1.6.1 (Hotfix)
 
-### Bug Fixes
-- Fixed tool call limit messages being incorrectly output as AI responses (now properly handled as errors via `mcai.chat.error`)
-- Fixed fallback API calls missing `Authorization` header, which caused 401 errors
-- Fixed i18n color codes not being re-applied after `%s`/`%d` placeholders in approval messages
-- Fixed premature "invalid ID" error when approving command chains
-
-### Internationalization
-- Replaced hardcoded visible text with `Component.translatable` across `ReviewEngine.java`, `CommandRegistry.java`, and other files
-- All user-facing strings now use proper i18n keys (e.g., `mcai.review.status.empty`, `mcai.cmd.suggest.chain`)
-
-### New Features
-- **Cancel hints**: When AI requests approval, the requester now receives a clickable hint with `/aicancel [ID]` to cancel pending commands/chains
-- **Version awareness**: System prompts now include information about the 26.x version naming convention to prevent AI from misidentifying the game version
-- **Console review support**: Console can now trigger behavior reviews
-- **Prompt management**: Added `/airesetprompts` command (admin-only) to reset system and review prompt files
+### Critical Bug Fixes
+- **Fixed approval command execution context**: Approved commands now execute with the original requester's position, dimension, and rotation instead of the admin's context. Previously, when player A requested a command and admin B approved it, the command would run at B's location (e.g., `/tp @s ~ ~ ~` would teleport to the admin, not the requester).
+- **Fixed concurrent player counter leak**: When the AI thread pool is full and rejects a task, the non-admin concurrent counter and cooldown are now properly rolled back. Previously, a rejected task would permanently increment the counter, eventually blocking all non-admin players from using AI with a "concurrent limit" message.
+- **Fixed ToolDispatcher not refreshing after `/aireload`**: The `ToolDispatcher` is now rebuilt alongside `SearchRouter` during config reload. Previously, the old dispatcher kept a reference to the closed search router, causing `/aikb` and tool calls to fail after `/aireload`.
+- **Fixed review severity grading inversion**: AI-returned severity scores are now correctly mapped to three tiers (-10/-20/-30). Previously, the most severe violations (-30) were incorrectly downgraded to the mildest tier (-10), making the review system effectively useless.
 
 ### Improvements
-- Optimized system and review prompts for more efficient AI operation
-- Search results increased from 5 to 7 for `/aikb` command
-- Command normalization for more reliable execution after `/aireload`
+- **Configurable red card threshold**: The cumulative penalty threshold for red cards now reads from `redCardThreshold` in config instead of a hardcoded -60.
+- **Thread-safe chat log clearing**: Chat log clearing during behavior review is now synchronized to prevent race conditions with concurrent AI query threads.
+- **Graceful thread pool rejection handling**: `RejectedExecutionException` is now caught and reported to the player with the concurrent-limit message, instead of silently failing.
 
 ### Compatibility
 - Built for Minecraft 26.1.2 (supports 26.1 ~ 26.2)
@@ -28,7 +18,7 @@
 - Java 25 required
 
 ## Installation
-1. Download `mcai-26.1.2-1.6.0.jar` to `mods/` folder
+1. Download `mcai-26.1.2-1.6.1.jar` to `mods/` folder
 2. (Optional) Download `mcai-lang-pack.zip` for clients without mod
 3. Restart server or run `/aireload`
 

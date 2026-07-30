@@ -57,6 +57,10 @@
   "mcai.cmd.debug.started": "§a[AI] Debug logging started: %s",
   "mcai.cmd.debug.stopped": "§e[AI] Debug logging stopped: %s",
   "mcai.cmd.debug.status": "§e[AI] Debug logging: %s §7File: %s",
+  "mcai.cmd.debug.no_sessions": "§e[AI] No debug sessions recorded",
+  "mcai.cmd.debug.session_not_found": "§c[AI] Session #%s not found",
+  "mcai.cmd.debug.session_list_header": "§e[AI] Last %s debug sessions:",
+  "mcai.cmd.debug.sessions_cleared": "§a[AI] Debug sessions cleared",
   "mcai.cmd.player_offline": "§cPlayer not online: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",
@@ -188,6 +192,7 @@
   "mcai.config.thinking_level": "Thinking Level 0-3",
   "mcai.config.tool_calls": "Tool Call Limit",
   "mcai.config.compatibility_mode": "Compatibility Mode",
+  "mcai.config.wiki_language": "Wiki Language",
   "mcai.config.chat_listen": "Chat Listen",
   "mcai.config.cmd_exec": "Cmd Execution",
   "mcai.config.strict_mode": "Strict Mode",

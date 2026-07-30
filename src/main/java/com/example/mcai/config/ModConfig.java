@@ -63,9 +63,9 @@ public class ModConfig {
 
             #4 Knowledge
             - When asked about game content (items, blocks, mobs, recipes, mechanics, command syntax), call search_knowledge_base first.
-            - If online Wiki is enabled, it is queried first and falls back to the local KB.
+            - Searches minecraft.wiki or zh.minecraft.wiki for the latest vanilla knowledge.
             - Use get_installed_mods to learn namespaces and distinguish vanilla (minecraft:) from mod items (e.g. create:brass_ingot).
-            - The KB may be mixed-language. If one language returns nothing, try the other.
+            - The Wiki may be mixed-language. If one language returns nothing, try the other.
 
             #5 Execution discipline
             - Read every tool result before deciding the next step. Never assume success.
@@ -116,8 +116,9 @@ public class ModConfig {
 
             #4 知识查询
             - 玩家询问游戏内容（物品、方块、生物、配方、机制、指令语法）时，先调用 search_knowledge_base。
+            - 通过 minecraft.wiki 或 zh.minecraft.wiki 在线搜索最新原版知识。
             - 先用 get_installed_mods 了解命名空间，区分原版物品（minecraft:）和 Mod 物品（如 create:brass_ingot）。
-            - 知识库可能中英混合；一种语言搜不到可换另一种尝试。
+            - Wiki 可能中英混合；一种语言搜不到可换另一种尝试。
 
             #5 执行纪律
             - 每次工具调用后必须读取结果，不要假设成功。
@@ -268,8 +269,6 @@ public class ModConfig {
     private String reviewModel = "";
 
     // ── 在线 Wiki 搜索 ──
-    /** 是否启用 Minecraft Wiki 在线搜索（默认关闭，需服主手动开启） */
-    private boolean enableOnlineWiki = false;
     /** 在线 Wiki 语言：zh_cn=中文站，en_us=英文站 */
     private String wikiLanguage = "zh_cn";
 
@@ -506,8 +505,6 @@ public class ModConfig {
     public boolean isEnableAutoReview() { return enableAutoReview; }
     public void setEnableAutoReview(boolean enableAutoReview) { this.enableAutoReview = enableAutoReview; }
 
-    public boolean isEnableOnlineWiki() { return enableOnlineWiki; }
-    public void setEnableOnlineWiki(boolean enableOnlineWiki) { this.enableOnlineWiki = enableOnlineWiki; }
     public String getWikiLanguage() { return wikiLanguage; }
     public void setWikiLanguage(String wikiLanguage) { this.wikiLanguage = wikiLanguage; }
 

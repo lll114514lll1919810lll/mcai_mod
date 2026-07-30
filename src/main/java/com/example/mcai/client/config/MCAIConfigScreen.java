@@ -38,7 +38,7 @@ public class MCAIConfigScreen extends Screen {
     private EditBox reviewIntervalField, yellowCardField, redCardField;
     private EditBox scoreRecoveryField, approvalTimeoutField;
     private EditBox reviewApiEndpointField, reviewApiKeyField, reviewModelField;
-    private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn, compatBtn;
+    private Button chatBtn, cmdBtn, strictBtn, autoReviewBtn, compatBtn, wikiLangBtn;
 
     public MCAIConfigScreen(Screen parent) {
         super(Component.translatable("mcai.config.title"));
@@ -95,6 +95,7 @@ public class MCAIConfigScreen extends Screen {
         addRow(lx, inX, r, "mcai.config.thinking_level", thinkingField   = n(inX, ry(r), gi("thinkingLevel", 1))); r++;
         addRow(lx, inX, r, "mcai.config.tool_calls",     toolCallsField  = n(inX, ry(r), gi("maxToolCalls", 15))); r++;
         tg(lx, inX, fw, r, "mcai.config.compatibility_mode", gb("compatibilityMode", false), b -> compatBtn = b); r++;
+        addWikiLangRow(lx, inX, r); r++;
 
         addRenderableWidget(new StringWidget(lx, ry(r), LABEL_W, 20,
                 Component.translatable("mcai.config.group.review"), font)); r++;
@@ -156,6 +157,26 @@ public class MCAIConfigScreen extends Screen {
     }
 
     private final java.util.IdentityHashMap<Button, Boolean> toggleStates = new java.util.IdentityHashMap<>();
+    private final java.util.IdentityHashMap<Button, String> cycleStates = new java.util.IdentityHashMap<>();
+    private static final String[] WIKI_LANGS = {"zh_cn", "en_us"};
+    private static final String[] WIKI_LANG_LABELS = {"中文", "English"};
+
+    private void addWikiLangRow(int lx, int inX, int row) {
+        int y = ry(row);
+        addRenderableWidget(new StringWidget(lx, y, LABEL_W, 20,
+                Component.translatable("mcai.config.wiki_language"), font));
+        String current = gs("wikiLanguage", "zh_cn");
+        int idx = "en_us".equals(current) ? 1 : 0;
+        Button btn = Button.builder(
+                Component.literal(WIKI_LANG_LABELS[idx]), b -> {
+                    int i = "en_us".equals(cycleStates.get(b)) ? 0 : 1;
+                    cycleStates.put(b, WIKI_LANGS[i]);
+                    b.setMessage(Component.literal(WIKI_LANG_LABELS[i]));
+                }).bounds(inX, y, 80, 20).build();
+        cycleStates.put(btn, WIKI_LANGS[idx]);
+        addRenderableWidget(btn);
+        wikiLangBtn = btn;
+    }
 
     private void tg(int lx, int inX, int fw, int row, String key, boolean initial, Consumer<Button> setter) {
         int y = ry(row);
@@ -184,6 +205,7 @@ public class MCAIConfigScreen extends Screen {
             o.addProperty("thinkingLevel", pi(thinkingField.getValue(), 1));
             o.addProperty("maxToolCalls", pi(toolCallsField.getValue(), 15));
             o.addProperty("compatibilityMode", toggleStates.getOrDefault(compatBtn, false));
+            o.addProperty("wikiLanguage", cycleStates.getOrDefault(wikiLangBtn, "zh_cn"));
             o.addProperty("enableChatInterception", toggleStates.getOrDefault(chatBtn, true));
             o.addProperty("enableCommandExecution", toggleStates.getOrDefault(cmdBtn, true));
             o.addProperty("strictMode", toggleStates.getOrDefault(strictBtn, true));

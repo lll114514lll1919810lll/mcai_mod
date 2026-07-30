@@ -1,8 +1,8 @@
 package com.example.mcai.handler;
 import com.example.mcai.MCAIMod;
 import com.example.mcai.api.OpenAIClient;
-import com.example.mcai.kb.KnowledgeBase;
 import com.example.mcai.kb.SearchProvider;
+import com.example.mcai.kb.SearchResult;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.loader.api.FabricLoader;
@@ -26,8 +26,7 @@ public class ToolDispatcher {
         List<String> results = new ArrayList<>();
         for (var tc : toolCalls) {
             switch (tc.name) {
-                case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
-                case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
+                case "search_knowledge_base" -> results.add(formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "execute_minecraft_command" -> results.add(cmdExec.executeCommand(normalizeCommand(parseArg(tc.arguments, "command")), player));
                 case "execute_command_chain" -> results.add(cmdExec.submitChain(normalizeCommands(parseArgArray(tc.arguments, "commands")), parseArgInt(tc.arguments, "interval", 0), player));
                 case "get_server_status" -> results.add(getServerStatus(player));
@@ -47,8 +46,7 @@ public class ToolDispatcher {
         List<String> results = new ArrayList<>();
         for (var tc : toolCalls) {
             switch (tc.name) {
-                case "search_knowledge_base" -> results.add(KnowledgeBase.formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
-                case "read_knowledge_base" -> results.add(searchProvider.read(parseArg(tc.arguments, "title")));
+                case "search_knowledge_base" -> results.add(formatSearchResult(searchProvider.search(parseArg(tc.arguments, "query"), 10)));
                 case "execute_minecraft_command" -> results.add(server != null ? cmdExec.executeAsOp(normalizeCommand(parseArg(tc.arguments, "command")), server) : "服务器未就绪");
                 case "execute_command_chain" -> {
                     if (server == null) {
@@ -283,5 +281,23 @@ public class ToolDispatcher {
             MCAIMod.LOGGER.warn("Invalid tool argument JSON for int: {}", json.length() > 100 ? json.substring(0, 100) + "..." : json);
         }
         return defaultValue;
+    }
+
+    /** Format search results for AI consumption. */
+    public static String formatSearchResult(SearchResult result) {
+        if (result == null || result.isEmpty()) {
+            return "未找到相关条目。";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("[%s] 找到 %d 条相关条目：\n", result.provider, result.items.size()));
+        int i = 0;
+        for (var item : result.items) {
+            i++;
+            String summary = item.summary != null && item.summary.length() > 200
+                    ? item.summary.substring(0, 200) + "..." : item.summary;
+            sb.append(String.format("[%d] %s §7(%s)\n    %s\n", i, item.title,
+                    item.url != null ? item.url : "", summary != null ? summary : ""));
+        }
+        return sb.toString();
     }
 }

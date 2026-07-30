@@ -1,7 +1,7 @@
 package com.example.mcai.handler;
-import com.example.mcai.kb.KnowledgeBase;
-import com.example.mcai.kb.SearchProvider;
 import com.example.mcai.kb.SearchRouter;
+import com.example.mcai.kb.SearchProvider;
+import com.example.mcai.kb.SearchResult;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -77,7 +77,7 @@ public class CommandRegistry {
                     var router = (knowledgeBase instanceof SearchRouter) ? (SearchRouter) knowledgeBase : null;
                     java.util.concurrent.ExecutorService asyncPool = router != null ? router.getExecutor() : null;
                     Runnable searchTask = () -> {
-                        String r = KnowledgeBase.formatSearchResult(knowledgeBase.search(q, 7));
+                        String r = ToolDispatcher.formatSearchResult(knowledgeBase.search(q, 7));
                         srv.execute(() -> src.sendSuccess(() -> Component.translatable("mcai.cmd.kb.result", r), false));
                     };
                     if (asyncPool != null) {
@@ -302,10 +302,128 @@ public class CommandRegistry {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.stopped", file), true);
                     return 1;
                 }))
+                .then(Commands.literal("show").executes(ctx -> {
+                    // Show last session
+                    var session = dbg.getLastSession();
+                    if (session == null) {
+                        ctx.getSource().sendFailure(Component.translatable("mcai.cmd.debug.no_sessions"));
+                        return 0;
+                    }
+                    sendSessionToPlayer(ctx, session);
+                    return 1;
+                }).then(Commands.argument("id", IntegerArgumentType.integer(1)).executes(ctx -> {
+                    // Show specific session by ID
+                    int id = IntegerArgumentType.getInteger(ctx, "id");
+                    var session = dbg.getSession(id);
+                    if (session == null) {
+                        ctx.getSource().sendFailure(Component.translatable("mcai.cmd.debug.session_not_found", id));
+                        return 0;
+                    }
+                    sendSessionToPlayer(ctx, session);
+                    return 1;
+                })))
+                .then(Commands.literal("list").executes(ctx -> {
+                    var sessions = dbg.getLastSessions(10);
+                    if (sessions.isEmpty()) {
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.no_sessions"), false);
+                        return 1;
+                    }
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.session_list_header", sessions.size()), false);
+                    for (var s : sessions) {
+                        String time = new java.text.SimpleDateFormat("HH:mm:ss").format(new java.util.Date(s.timestamp));
+                        String thinkingInfo = s.thinking != null ? "§7[§b思考 §e" + s.thinking.length() + "字§7]" : "";
+                        String toolInfo = s.toolCalls.isEmpty() ? "" : "§7[§d工具 §e" + s.toolCalls.size() + "次§7]";
+                        String respInfo = s.response != null ? "§7[§a回复 §e" + Math.min(s.response.length(), 50) + "字§7]" : "";
+                        ctx.getSource().sendSuccess(() -> Component.literal(
+                                "§6#" + s.id + " §f" + time + " §7" + s.playerName + " §8» §f" +
+                                truncate(s.query, 40) + " " + thinkingInfo + toolInfo + respInfo
+                        ), false);
+                    }
+                    return 1;
+                }))
+                .then(Commands.literal("clear").executes(ctx -> {
+                    dbg.clearSessions();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.sessions_cleared"), false);
+                    return 1;
+                }))
                 .executes(ctx -> {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.debug.status", dbg.isEnabled() ? "§a开启" : "§c关闭", dbg.getCurrentLogFile() != null ? dbg.getCurrentLogFile() : "-"), false);
                     return 1;
                 });
+    }
+
+    private void sendSessionToPlayer(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, AIDebugLogger.DebugSession session) {
+        String time = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new java.util.Date(session.timestamp));
+        // Header
+        ctx.getSource().sendSuccess(() -> Component.literal("§8════════════════════════════════════════"), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("§6§lAI Debug Session §e#" + session.id), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("§7时间: §f" + time + "  §7玩家: §f" + session.playerName), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("§7提问: §f" + session.query), false);
+        ctx.getSource().sendSuccess(() -> Component.literal("§8────────────────────────────────────────"), false);
+
+        // Thinking
+        if (session.thinking != null && !session.thinking.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("§b§l[思考过程] §7(" + session.thinking.length() + " 字)"), false);
+            sendLongText(ctx, "§8" + session.thinking);
+        } else {
+            ctx.getSource().sendSuccess(() -> Component.literal("§b§l[思考过程] §7(无)"), false);
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal("§8────────────────────────────────────────"), false);
+
+        // Tool calls
+        if (session.toolCalls.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("§d§l[工具调用] §7(无)"), false);
+        } else {
+            ctx.getSource().sendSuccess(() -> Component.literal("§d§l[工具调用] §7(共 " + session.toolCalls.size() + " 次)"), false);
+            int idx = 0;
+            for (var tc : session.toolCalls) {
+                idx++;
+                final int finalIdx = idx;
+                final String toolName = tc.toolName;
+                final String args = tc.arguments;
+                final String result = tc.result;
+                ctx.getSource().sendSuccess(() -> Component.literal("§d  [" + finalIdx + "] §e" + toolName + "§8(" + truncate(args, 200) + "§8)"), false);
+                if (result != null) {
+                    sendLongText(ctx, "§8    → " + truncate(result, 500));
+                } else {
+                    ctx.getSource().sendSuccess(() -> Component.literal("§8    → §7(无结果)"), false);
+                }
+            }
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal("§8────────────────────────────────────────"), false);
+
+        // Response
+        if (session.response != null && !session.response.isEmpty()) {
+            ctx.getSource().sendSuccess(() -> Component.literal("§a§l[AI 回复] §7(" + session.response.length() + " 字)"), false);
+            sendLongText(ctx, "§f" + session.response);
+        } else {
+            ctx.getSource().sendSuccess(() -> Component.literal("§a§l[AI 回复] §7(无)"), false);
+        }
+        ctx.getSource().sendSuccess(() -> Component.literal("§8════════════════════════════════════════"), false);
+    }
+
+    private void sendLongText(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, String text) {
+        // Minecraft chat messages have a practical limit; split into chunks
+        int maxLen = 8000;
+        if (text.length() <= maxLen) {
+            final String finalText = text;
+            ctx.getSource().sendSuccess(() -> Component.literal(finalText), false);
+        } else {
+            int chunks = (text.length() + maxLen - 1) / maxLen;
+            for (int i = 0; i < chunks; i++) {
+                int start = i * maxLen;
+                int end = Math.min(start + maxLen, text.length());
+                final String chunk = text.substring(start, end);
+                final int chunkNum = i + 1;
+                final int totalChunks = chunks;
+                ctx.getSource().sendSuccess(() -> Component.literal("§7[" + chunkNum + "/" + totalChunks + "] " + chunk), false);
+            }
+        }
+    }
+
+    private static String truncate(String s, int maxLen) {
+        if (s == null) return "";
+        return s.length() > maxLen ? s.substring(0, maxLen) + "..." : s;
     }
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {
         var ps = playerNameSuggestions(); var bt = chatHandler.getMod().getBehaviorTracker();

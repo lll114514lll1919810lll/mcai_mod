@@ -678,13 +678,6 @@ public class CommandExecutionService {
     }
 
     /**
-     * 检查命令链中是否有需要审批的命令。
-     */
-    private boolean needsChainApproval(List<String> commands) {
-        return commands.stream().anyMatch(this::needsApproval);
-    }
-
-    /**
      * 广播命令链审批请求。
      */
     private void notifyAdminsPendingChain(PendingChain chain, MinecraftServer server) {

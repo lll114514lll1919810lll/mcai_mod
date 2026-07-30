@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.example.mcai.config.ModConfig;
 import com.example.mcai.api.OpenAIClient;
 import com.example.mcai.handler.*;
-import com.example.mcai.kb.KnowledgeBase;
 import com.example.mcai.kb.SearchRouter;
 import com.example.mcai.kb.WikiSearchProvider;
 import com.example.mcai.behavior.PlayerBehaviorTracker;
@@ -39,7 +38,6 @@ public class MCAIMod implements ModInitializer {
     private ToolDispatcher toolDispatcher;
     private ChatHandler chatHandler;
     private CommandRegistry cmdReg;
-    private volatile KnowledgeBase knowledgeBase;
     private volatile SearchRouter searchRouter;
     private volatile PlayerBehaviorTracker behaviorTracker;
     private volatile ChatReviewSystem chatReviewSystem;
@@ -56,10 +54,7 @@ public class MCAIMod implements ModInitializer {
         // 初始化时触发提示词文件自动创建（如不存在则以内置默认内容创建）
         config.getSystemPrompt();
         config.getReviewPrompt();
-        knowledgeBase = new KnowledgeBase();
-        knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
-                .getConfigDir().resolve("mcai/kb"));
-        searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
+        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
         aiClient = new OpenAIClient(config);
         reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
 
@@ -119,10 +114,9 @@ public class MCAIMod implements ModInitializer {
         chatHandler.registerChatInterceptor();
         startConfigWatcher();
 
-        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, model: {}, review model: {} ({}), KB: {} chunks",
+        LOGGER.info("MCAI initialized - prefix: '{}', endpoint: {}, model: {}, review model: {} ({})",
                 config.getTriggerPrefix(), config.getApiEndpoint(), config.getModel(),
-                config.getReviewModel(), config.hasSeparateReviewModel() ? "independent" : "shared",
-                knowledgeBase.size());
+                config.getReviewModel(), config.hasSeparateReviewModel() ? "independent" : "shared");
     }
 
     /** 启动配置文件监视器，自动热重载 */
@@ -213,7 +207,6 @@ public class MCAIMod implements ModInitializer {
     public ModConfig getConfig() { return config; }
     public OpenAIClient getAiClient() { return aiClient; }
     public OpenAIClient getReviewClient() { return reviewClient; }
-    public KnowledgeBase getKnowledgeBase() { return knowledgeBase; }
     public SearchRouter getSearchRouter() { return searchRouter; }
     public MinecraftServer getServer() { return server; }
     public ChatHandler getChatHandler() { return chatHandler; }
@@ -229,17 +222,14 @@ public class MCAIMod implements ModInitializer {
         config.getReviewPrompt();
         aiClient = new OpenAIClient(config);
         reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
-        knowledgeBase.load(net.fabricmc.loader.api.FabricLoader.getInstance()
-                .getConfigDir().resolve("mcai/kb"));
         if (searchRouter != null) {
             searchRouter.shutdown();
         }
-        searchRouter = new SearchRouter(config, knowledgeBase, new WikiSearchProvider(config.getWikiLanguage()));
+        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
         toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
         if (chatReviewSystem != null) {
             chatReviewSystem.reloadConfig(config);
         }
-        LOGGER.info("MCAI config reloaded, KB: {} chunks (history preserved)",
-                knowledgeBase.size());
+        LOGGER.info("MCAI config reloaded (online wiki mode)");
     }
 }

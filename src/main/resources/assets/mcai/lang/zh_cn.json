@@ -57,6 +57,10 @@
   "mcai.cmd.debug.started": "§a[AI] 调试日志已开启: %s",
   "mcai.cmd.debug.stopped": "§e[AI] 调试日志已关闭: %s",
   "mcai.cmd.debug.status": "§e[AI] 调试日志: %s §7文件: %s",
+  "mcai.cmd.debug.no_sessions": "§e[AI] 暂无调试会话记录",
+  "mcai.cmd.debug.session_not_found": "§c[AI] 未找到会话 #%s",
+  "mcai.cmd.debug.session_list_header": "§e[AI] 最近 %s 条调试会话:",
+  "mcai.cmd.debug.sessions_cleared": "§a[AI] 调试会话已清空",
   "mcai.cmd.player_offline": "§c玩家不在线: %s",
 
   "mcai.cmd.exec.approval_pending": "§7[AI] %s",
@@ -188,6 +192,7 @@
   "mcai.config.thinking_level": "思考等级 0-3",
   "mcai.config.tool_calls": "工具调用上限",
   "mcai.config.compatibility_mode": "兼容模式",
+  "mcai.config.wiki_language": "Wiki 语言",
   "mcai.config.chat_listen": "聊天监听",
   "mcai.config.cmd_exec": "指令执行",
   "mcai.config.strict_mode": "严格模式",

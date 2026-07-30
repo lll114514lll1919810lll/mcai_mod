@@ -15,6 +15,7 @@ out/
 *.code-workspace
 .vs/
 .mimocode/
+CLAUDE.md
 
 # Minecraft
 run/

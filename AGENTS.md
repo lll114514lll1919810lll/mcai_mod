@@ -9,7 +9,7 @@ MCAI — Minecraft Fabric mod (MC 26.3-snapshot-5, Java 25, Mojang mappings) tha
 ## Build
 
 ```bash
-.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-1.6.0.jar
+.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-1.6.1.jar
 ```
 
 Requires **JDK 25** (see `gradle.properties` — `java.toolchain.languageVersion = 25`).
@@ -59,6 +59,106 @@ src/main/java/com/example/mcai/
 - **Knowledge base files** (`kb/*.json`) are NOT bundled in the JAR — they live in `kb/` with license files and are deployed separately by server admins to `config/mcai/kb/`
 - **Config lives at runtime** in `config/mcai/` — never commit files from that directory
 
+## Versioning
+
+This project uses **Semantic Versioning**, effective from v1.7.0. The version is composed of two parts: `mod_version` (semantic) + `minecraft_version` (MC target).
+
+### mod_version format
+
+```
+<MAJOR>.<MINOR>.<PATCH>[-<PRERELEASE>]
+
+Examples:
+1.7.0            # Release
+1.7.0-beta.1     # Public beta
+1.7.0-alpha.1    # Early internal alpha
+```
+
+### Version increment rules
+
+| Change type | MAJOR | MINOR | PATCH | Example |
+|---|---|---|---|---|
+| Breaking API/config/save format change | +1 | 0 | 0 | 1.x.x → 2.0.0 |
+| New feature, backward compatible | . | +1 | 0 | 1.6.x → 1.7.0 |
+| Bug fix, backward compatible | . | . | +1 | 1.6.0 → 1.6.1 |
+| Pre-release (testing) | . | . | . + suffix | 1.7.0-beta.1 |
+
+### Release channels and workflow
+
+| Channel | Trigger | Visibility | GitHub Release |
+|---|---|---|---|
+| `alpha.N` | Each code change + successful build | Local/internal only, not published | None |
+| `beta.N` | User says "publish" | Public testing | Created, marked as pre-release |
+| No suffix | Breaking changes + stable after testing | All players | Created, marked as Latest |
+
+**Daily workflow**:
+1. Modify code → set `mod_version` to `X.Y.Z-alpha.N` → build → Git commit (increment alpha N, starting from 1)
+2. User says "publish" → change `mod_version` to `X.Y.Z-beta.1` → build → create GitHub Release (pre-release)
+3. Continue fixing → `beta.2`, `beta.3`... increment beta N each release
+4. Breaking changes done and stable → remove suffix → `X.Y.Z` release → create GitHub Release (Latest)
+
+**Version progression example**:
+```
+1.7.0-alpha.1   # First code change + build
+1.7.0-alpha.2   # Second code change + build
+1.7.0-beta.1    # User says "publish", public beta
+1.7.0-beta.2    # Fix feedback, re-publish
+1.7.0           # Testing stable, promoted to release
+```
+
+### GitHub Tag rules
+
+```
+v<MOD_VERSION>           # Release and beta
+v<MOD_VERSION>-<MC_TAG>  # Only add MC tag when multiple MC versions coexist
+
+Examples:
+v1.7.0
+v1.7.0-beta.1
+```
+
+Alpha versions do not create GitHub Tags — they are recorded in Git commit history only.
+
+### JAR naming
+
+Keep `mcai-<MC_VERSION>-<MOD_VERSION>.jar`, e.g. `mcai-26.1.2-1.7.0-alpha.1.jar`, `mcai-26.1.2-1.7.0-beta.1.jar`, `mcai-26.1.2-1.7.0.jar`. The filename encodes both MC compatibility and release channel info.
+
+### gradle.properties config
+
+```properties
+minecraft_version=26.1.2
+mod_version=1.7.0-alpha.1   # In development
+# mod_version=1.7.0-beta.1  # When user says "publish"
+# mod_version=1.7.0         # Release
+```
+
+### Git Commit message format
+
+```
+<type>: <description>
+
+type values:
+feat:     New feature
+fix:      Bug fix
+refactor: Refactoring (no functional change)
+docs:     Documentation change
+chore:    Build/config/misc
+release:  Release commit
+```
+
+| Scenario | Example |
+|---|---|
+| Feature commit | `feat: add command chain cancellation` |
+| Fix commit | `fix: approval command uses wrong execution context` |
+| Release commit | `release: v1.7.0` |
+| Pre-release commit | `release: v1.7.0-beta.1` |
+
+### GitHub Release rules
+
+- Release: mark as `Latest`, include full release notes
+- Pre-release (alpha/beta): must check `Set as a pre-release`, note known issues in release notes
+- After pre-release stabilizes, promote to release (remove suffix), create new Tag and Release
+
 ## Mojang 26.3 API Gotchas
 
 - `ResourceLocation`/`Identifier` class location changed — not at `net.minecraft.util` or `net.minecraft.resources`
@@ -73,7 +173,7 @@ src/main/java/com/example/mcai/
 
 ## Mojang ↔ Yarn Mapping Reference
 
-供跨版本移植参考：
+Cross-version porting reference:
 
 | Mojang (26.2) | Yarn (1.21.x) | Category |
 |----------------|---------------|----------|

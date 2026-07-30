@@ -201,6 +201,7 @@ public class ChatHandler {
         var playerHistory = history.computeIfAbsent(pid, k -> new LinkedList<>());
         int maxCtx = mod.getConfig().getContextMaxChars();
         MCAIMod.LOGGER.info("AI query from {}: {}", pname, query);
+        dbg.startSession(pname, query);
         animation.start(player, server);
         final boolean finalIsAdmin = isAdmin;
         try {
@@ -223,7 +224,7 @@ public class ChatHandler {
                     server2.execute(() -> { try { animation.done(player); handleResponse(player, response); synchronized (playerHistory) { playerHistory.add(new OpenAIClient.ChatMessage("user", userContent)); playerHistory.add(new OpenAIClient.ChatMessage("assistant", response)); trimHistoryByChars(playerHistory, maxCtx); } } catch (Exception ex) { MCAIMod.LOGGER.error("AI response handler error", ex); } });
                 } else { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.error", result.error())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI error handler error", ex); } }); }
             } catch (Exception e) { MCAIMod.LOGGER.error("AI query failed", e); MinecraftServer server2 = mod.getServer(); if (server2 != null) { server2.execute(() -> { try { animation.done(player); player.sendSystemMessage(Component.translatable("mcai.chat.exception", e.getMessage())); } catch (Exception ex) { MCAIMod.LOGGER.error("AI exception handler error", ex); } }); } }
-            finally { if (!finalIsAdmin) concurrentNonAdminCalls.decrementAndGet(); }
+            finally { if (!finalIsAdmin) concurrentNonAdminCalls.decrementAndGet(); dbg.endSession(); }
             });
         } catch (java.util.concurrent.RejectedExecutionException e) {
             // 任务被拒绝（线程池满），回滚计数器和冷却时间
@@ -232,6 +233,7 @@ public class ChatHandler {
                 lastAICallTime.remove(pid);
             }
             MCAIMod.LOGGER.warn("AI executor rejected task for {}", pname);
+            dbg.endSession();
             server.execute(() -> {
                 animation.done(player);
                 player.sendSystemMessage(Component.translatable("mcai.chat.concurrent_limit"));

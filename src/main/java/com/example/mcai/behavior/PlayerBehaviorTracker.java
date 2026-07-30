@@ -13,10 +13,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,10 +25,6 @@ public class PlayerBehaviorTracker {
     private final ModConfig config;
     private final ConcurrentMap<UUID, Integer> scores = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastRecoveryTime = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService saveScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "MCAI-ScoreSaver"); t.setDaemon(true); return t;
-    });
-    private final AtomicBoolean saveScheduled = new AtomicBoolean(false);
 
     public PlayerBehaviorTracker(ModConfig config) {
         this.config = config;
@@ -86,19 +78,13 @@ public class PlayerBehaviorTracker {
 
     // ── Persistence ──
 
-    /** Force a full save of scores to disk. */
+    /** Save scores to disk immediately. */
     public void save() {
-        if (saveScheduled.compareAndSet(false, true)) {
-            saveScheduler.schedule(() -> {
-                saveScheduled.set(false);
-                doSave();
-            }, 5, TimeUnit.SECONDS);
-        }
+        doSave();
     }
 
     /** Immediate save (for shutdown). */
     public void saveImmediate() {
-        saveScheduled.set(false);
         doSave();
     }
 

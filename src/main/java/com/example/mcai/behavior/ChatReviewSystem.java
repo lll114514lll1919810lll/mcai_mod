@@ -125,7 +125,7 @@ public class ChatReviewSystem {
         }
     }
 
-    private void executeApprovedAction(AdminApprovalQueue.ApprovalItem item) {
+    public void executeApprovedAction(AdminApprovalQueue.ApprovalItem item) {
         var server = mod.getServer();
         if (server == null) return;
 

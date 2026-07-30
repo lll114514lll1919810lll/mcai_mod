@@ -6,7 +6,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.example.mcai.config.ModConfig;
-import com.example.mcai.handler.AIDebugLogger;
 import com.example.mcai.MCAIMod;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +121,6 @@ public class OpenAIClient {
 
     public ApiResult<String> chat(List<ChatMessage> messages,
                                    Function<List<ToolCall>, List<String>> toolExecutor) {
-        String endpoint = resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions";
         int maxTurns = config.getMaxToolCalls();
         long startTime = System.currentTimeMillis();
         long totalTimeoutMs = 5 * 60 * 1000L; // 5 minutes total timeout
@@ -143,59 +141,13 @@ public class OpenAIClient {
 
             String bodyJson = GSON.toJson(body);
 
-            HttpRequest.Builder builder = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60))
-                    .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
-
-            String key = resolvedApiKey;
-            if (!key.isEmpty()) {
-                builder.header("Authorization", "Bearer " + key);
+            var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
+            var result = sendAndParseMessage(bodyJson);
+            if (!result.success()) {
+                if (dbg != null && dbg.isEnabled()) dbg.logError("API", result.error());
+                return ApiResult.err(result.error());
             }
-
-            HttpResponse<String> response;
-            try {
-                var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
-                if (dbg != null && dbg.isEnabled()) dbg.logAPICall(endpoint, resolvedModel, messages.size());
-                response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-            } catch (Exception e) {
-                LOGGER.error("HTTP request failed: {}", e.getMessage());
-                var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
-                if (dbg != null && dbg.isEnabled()) dbg.logError("HTTP", e.getMessage());
-                return ApiResult.err(e.getMessage());
-            }
-
-            if (response.statusCode() != 200) {
-                String resp = response.body();
-                try {
-                    JsonObject err = GSON.fromJson(resp, JsonObject.class);
-                    if (err.has("error")) {
-                        String msg = err.getAsJsonObject("error").get("message").getAsString();
-                        LOGGER.error("API error {}: {}", response.statusCode(), msg);
-                        return ApiResult.err(msg);
-                    }
-                } catch (Exception ignored) {}
-                LOGGER.error("API error {} (no JSON error): {}", response.statusCode(),
-                        resp.length() > 200 ? resp.substring(0, 200) + "..." : resp);
-                return ApiResult.err("HTTP " + response.statusCode());
-            }
-
-            JsonObject json;
-            try {
-                json = GSON.fromJson(response.body(), JsonObject.class);
-            } catch (Exception e) {
-                LOGGER.error("Failed to parse API response: {}", e.getMessage());
-                return ApiResult.err("response parse failed, check API compatibility");
-            }
-
-            JsonArray choices = json.getAsJsonArray("choices");
-            if (choices == null || choices.isEmpty()) {
-                return ApiResult.err("no choices in response");
-            }
-
-            JsonObject choice = choices.get(0).getAsJsonObject();
-            JsonObject msg = choice.getAsJsonObject("message");
+            JsonObject msg = result.value();
 
             // Capture reasoning_content for thinking mode
             String reasoningContent = msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull()
@@ -205,9 +157,7 @@ public class OpenAIClient {
             JsonElement tcElement = msg.get("tool_calls");
             JsonArray toolCallsJson = (tcElement != null && !tcElement.isJsonNull()) ? tcElement.getAsJsonArray() : null;
 
-            var dbg = MCAIMod.getInstance() != null ? MCAIMod.getInstance().getDebugLogger() : null;
             if (dbg != null && dbg.isEnabled()) {
-                dbg.logAPIResponse(response.statusCode(), choices.size(), toolCallsJson != null && toolCallsJson.size() > 0);
                 if (reasoningContent != null && !reasoningContent.isEmpty()) dbg.logThinking(reasoningContent);
             }
 
@@ -226,11 +176,11 @@ public class OpenAIClient {
 
                 List<String> results = toolExecutor.apply(toolCalls);
                 for (int i = 0; i < toolCalls.size(); i++) {
-                    String result = results.size() > i ? results.get(i) : "无结果";
-                    messages.add(ChatMessage.toolResult(toolCalls.get(i).id, result));
+                    String toolResult = results.size() > i ? results.get(i) : "无结果";
+                    messages.add(ChatMessage.toolResult(toolCalls.get(i).id, toolResult));
                     if (dbg != null && dbg.isEnabled()) {
                         dbg.logToolCall(toolCalls.get(i).name, toolCalls.get(i).arguments);
-                        dbg.logToolResult(toolCalls.get(i).name, result);
+                        dbg.logToolResult(toolCalls.get(i).name, toolResult);
                     }
                 }
                 continue;
@@ -251,29 +201,12 @@ public class OpenAIClient {
         JsonArray msgArray = new JsonArray();
         for (ChatMessage msg : messages) msgArray.add(msg.toJson());
         body.add("messages", msgArray);
-        // No tools attached - AI can only reply with text
-        try {
-            HttpRequest.Builder fbBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create(endpoint))
-                    .header("Content-Type", "application/json")
-                    .timeout(Duration.ofSeconds(60))
-                    .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(body)));
-            String key = resolvedApiKey;
-            if (!key.isEmpty()) {
-                fbBuilder.header("Authorization", "Bearer " + key);
-            }
-            HttpResponse<String> response = httpClient.send(fbBuilder.build(), HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200) {
-                JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
-                JsonArray choices = json.getAsJsonArray("choices");
-                if (choices != null && !choices.isEmpty()) {
-                    JsonObject choiceMsg = choices.get(0).getAsJsonObject().getAsJsonObject("message");
-                    String content = choiceMsg.has("content") && !choiceMsg.get("content").isJsonNull()
-                            ? choiceMsg.get("content").getAsString() : "";
-                    if (!content.isEmpty()) return ApiResult.ok(content);
-                }
-            }
-        } catch (Exception e) { LOGGER.warn("Final fallback call failed: {}", e.getMessage()); }
+        var fbResult = sendAndParseMessage(GSON.toJson(body));
+        if (fbResult.success()) {
+            String content = fbResult.value().has("content") && !fbResult.value().get("content").isJsonNull()
+                    ? fbResult.value().get("content").getAsString() : "";
+            if (!content.isEmpty()) return ApiResult.ok(content);
+        }
         return ApiResult.err("工具调用次数已达上限，请稍后重试或简化请求");
     }
 
@@ -296,16 +229,11 @@ public class OpenAIClient {
      * Supports thinking mode if configured. Returns both content and reasoning_content.
      */
     public ApiResult<ChatSimpleResult> chatSimpleFull(List<ChatMessage> messages) {
-        String endpoint = resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions";
-
         JsonObject body = buildBaseRequestBody();
         JsonArray msgArray = new JsonArray();
-        for (ChatMessage msg : messages) {
-            msgArray.add(msg.toJson());
-        }
+        for (ChatMessage msg : messages) msgArray.add(msg.toJson());
         body.add("messages", msgArray);
-
-        return executeChatCompletion(endpoint, body);
+        return executeChatCompletion(body);
     }
 
     /**
@@ -326,29 +254,35 @@ public class OpenAIClient {
     }
 
     /**
-     * 发送 chat/completions 请求并解析最简响应（仅兼容模式/审查系统使用）。
+     * 发送 chat/completions 请求并解析最简响应（审查系统使用）。
      */
-    private ApiResult<ChatSimpleResult> executeChatCompletion(String endpoint, JsonObject body) {
-        String bodyJson = GSON.toJson(body);
+    private ApiResult<ChatSimpleResult> executeChatCompletion(JsonObject body) {
+        var result = sendAndParseMessage(GSON.toJson(body));
+        if (!result.success()) return ApiResult.err(result.error());
+        JsonObject msg = result.value();
+        String reasoningContent = msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull()
+                ? msg.get("reasoning_content").getAsString() : null;
+        String content = msg.has("content") && !msg.get("content").isJsonNull()
+                ? msg.get("content").getAsString() : "";
+        if (content.isEmpty()) return ApiResult.err("empty response content");
+        return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
+    }
 
+    /**
+     * 发送 POST 请求到 API，解析响应，返回 choices[0].message 的 JsonObject。
+     * 处理 HTTP 错误、JSON 解析、choices 提取。两个 chat 方法共享此请求逻辑。
+     */
+    private ApiResult<JsonObject> sendAndParseMessage(String bodyJson) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint))
+                .uri(URI.create(resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions"))
                 .header("Content-Type", "application/json")
                 .timeout(Duration.ofSeconds(60))
                 .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
-
-        String key = resolvedApiKey;
-        if (!key.isEmpty()) {
-            builder.header("Authorization", "Bearer " + key);
-        }
+        if (!resolvedApiKey.isEmpty()) builder.header("Authorization", "Bearer " + resolvedApiKey);
 
         HttpResponse<String> response;
-        try {
-            response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            LOGGER.error("HTTP request failed: {}", e.getMessage());
-            return ApiResult.err(e.getMessage());
-        }
+        try { response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString()); }
+        catch (Exception e) { LOGGER.error("HTTP request failed: {}", e.getMessage()); return ApiResult.err(e.getMessage()); }
 
         if (response.statusCode() != 200) {
             String resp = response.body();
@@ -366,28 +300,15 @@ public class OpenAIClient {
         }
 
         JsonObject json;
-        try {
-            json = GSON.fromJson(response.body(), JsonObject.class);
-        } catch (Exception e) {
-            LOGGER.error("Failed to parse API response: {}", e.getMessage());
-            return ApiResult.err("response parse failed, check API compatibility");
-        }
+        try { json = GSON.fromJson(response.body(), JsonObject.class); }
+        catch (Exception e) { LOGGER.error("Failed to parse API response: {}", e.getMessage()); return ApiResult.err("response parse failed"); }
 
         JsonArray choices = json.getAsJsonArray("choices");
-        if (choices == null || choices.isEmpty()) {
-            return ApiResult.err("no choices in response");
-        }
+        if (choices == null || choices.isEmpty()) return ApiResult.err("no choices in response");
 
-        JsonObject choice = choices.get(0).getAsJsonObject();
-        JsonObject msg = choice.getAsJsonObject("message");
-
-        String reasoningContent = msg.has("reasoning_content") && !msg.get("reasoning_content").isJsonNull()
-                ? msg.get("reasoning_content").getAsString() : null;
-
-        String content = msg.has("content") && !msg.get("content").isJsonNull()
-                ? msg.get("content").getAsString() : "";
-        if (content.isEmpty()) return ApiResult.err("empty response content");
-        return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
+        JsonObject message = choices.get(0).getAsJsonObject().getAsJsonObject("message");
+        if (message == null) return ApiResult.err("no message in choice");
+        return ApiResult.ok(message);
     }
 
     private List<ToolCall> parseToolCalls(JsonObject msg) {
@@ -410,12 +331,8 @@ public class OpenAIClient {
 
     private JsonArray buildToolDefinitions() {
         JsonObject kbTool = buildTool("search_knowledge_base",
-                "搜索 Minecraft 知识库。如果服主启用了在线 Wiki，会优先搜索 minecraft.wiki 或 zh.minecraft.wiki 上的最新原版知识；未开启或在线失败时自动降级到本地知识库。可用中文或英文关键词。先调用 get_installed_mods 了解已安装的Mod，再用其modid作为命名空间搜索。如搜 create:brass_ingot 可用 \"黄铜锭\" 或 \"brass ingot\"。",
+                "搜索 Minecraft 知识库。通过在线 Wiki（minecraft.wiki 或 zh.minecraft.wiki）搜索最新原版知识。可用中文或英文关键词。先调用 get_installed_mods 了解已安装的Mod，再用其modid作为命名空间搜索。如搜 create:brass_ingot 可用 \"黄铜锭\" 或 \"brass ingot\"。结果会在返回摘要时直接包含完整内容。",
                 "query", "string", "搜索关键词（中文或英文）");
-
-        JsonObject readTool = buildTool("read_knowledge_base",
-                "读取知识库/Wiki 中某个条目的完整内容。先用 search_knowledge_base 搜索到目标条目后，用此工具获取全文。",
-                "title", "string", "条目标题（从 search_knowledge_base 的结果中获取）");
 
         JsonObject cmdTool = buildTool("execute_minecraft_command",
                 "在服务器上执行一条 Minecraft 指令。玩家提出的任何指令请求都可以用此工具执行（如给物品、传送、修改游戏规则等），不需要你判断权限——所有指令会自动送去管理员审批，审批通过后才会执行。只管调用工具，把结果告诉玩家即可。",
@@ -477,7 +394,6 @@ public class OpenAIClient {
 
         JsonArray tools = new JsonArray();
         tools.add(kbTool);
-        tools.add(readTool);
         tools.add(cmdTool);
         tools.add(chainTool);
         JsonObject debugTool = new JsonObject();

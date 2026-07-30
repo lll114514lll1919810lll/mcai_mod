@@ -103,6 +103,7 @@ public class AdminApprovalQueue {
             if (item.resolved) return false;
             item.resolved = true;
         }
+        items.remove(item.id);
         ScheduledFuture<?> t = timeouts.remove(item.id);
         if (t != null) t.cancel(false);
         return true;

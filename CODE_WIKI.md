@@ -1,4 +1,4 @@
-# MCAI Code Wiki
+﻿# MCAI Code Wiki
 
 > Minecraft Fabric Mod —— 将 AI 助手深度集成到 Minecraft 服务器中，实现智能对话、命令执行、知识库搜索与自动行为审查。
 
@@ -206,7 +206,7 @@ PendingCommand  server.execute() 直接执行
 
 ### 3.1 入口模块：MCAIMod.java
 
-**文件**: [MCAIMod.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/MCAIMod.java)
+**文件**: [MCAIMod.java](./src/main/java/com/example/mcai/MCAIMod.java)
 
 职责：Mod 主入口，负责所有子系统的初始化、事件注册与生命周期管理。
 
@@ -277,7 +277,7 @@ PendingCommand  server.execute() 直接执行
 
 #### 3.2.1 OpenAIClient.java
 
-**文件**: [OpenAIClient.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/api/OpenAIClient.java)
+**文件**: [OpenAIClient.java](./src/main/java/com/example/mcai/api/OpenAIClient.java)
 
 AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调用（Function Calling）与思考模式（Reasoning）。
 
@@ -331,7 +331,7 @@ AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调�
 
 #### 3.2.2 ApiResult.java
 
-**文件**: [ApiResult.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/api/ApiResult.java)
+**文件**: [ApiResult.java](./src/main/java/com/example/mcai/api/ApiResult.java)
 
 轻量级结果封装 record：`ApiResult<T>(value, error, success)`。
 
@@ -346,7 +346,7 @@ ApiResult.err(message) // 失败
 
 #### 3.3.1 ChatHandler.java
 
-**文件**: [ChatHandler.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/ChatHandler.java)
+**文件**: [ChatHandler.java](./src/main/java/com/example/mcai/handler/ChatHandler.java)
 
 **职责**：AI 对话编排中心，负责聊天拦截、上下文构建、API 调用调度、历史管理、安全防护。
 
@@ -433,7 +433,7 @@ return "[PLAYER:" + playerName + "] " + clean;
 
 #### 3.3.2 CommandExecutionService.java
 
-**文件**: [CommandExecutionService.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/CommandExecutionService.java)
+**文件**: [CommandExecutionService.java](./src/main/java/com/example/mcai/handler/CommandExecutionService.java)
 
 **职责**：命令执行与审批管理子系统。这是整个项目中逻辑最复杂的类（约 830 行）。
 
@@ -508,7 +508,7 @@ new CommandSourceStack(
 
 #### 3.3.3 ToolDispatcher.java
 
-**文件**: [ToolDispatcher.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/ToolDispatcher.java)
+**文件**: [ToolDispatcher.java](./src/main/java/com/example/mcai/handler/ToolDispatcher.java)
 
 **职责**：AI 工具调用的分发路由器。约 310 行。
 
@@ -545,7 +545,7 @@ switch (tc.name) {
 
 #### 3.3.4 CommandRegistry.java
 
-**文件**: [CommandRegistry.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/CommandRegistry.java)
+**文件**: [CommandRegistry.java](./src/main/java/com/example/mcai/handler/CommandRegistry.java)
 
 **职责**：注册所有玩家可调用的 `/ai*` 子命令。约 570 行。
 
@@ -575,7 +575,7 @@ switch (tc.name) {
 
 #### 3.3.5 ChatLog.java
 
-**文件**: [ChatLog.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/ChatLog.java)
+**文件**: [ChatLog.java](./src/main/java/com/example/mcai/handler/ChatLog.java)
 
 轻量级聊天记录存储，最多 50 条，带脏标记缓存。
 
@@ -591,7 +591,7 @@ size()             → 当前记录数
 
 #### 3.3.6 ThinkingAnimation.java
 
-**文件**: [ThinkingAnimation.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/ThinkingAnimation.java)
+**文件**: [ThinkingAnimation.java](./src/main/java/com/example/mcai/handler/ThinkingAnimation.java)
 
 "思考中"动画发送器。使用 `ClientboundSetActionBarTextPacket` 在玩家 Action Bar 显示动态效果。
 
@@ -607,7 +607,7 @@ done(player)         → 清除 Action Bar（发送空的 ActionBar 包）
 
 #### 3.3.7 PlayerContextBuilder.java
 
-**文件**: [PlayerContextBuilder.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/PlayerContextBuilder.java)
+**文件**: [PlayerContextBuilder.java](./src/main/java/com/example/mcai/handler/PlayerContextBuilder.java)
 
 构建 AI 调用时的玩家上下文信息（纯字符串拼接）。
 
@@ -621,7 +621,7 @@ done(player)         → 清除 Action Bar（发送空的 ActionBar 包）
 
 #### 3.3.8 PersonaManager.java
 
-**文件**: [PersonaManager.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/PersonaManager.java)
+**文件**: [PersonaManager.java](./src/main/java/com/example/mcai/handler/PersonaManager.java)
 
 **职责**：AI 人格管理子系统，从 JSON 文件加载人格定义，支持多语言翻译。约 390 行。
 
@@ -675,7 +675,7 @@ done(player)         → 清除 Action Bar（发送空的 ActionBar 包）
 
 #### 3.3.9 AIDebugLogger.java
 
-**文件**: [AIDebugLogger.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/handler/AIDebugLogger.java)
+**文件**: [AIDebugLogger.java](./src/main/java/com/example/mcai/handler/AIDebugLogger.java)
 
 AI 交互全流程调试记录器。写入文件 + 内存会话追踪。
 
@@ -708,7 +708,7 @@ AI 交互全流程调试记录器。写入文件 + 内存会话追踪。
 
 #### 3.4.1 ChatReviewSystem.java
 
-**文件**: [ChatReviewSystem.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/ChatReviewSystem.java)
+**文件**: [ChatReviewSystem.java](./src/main/java/com/example/mcai/behavior/ChatReviewSystem.java)
 
 **职责**：审查子系统的调度与编排器。仅专用服务器上启用。约 147 行。
 
@@ -743,7 +743,7 @@ this.cmdReg = new ReviewCommandRegistry(this, approvalQueue, reviewEngine);
 
 #### 3.4.2 ReviewEngine.java
 
-**文件**: [ReviewEngine.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/ReviewEngine.java)
+**文件**: [ReviewEngine.java](./src/main/java/com/example/mcai/behavior/ReviewEngine.java)
 
 **职责**：AI 审查引擎 —— 读取聊天记录、调用审查模型、解析违规、执行处罚。约 167 行。
 
@@ -799,7 +799,7 @@ this.cmdReg = new ReviewCommandRegistry(this, approvalQueue, reviewEngine);
 
 #### 3.4.3 PlayerBehaviorTracker.java
 
-**文件**: [PlayerBehaviorTracker.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/PlayerBehaviorTracker.java)
+**文件**: [PlayerBehaviorTracker.java](./src/main/java/com/example/mcai/behavior/PlayerBehaviorTracker.java)
 
 **职责**：玩家行为分数持久化存储。
 
@@ -842,7 +842,7 @@ if (now - last >= intervalMs) {
 
 #### 3.4.4 AdminApprovalQueue.java
 
-**文件**: [AdminApprovalQueue.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/AdminApprovalQueue.java)
+**文件**: [AdminApprovalQueue.java](./src/main/java/com/example/mcai/behavior/AdminApprovalQueue.java)
 
 **职责**：红牌踢出的管理员审批队列。约 110 行。
 
@@ -873,7 +873,7 @@ if (now - last >= intervalMs) {
 
 #### 3.4.5 PenaltyHistory.java
 
-**文件**: [PenaltyHistory.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/PenaltyHistory.java)
+**文件**: [PenaltyHistory.java](./src/main/java/com/example/mcai/behavior/PenaltyHistory.java)
 
 **职责**：处罚历史记录，供 AI 和管理员查看。
 
@@ -898,7 +898,7 @@ if (now - last >= intervalMs) {
 
 #### 3.4.6 ReviewCommandRegistry.java
 
-**文件**: [ReviewCommandRegistry.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/ReviewCommandRegistry.java)
+**文件**: [ReviewCommandRegistry.java](./src/main/java/com/example/mcai/behavior/ReviewCommandRegistry.java)
 
 `/aireview` 命令注册器：
 
@@ -915,7 +915,7 @@ if (now - last >= intervalMs) {
 
 #### 3.4.7 PenaltyEvent.java
 
-**文件**: [PenaltyEvent.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/PenaltyEvent.java)
+**文件**: [PenaltyEvent.java](./src/main/java/com/example/mcai/behavior/PenaltyEvent.java)
 
 处罚事件记录类：
 ```java
@@ -931,7 +931,7 @@ public enum PenaltyAction {
 
 #### 3.4.8 PlayerViolation.java
 
-**文件**: [PlayerViolation.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/behavior/PlayerViolation.java)
+**文件**: [PlayerViolation.java](./src/main/java/com/example/mcai/behavior/PlayerViolation.java)
 
 AI 审查解析后的违规记录：`(playerName, description, severity, suggestedAction)`。
 
@@ -941,7 +941,7 @@ AI 审查解析后的违规记录：`(playerName, description, severity, suggest
 
 #### 3.5.1 ModConfig.java
 
-**文件**: [ModConfig.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/config/ModConfig.java)
+**文件**: [ModConfig.java](./src/main/java/com/example/mcai/config/ModConfig.java)
 
 **职责**：JSON 配置的加载、持久化、校验。约 553 行。
 
@@ -1035,7 +1035,7 @@ AI 审查解析后的违规记录：`(playerName, description, severity, suggest
 
 #### 3.5.2 PromptLoader.java
 
-**文件**: [PromptLoader.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/config/PromptLoader.java)
+**文件**: [PromptLoader.java](./src/main/java/com/example/mcai/config/PromptLoader.java)
 
 极简工具类，负责提示词文件的加载与重置。
 
@@ -1056,7 +1056,7 @@ reset(fileName, defaultContent)
 
 #### 3.6.1 SearchProvider.java
 
-**文件**: [SearchProvider.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/kb/SearchProvider.java)
+**文件**: [SearchProvider.java](./src/main/java/com/example/mcai/kb/SearchProvider.java)
 
 搜索提供器抽象接口。所有搜索源（Wiki 在线、本地 JSON）实现此接口。
 
@@ -1071,7 +1071,7 @@ public interface SearchProvider {
 
 #### 3.6.2 SearchResult.java
 
-**文件**: [SearchResult.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/kb/SearchResult.java)
+**文件**: [SearchResult.java](./src/main/java/com/example/mcai/kb/SearchResult.java)
 
 统一搜索结果格式：
 ```java
@@ -1092,7 +1092,7 @@ public class SearchResult {
 
 #### 3.6.3 SearchRouter.java
 
-**文件**: [SearchRouter.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/kb/SearchRouter.java)
+**文件**: [SearchRouter.java](./src/main/java/com/example/mcai/kb/SearchRouter.java)
 
 **职责**：搜索路由器，异步调用 WikiSearchProvider，带超时保护。约 89 行。
 
@@ -1111,7 +1111,7 @@ search(query, maxResults)
 
 #### 3.6.4 WikiSearchProvider.java
 
-**文件**: [WikiSearchProvider.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/kb/WikiSearchProvider.java)
+**文件**: [WikiSearchProvider.java](./src/main/java/com/example/mcai/kb/WikiSearchProvider.java)
 
 通过 MediaWiki API 实现 Minecraft Wiki 在线搜索。约 183 行。
 
@@ -1139,7 +1139,7 @@ search(query, maxResults)
 
 #### 3.6.5 KnowledgeBase.java
 
-**文件**: [KnowledgeBase.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/kb/KnowledgeBase.java)
+**文件**: [KnowledgeBase.java](./src/main/java/com/example/mcai/kb/KnowledgeBase.java)
 
 本地 JSON 知识库实现（**已弃用，保留兼容**）。从 `config/mcai/kb/*.json` 加载。
 
@@ -1163,7 +1163,7 @@ public record Entry(String title, List<String> keywords, String summary, String 
 
 #### 3.7.1 ModMenuIntegration.java
 
-**文件**: [ModMenuIntegration.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/client/ModMenuIntegration.java)
+**文件**: [ModMenuIntegration.java](./src/main/java/com/example/mcai/client/ModMenuIntegration.java)
 
 Mod Menu API 实现，提供配置屏幕工厂。标注 `@Environment(EnvType.CLIENT)` —— 仅客户端加载。
 
@@ -1178,7 +1178,7 @@ implements ModMenuApi {
 
 #### 3.7.2 MCAIConfigScreen.java
 
-**文件**: [MCAIConfigScreen.java](file:///c:/Users/Lecoo/mc/src/main/java/com/example/mcai/client/config/MCAIConfigScreen.java)
+**文件**: [MCAIConfigScreen.java](./src/main/java/com/example/mcai/client/config/MCAIConfigScreen.java)
 
 **职责**：客户端 GUI 配置界面，直接读写 `config/mcai/config.json` 原始 JSON。
 

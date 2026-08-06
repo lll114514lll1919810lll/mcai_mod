@@ -172,7 +172,7 @@ MCAIMod 单例持有所有子系统实例，通过 `MCAIMod.getInstance()` + get
 | 线程池 | 创建位置 | 用途 | 关闭时机 |
 |---|---|---|---|
 | `MCAI-Worker` (4~8 线程) | ChatHandler | AI 对话请求处理 | 不关闭（daemon），`killAIThreads()` 重建 |
-| `MCAI-SearchRouter` (CachedThreadPool) | SearchRouter | Wiki 在线搜索 | `SERVER_STOPPING` |
+| `MCAI-SearchRouter` (ThreadPoolExecutor(1-4 threads, queue 16)) | SearchRouter | Wiki 在线搜索 | `SERVER_STOPPING` |
 | `MCAI-UI` (单线程 Scheduler) | ThinkingAnimation | "思考中" 动画 | 不关闭（daemon） |
 | `MCAI-Review` (单线程 Scheduler) | ChatReviewSystem | 定时审查任务 | `SERVER_STOPPING` |
 | `MCAI-ConfigWatcher` (单线程 Scheduler) | MCAIMod | 配置文件热重载 | `SERVER_STOPPING` |
@@ -1103,7 +1103,7 @@ search(query, maxResults)
   → 返回 Wiki 结果（错误不丢弃）或空结果
 ```
 
-**线程池**：`CachedThreadPool`，每次搜索创建新线程，daemon 模式，线程名 `MCAI-SearchRouter`。
+**线程池**：`ThreadPoolExecutor(1-4 threads, queue 16)`，core 1 / max 4 / queue 16，daemon 模式，线程名 `MCAI-SearchRouter`。
 
 **⚠️ 重要**：线程池在 `SERVER_STOPPING` 时 `shutdownNow()`，进入新世界时必须重建。`MCAIMod.reloadConfig()` 和 `SERVER_STARTED` 事件中都执行了重建。
 
@@ -1416,7 +1416,7 @@ reloadConfig() 执行链:
   4. config.getReviewPrompt()
   5. aiClient = new OpenAIClient(config) — 重建聊天系统 AI 客户端
   6. reviewClient = new OpenAIClient(config, reviewEndpoint, reviewKey, reviewModel)
-  7. searchRouter.shutdown() + 重建      — 关闭旧线程池，创建新 CachedThreadPool
+  7. searchRouter.shutdown() + 重建      — 关闭旧线程池，创建新 ThreadPoolExecutor(1-4 threads, queue 16)
   8. toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this)
   9. chatHandler.setToolDispatcher(td)    — 更新 volatile 引用（避免 ChatHandler 持有旧 ToolDispatcher）
   10. chatReviewSystem.reloadConfig()    — 间隔变化时重建调度器
@@ -1510,7 +1510,7 @@ MCAIMod (单例服务定位器)
   │     └── 内部调用 aiClient.chat() → HTTP 请求
   │          └── 调用 toolExecutor → ToolDispatcher → 同步执行
   │
-  ├─── MCAI-SearchRouter (CachedThreadPool, daemon) ← SearchRouter.executor
+  ├─── MCAI-SearchRouter (1-4 threads, queue 16, daemon) ← SearchRouter.executor
   │     └── WikiSearchProvider.search() → HTTP 请求 (8s 超时)
   │
   ├─── MCAI-UI (单线程 Scheduler, daemon) ← ThinkingAnimation.scheduler
@@ -1541,7 +1541,7 @@ MCAIMod (单例服务定位器)
   │   └─ MCAIMod.onInitialize() [◆ 只调用一次]
   │       ├─ ModConfig.load() → config/mcai/config.json
   │       ├─ PromptLoader.load() → system_prompt.txt / review_prompt.txt
-  │       ├─ new SearchRouter(config, wikiProvider) → 创建 CachedThreadPool
+  │       ├─ new SearchRouter(config, wikiProvider) → 创建 ThreadPoolExecutor(1-4 threads, queue 16)
   │       ├─ new OpenAIClient(config)
   │       ├─ new OpenAIClient(config, reviewEndpoint, reviewKey, reviewModel)
   │       ├─ new PersonaManager() → 提取内置 JSON + refreshPersonaList()
@@ -1647,7 +1647,7 @@ MCAIMod (单例服务定位器)
 
 ```bash
 # 1. 将 JAR 放入 mods/ 目录
-cp build/libs/mcai-26.1.2-1.7.0-beta.3-alpha.1.jar minecraft_server/mods/
+cp build/libs/mcai-26.1.2-1.7.0-beta.3-alpha.2.jar minecraft_server/mods/
 
 # 2. 首次启动后配置文件自动生成
 #    config/mcai/config.json       —— 主配置
@@ -1857,7 +1857,7 @@ needsApproval(command):
 | `pendingById` | `ConcurrentMap<Long, PendingCommand>` | 待审批单命令索引 |
 | `pendingChains` | `ConcurrentMap<Long, PendingChain>` | 待审批命令链索引 |
 | `pendingByPlayer` | `ConcurrentMap<UUID, Set<Long>>` | 玩家 → 待审批 ID 集合 |
-| `history` | `ConcurrentHashMap<UUID, LinkedList<ChatMessage>>` | 每玩家对话历史（synchronized 块保护内部 LinkedList） |
+| `history` | `ConcurrentHashMap<UUID, List<ChatMessage>>` | 每玩家对话历史，value 为 `Collections.synchronizedList(new LinkedList<>())` |
 | `lastAICallTime` | `ConcurrentMap<UUID, Long>` | 非管理员冷却时间戳 |
 | `scores` / `lastRecoveryTime` | `ConcurrentHashMap<UUID, Integer/Long>` | 行为分数持久化 |
 | `items` / `timeouts` | `ConcurrentMap<Integer, ApprovalItem/ScheduledFuture>` | 红牌审批队列 |

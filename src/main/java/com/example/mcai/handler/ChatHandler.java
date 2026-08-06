@@ -9,6 +9,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class ChatHandler {
     private volatile ToolDispatcher toolDispatcher;
 
     private volatile ExecutorService aiExecutor = newExecutor();
-    private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
+    private final Map<UUID, List<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastAICallTime = new ConcurrentHashMap<>();
     private final AtomicInteger concurrentNonAdminCalls = new AtomicInteger(0);
     private volatile boolean chatEnabled = true;
@@ -199,7 +200,7 @@ public class ChatHandler {
             concurrentNonAdminCalls.incrementAndGet();
         }
 
-        var playerHistory = history.computeIfAbsent(pid, k -> new LinkedList<>());
+        var playerHistory = history.computeIfAbsent(pid, k -> Collections.synchronizedList(new LinkedList<>()));
         int maxCtx = mod.getConfig().getContextMaxChars();
         MCAIMod.LOGGER.info("AI query from {}: {}", pname, query);
         dbg.startSession(pname, query);
@@ -306,11 +307,11 @@ public class ChatHandler {
 
     public void clearHistory(UUID playerId) { history.remove(playerId); }
     public void reloadAll() { mod.reloadConfig(); }
-    private void trimHistoryByChars(LinkedList<OpenAIClient.ChatMessage> h, int maxChars) {
+    private void trimHistoryByChars(List<OpenAIClient.ChatMessage> h, int maxChars) {
         int total = 0;
         for (var msg : h) { total += msg.content != null ? msg.content.length() : 0; }
         while (total > maxChars && !h.isEmpty()) {
-            var removed = h.removeFirst();
+            var removed = h.remove(0);
             total -= removed.content != null ? removed.content.length() : 0;
         }
     }

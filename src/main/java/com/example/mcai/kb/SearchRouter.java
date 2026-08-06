@@ -21,11 +21,10 @@ public class SearchRouter implements SearchProvider {
     public SearchRouter(ModConfig config, SearchProvider wikiProvider) {
         this.config = config;
         this.wikiProvider = wikiProvider;
-        this.executor = Executors.newCachedThreadPool(r -> {
-            Thread t = new Thread(r, "MCAI-SearchRouter");
-            t.setDaemon(true);
-            return t;
-        });
+        this.executor = new ThreadPoolExecutor(1, 4, 60L, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(16),
+                r -> { Thread t = new Thread(r, "MCAI-SearchRouter"); t.setDaemon(true); return t; },
+                (r, exec) -> LOGGER.warn("SearchRouter executor queue full, task rejected"));
     }
 
     @Override
@@ -82,7 +81,9 @@ public class SearchRouter implements SearchProvider {
     }
 
     public void shutdown() {
-        executor.shutdownNow();
+        executor.shutdown();
+        try { if (!executor.awaitTermination(5, TimeUnit.SECONDS)) executor.shutdownNow(); }
+        catch (InterruptedException ignored) { executor.shutdownNow(); }
     }
 
     public ExecutorService getExecutor() { return executor; }

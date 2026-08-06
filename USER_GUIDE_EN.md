@@ -61,7 +61,19 @@ The mod works in **single-player** too - no dedicated server needed:
 | `/aikb <keyword>` | Search knowledge base |
 | `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
 | `/aikill` | Destroy all AI threads |
-| `/aidebug start/stop` | Debug logging |
+| `/aidebug start/stop/show/list/clear` | Debug logging |
+| `/aipersona [list/set/current/view/reload]` | Switch/view/reload AI persona |
+
+### Persona Mode
+
+`/aipersona` subcommands:
+- `list` — list all personas (clickable to select)
+- `set <id|index>` — switch persona
+- `current` — show current persona
+- `view <id|index>` — view persona content
+- `reload` — rescan `config/mcai/personas/` directory
+
+Built-in personas: `default`, villager, piglin, ender dragon, creeper. Admins can add custom persona JSON in `config/mcai/personas/` (required fields `id`/`name`/`content`; optional `summary` and `translations` for multi-language). Duplicate IDs keep the alphabetically-first file; later duplicates are skipped with a warning.
 
 ### Review System
 
@@ -141,9 +153,22 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |
 | `scoreRecoveryPerInterval` | `5` | Score recovery per cycle |
-| `approvalTimeoutMinutes` | `10` | Approval timeout (min) |
-| `enableOnlineWiki` | `false` | Enable Minecraft Wiki online search |
-| `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
+| `approvalTimeoutMinutes` | 10 | Approval timeout (min) |
+| `wikiLanguage` | `"zh_cn"` | AI online search language: `zh_cn` Chinese, `en_us` English (online search enabled by default) |
+| `apiConnectTimeoutSeconds` | 10 | API connect timeout (seconds) |
+| `apiRequestTimeoutSeconds` | 60 | API per-request timeout (seconds) |
+| `apiLoopTimeoutSeconds` | 300 | Tool-call loop total timeout (seconds) |
+| `commandExecTimeoutSeconds` | 30 | Per-command execution timeout (seconds) |
+| `maxChainCommands` | 10 | Max commands per chain |
+| `contextMaxChars` | 20000 | Max context chars for AI |
+| `maxToolCalls` | 15 | Max tool calls per turn |
+| `activePersona` | `"default"` | Current persona ID |
+| `personaLanguage` | `""` | Persona language override, empty=follow client language |
+| `promptLanguage` | `"zh_cn"` | Built-in prompt language |
+| `enableChatInterception` | `true` | Intercept chat and forward to AI |
+| `enableCommandExecution` | `true` | Allow AI to execute commands |
+| `enableAutoReview` | `true` | Enable auto behavior review |
+| `maxReviewCycles` | 4 | Max review analysis cycles |
 | `systemPromptPath` | `""` | System prompt file path |
 | `reviewPromptPath` | `""` | Review prompt file path |
 | `reviewApiEndpoint` | `""` | Review system API endpoint, empty=follow chat config |
@@ -155,21 +180,19 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 
 ## Online Wiki Search
 
-By default the knowledge base uses built-in local JSON. Enabling online Wiki makes the AI search minecraft.wiki / zh.minecraft.wiki first, and automatically fall back to the local knowledge base on timeout or failure.
+AI enables online Wiki search by default, querying minecraft.wiki / zh.minecraft.wiki first and falling back to the local knowledge base on failure or timeout.
 
-Edit `config/mcai/config.json`:
+Edit `config/mcai/config.json` to set the language:
 
 ```json
 {
-  "enableOnlineWiki": true,
   "wikiLanguage": "zh_cn"
 }
 ```
 
-- `enableOnlineWiki`: `true` to enable online Wiki, `false` for local KB only
 - `wikiLanguage`: `zh_cn` for Chinese Wiki, `en_us` for English Wiki
 
-> Note: enabling this sends search requests to minecraft.wiki. Make sure your server has internet access and follows the wiki usage policy.
+> Note: online search sends requests to minecraft.wiki. Make sure your server has internet access and follows the wiki usage policy.
 
 ## File Structure
 
@@ -184,6 +207,7 @@ Edit `config/mcai/config.json`:
 | `review_prompt.txt` | Review prompt (customizable) |
 | `review_last_response.txt` | Last review AI raw output |
 | `review_last_reasoning.txt` | Last review AI reasoning |
+| `personas/*.json` | Custom personas (optional; effective after `/aipersona reload`) |
 
 ---
 

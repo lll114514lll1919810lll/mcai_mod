@@ -61,7 +61,19 @@
 | `/aikb <关键词>` | 搜索知识库 |
 | `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
 | `/aikill` | 销毁所有 AI 线程 |
-| `/aidebug start/stop` | 调试日志 |
+| `/aidebug start/stop/show/list/clear` | 调试日志 |
+| `/aipersona [list/set/current/view/reload]` | 切换/查看/重载 AI 人格 |
+
+### 人格模式
+
+`/aipersona` 子命令：
+- `list` — 列出所有人格（可点击选择）
+- `set <id|序号>` — 切换人格
+- `current` — 查看当前人格
+- `view <id|序号>` — 查看人格内容
+- `reload` — 重新扫描 `config/mcai/personas/` 目录
+
+内置人格：`default`（默认）、村民、猪灵、末影龙、苦力怕。服主可在 `config/mcai/personas/` 添加自定义人格 JSON（必填字段 `id`/`name`/`content`，可选 `summary` 与 `translations` 多语言）。重复 ID 按文件名字母序优先，重复项跳过并告警。
 
 ### 审查系统
 
@@ -146,8 +158,21 @@
 | `redCardThreshold` | -60 | 红牌阈值 |
 | `scoreRecoveryPerInterval` | 5 | 每周期恢复分数 |
 | `approvalTimeoutMinutes` | 10 | 审批超时（分） |
-| `enableOnlineWiki` | `false` | 是否启用 Minecraft Wiki 在线搜索 |
-| `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
+| `wikiLanguage` | `"zh_cn"` | AI 在线搜索语言：`zh_cn` 中文，`en_us` 英文（在线搜索默认开启） |
+| `apiConnectTimeoutSeconds` | 10 | API 连接超时（秒） |
+| `apiRequestTimeoutSeconds` | 60 | API 单次请求超时（秒） |
+| `apiLoopTimeoutSeconds` | 300 | 工具调用循环总超时（秒） |
+| `commandExecTimeoutSeconds` | 30 | 单条命令执行超时（秒） |
+| `maxChainCommands` | 10 | 命令链最大条数 |
+| `contextMaxChars` | 20000 | AI 上下文最大字符数 |
+| `maxToolCalls` | 15 | 单轮对话最大工具调用次数 |
+| `activePersona` | `"default"` | 当前人格 ID |
+| `personaLanguage` | `""` | 人格语言覆盖，空=自动跟随客户端 |
+| `promptLanguage` | `"zh_cn"` | 内置提示词语言 |
+| `enableChatInterception` | `true` | 是否拦截聊天转交 AI |
+| `enableCommandExecution` | `true` | 是否允许 AI 执行命令 |
+| `enableAutoReview` | `true` | 是否启用自动行为审查 |
+| `maxReviewCycles` | 4 | 审查最大分析轮数 |
 | `systemPromptPath` | `""` | AI提示词文件路径 |
 | `reviewPromptPath` | `""` | 审查提示词文件路径 |
 | `reviewApiEndpoint` | `""` | 审查系统独立 API 地址，空=跟随聊天系统 |
@@ -159,21 +184,19 @@
 
 ## 在线 Wiki 搜索
 
-默认情况下知识库使用内置的本地 JSON。开启在线 Wiki 后，AI 会优先搜索 minecraft.wiki / zh.minecraft.wiki 上的最新原版内容，超时或失败时自动回退到本地知识库。
+AI 默认启用在线 Wiki 搜索，优先查询 minecraft.wiki / zh.minecraft.wiki 上的最新原版内容，失败或超时时自动回退到本地知识库。
 
-在 `config/mcai/config.json` 中修改：
+在 `config/mcai/config.json` 中配置语言：
 
 ```json
 {
-  "enableOnlineWiki": true,
   "wikiLanguage": "zh_cn"
 }
 ```
 
-- `enableOnlineWiki`：`true` 开启在线 Wiki，`false` 只用本地知识库
 - `wikiLanguage`：`zh_cn` 使用中文 Wiki，`en_us` 使用英文 Wiki
 
-> 注意：开启后会向 minecraft.wiki 发送搜索请求，请确保服务器可以访问互联网，并遵守 Wiki 的使用政策。
+> 注意：在线搜索会向 minecraft.wiki 发送请求，请确保服务器可访问互联网，并遵守 Wiki 的使用政策。
 
 ## 文件结构
 
@@ -188,6 +211,7 @@
 | `review_prompt.txt` | 审查提示词（可自定义） |
 | `review_last_response.txt` | 上次审查 AI 原始输出 |
 | `review_last_reasoning.txt` | 上次审查 AI 推理过程 |
+| `personas/*.json` | 自定义人格（可选，`/aipersona reload` 生效） |
 
 ---
 

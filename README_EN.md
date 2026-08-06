@@ -32,6 +32,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 - Players use `!ai` or `/ai` to chat with AI
 - AI has full server context (chat logs, weather, time, players)
 - Multi-turn conversation with history
+- **Persona mode**: switch AI persona with `/aipersona` — built-in villager, piglin, ender dragon, creeper themes, bilingual (ZH/EN), admins can add custom personas in `config/mcai/personas/`
 
 ### Auto Behavior Review
 - AI analyzes chat every 30 minutes
@@ -48,8 +49,8 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 
 ### Game Knowledge Base
 - Built-in Chinese Minecraft Wiki entries
-- Optional `enableOnlineWiki` to search minecraft.wiki / zh.minecraft.wiki
-- Online-first; falls back to local KB when disabled or offline
+- AI searches minecraft.wiki / zh.minecraft.wiki online first (language via `wikiLanguage`), falls back to local KB on failure or timeout
+- Custom KB: drop JSON files into `config/mcai/kb/` and they auto-load
 
 ---
 
@@ -101,7 +102,8 @@ The mod works in **single-player** too (no dedicated server required):
 | `/aikb <keyword>` | Search knowledge base |
 | `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
 | `/aikill` | Destroy all AI threads |
-| `/aidebug start/stop` | Debug logging |
+| `/aidebug start/stop/show/list/clear` | Debug logging |
+| `/aipersona [list/set/current/view/reload]` | Switch/view/reload AI persona |
 
 ### Review Management
 | Command | Description |
@@ -136,8 +138,21 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `redCardThreshold` | `-60` | Red card threshold |
 | `scoreRecoveryPerInterval` | `5` | Score recovery per cycle |
 | `approvalTimeoutMinutes` | `10` | Approval timeout (min) |
-| `enableOnlineWiki` | `false` | Enable Minecraft Wiki online search |
-| `wikiLanguage` | `"zh_cn"` | Wiki language: `zh_cn` Chinese, `en_us` English |
+| `wikiLanguage` | `"zh_cn"` | AI online search language: `zh_cn` Chinese, `en_us` English (online search enabled by default) |
+| `apiConnectTimeoutSeconds` | 10 | API connect timeout (seconds) |
+| `apiRequestTimeoutSeconds` | 60 | API per-request timeout (seconds) |
+| `apiLoopTimeoutSeconds` | 300 | Tool-call loop total timeout (seconds) |
+| `commandExecTimeoutSeconds` | 30 | Per-command execution timeout (seconds) |
+| `maxChainCommands` | 10 | Max commands per chain |
+| `contextMaxChars` | 20000 | Max context chars for AI (auto-truncated) |
+| `maxToolCalls` | 15 | Max tool calls per conversation turn |
+| `activePersona` | `"default"` | Current persona ID |
+| `personaLanguage` | `""` | Persona language override, empty=follow client language |
+| `promptLanguage` | `"zh_cn"` | Built-in prompt language |
+| `enableChatInterception` | `true` | Intercept chat and forward to AI |
+| `enableCommandExecution` | `true` | Allow AI to execute commands |
+| `enableAutoReview` | `true` | Enable auto behavior review |
+| `maxReviewCycles` | 4 | Max review analysis cycles |
 | `systemPromptPath` | `""` | System prompt file (under config/mcai/) |
 | `reviewPromptPath` | `""` | Review prompt file |
 | `reviewApiEndpoint` | `""` | Review system API endpoint, empty=follow chat config |

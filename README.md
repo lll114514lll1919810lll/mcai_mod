@@ -38,6 +38,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 - 玩家用 `!ai` 或 `/ai` 和 AI 聊天
 - AI 知道服务器里发生了什么（聊天记录、天气、时间等）
 - 支持多轮对话，记住上下文
+- **人格模式**：`/aipersona` 可切换 AI 人格，内置村民、猪灵、末影龙、苦力怕等主题人格，支持中英双语，服主可在 `config/mcai/personas/` 添加自定义人格
 
 ### 自动行为审查
 - AI 每 30 分钟自动检查聊天记录
@@ -52,8 +53,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 ### 游戏知识库
 - 内置中文 Minecraft Wiki 核心条目
-- 可启用 `enableOnlineWiki` 在线搜索 minecraft.wiki / zh.minecraft.wiki
-- 在线优先，失败或关闭时回退到本地知识库
+- AI 优先在线搜索 minecraft.wiki / zh.minecraft.wiki（`wikiLanguage` 控制语言），失败或超时自动回退本地知识库
+- 自定义知识库：将 JSON 文件放入 `config/mcai/kb/` 即可自动加载
 
 ---
 
@@ -125,7 +126,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aikb <关键词>` | 搜索知识库 |
 | `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
 | `/aikill` | 销毁所有 AI 线程 |
-| `/aidebug start/stop` | 调试日志 |
+| `/aidebug start/stop/show/list/clear` | 调试日志 |
+| `/aipersona [list/set/current/view/reload]` | 切换/查看/重载 AI 人格 |
 
 ### 审查管理
 | 命令 | 说明 |
@@ -160,8 +162,21 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `redCardThreshold` | `-60` | 红牌阈值 |
 | `scoreRecoveryPerInterval` | `5` | 每周期恢复分数 |
 | `approvalTimeoutMinutes` | 10 | 审批超时（分） |
-| `enableOnlineWiki` | `false` | 是否启用 Minecraft Wiki 在线搜索 |
-| `wikiLanguage` | `"zh_cn"` | 在线 Wiki 语言：`zh_cn` 中文，`en_us` 英文 |
+| `wikiLanguage` | `"zh_cn"` | AI 在线搜索语言：`zh_cn` 中文，`en_us` 英文（在线搜索默认开启） |
+| `apiConnectTimeoutSeconds` | 10 | API 连接超时（秒） |
+| `apiRequestTimeoutSeconds` | 60 | API 单次请求超时（秒） |
+| `apiLoopTimeoutSeconds` | 300 | 工具调用循环总超时（秒） |
+| `commandExecTimeoutSeconds` | 30 | 单条命令执行超时（秒） |
+| `maxChainCommands` | 10 | 命令链最大条数 |
+| `contextMaxChars` | 20000 | AI 上下文最大字符数（超出自动截断） |
+| `maxToolCalls` | 15 | 单轮对话最大工具调用次数 |
+| `activePersona` | `"default"` | 当前人格 ID |
+| `personaLanguage` | `""` | 人格语言覆盖，空=自动跟随客户端 |
+| `promptLanguage` | `"zh_cn"` | 内置提示词语言 |
+| `enableChatInterception` | `true` | 是否拦截聊天转交 AI |
+| `enableCommandExecution` | `true` | 是否允许 AI 执行命令 |
+| `enableAutoReview` | `true` | 是否启用自动行为审查 |
+| `maxReviewCycles` | 4 | 审查最大分析轮数 |
 | `systemPromptPath` | `""` | AI提示词文件（config/mcai/下） |
 | `reviewPromptPath` | `""` | 审查提示词文件 |
 | `reviewApiEndpoint` | `""` | 审查系统独立 API 地址，空=跟随聊天系统 |

@@ -1654,7 +1654,7 @@ MCAIMod (单例服务定位器)
 
 ```bash
 # 1. 将 JAR 放入 mods/ 目录
-cp build/libs/mcai-26.1.2-1.7.0-beta.3-alpha.3.jar minecraft_server/mods/
+cp build/libs/mcai-26.1.2-1.7.0-beta.3.jar minecraft_server/mods/
 
 # 2. 首次启动后配置文件自动生成
 #    config/mcai/config.json       —— 主配置
@@ -1961,6 +1961,6 @@ mcai.{模块}.{功能}[.{子功能}]
 
 ---
 
-> **文档版本**: 2026-08-07 —— 同步代码到 `main` 分支 HEAD (1.7.0-beta.2)
+> **文档版本**: 2026-08-07 —— 同步代码到 `main` 分支 HEAD (1.7.0-beta.3)
 > **维护者**: MCAI 项目团队
-> **对应 Mod 版本**: 1.7.0-beta.2 / Minecraft 26.1.2
+> **对应 Mod 版本**: 1.7.0-beta.3 / Minecraft 26.1.2

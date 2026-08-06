@@ -169,21 +169,18 @@ release:  Release commit
 
 ### Build Artifacts Directory
 
-Two directories store build outputs, with different naming conventions:
+Two directories store build outputs:
 
 | Directory | Purpose | Structure | Example |
 |---|---|---|---|
-| `builds/<channel>/` | Local development builds (not published) | `builds/<channel>/<MOD_VERSION>/` | `builds/alpha/1.7.0-alpha.3/` |
-| `releases/` | Published releases (mirror GitHub tags) | `releases/<MC_VERSION>/v<MOD_VERSION>/` | `releases/26.1.2/v1.6.1/` |
+| `alpha-builds/` | Local development builds (not published) | `alpha-builds/<MC_VERSION>/<MOD_VERSION>/` | `alpha-builds/26.1.2/1.7.0-beta.3-alpha.1/` |
+| `releases/` | Published releases (mirror GitHub tags) | `releases/<MC_VERSION>/<MOD_VERSION>/` | `releases/26.1.2/1.6.1/` |
 
 **Rules**:
-- `builds/` has a top-level channel category directory (`alpha/`, `beta/`) reflecting the version suffix type
-  - `X.Y.Z-alpha.N` standalone cycle → `builds/alpha/X.Y.Z-alpha.N/`
-  - `X.Y.Z-beta.N-alpha.M` (after beta.N published) → also goes under `builds/beta/`, since it belongs to the beta channel's ongoing development
-- `builds/` subdirectory names are plain version strings, no `v` prefix, no extra nesting
-- `releases/` subdirectories use `v` prefix to match GitHub tag convention: `v1.6.1`, `v1.7.0-beta.1`
+- Both directories nest by `<MC_VERSION>` first, then `<MOD_VERSION>` — flat version strings, no `v` prefix
+- No channel subdirectory (no `alpha/`, `beta/`) — version suffix itself (`alpha.N`, `beta.N-alpha.M`, `beta.N`) carries the channel info
 - JAR files inside always follow `mcai-<MC_VERSION>-<MOD_VERSION>.jar` naming (no `v` prefix in filename)
-- `-sources.jar` files are optional and may be omitted for alpha builds
+- `-sources.jar` files are optional and may be omitted for local dev builds
 
 ## Mojang 26.3 API Gotchas
 

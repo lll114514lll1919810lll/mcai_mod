@@ -69,9 +69,10 @@ This project uses **Semantic Versioning**, effective from v1.7.0. The version is
 <MAJOR>.<MINOR>.<PATCH>[-<PRERELEASE>]
 
 Examples:
-1.7.0            # Release
-1.7.0-beta.1     # Public beta
-1.7.0-alpha.1    # Early internal alpha
+1.7.0                 # Release
+1.7.0-beta.3          # Public beta (3rd published beta)
+1.7.0-beta.3-alpha.1  # Local development build on top of beta.3 (not published)
+1.7.0-alpha.2         # Early development before first beta
 ```
 
 ### Version increment rules
@@ -87,23 +88,29 @@ Examples:
 
 | Channel | Trigger | Visibility | GitHub Release |
 |---|---|---|---|
-| `alpha.N` | Each code change + successful build | Local/internal only, not published | None |
+| `beta.N-alpha.M` | After beta.N published, each code change + local build | Local/internal only, not published | None |
+| `alpha.N` (standalone) | Pre-first-beta development cycle | Local/internal only, not published | None |
 | `beta.N` | User says "publish" | Public testing | Created, marked as pre-release |
 | No suffix | Breaking changes + stable after testing | All players | Created, marked as Latest |
 
 **Daily workflow**:
-1. Modify code → set `mod_version` to `X.Y.Z-alpha.N` → build → Git commit (increment alpha N, starting from 1)
-2. User says "publish" → change `mod_version` to `X.Y.Z-beta.1` → build → create GitHub Release (pre-release)
-3. Continue fixing → `beta.2`, `beta.3`... increment beta N each release
-4. Breaking changes done and stable → remove suffix → `X.Y.Z` release → create GitHub Release (Latest)
+1. New feature/bugfix cycle starts, version at `X.Y.Z-alpha.1` → each commit increments alpha N (`alpha.2`, `alpha.3`...)
+2. User says "publish beta" → change `mod_version` to `X.Y.Z-beta.1` → build → create GitHub Release (pre-release)
+3. After beta.N is published, **continue development locally**: version stays at `X.Y.Z-beta.N-alpha.M` (M starts from 1, each commit increments) — this is a *beta.N-internal development build*, not a new beta channel
+4. When accumulated changes are ready for public beta again → drop `-alpha.M` suffix → `X.Y.Z-beta.(N+1)` → build → create GitHub Release (pre-release)
+5. Breaking changes done and stable → remove all suffix → `X.Y.Z` release → create GitHub Release (Latest)
 
 **Version progression example**:
 ```
-1.7.0-alpha.1   # First code change + build
-1.7.0-alpha.2   # Second code change + build
-1.7.0-beta.1    # User says "publish", public beta
-1.7.0-beta.2    # Fix feedback, re-publish
-1.7.0           # Testing stable, promoted to release
+1.7.0-alpha.1        # Feature A implemented
+1.7.0-alpha.2        # Feature B implemented
+1.7.0-beta.1         # User says "publish", public beta
+1.7.0-beta.1-alpha.1 # Bug fix #1 on top of beta.1 (local only)
+1.7.0-beta.1-alpha.2 # Bug fix #2 on top of beta.1 (local only)
+1.7.0-beta.2         # User says "publish" again → promoted
+1.7.0-beta.2-alpha.1 # Polish work on top of beta.2 (local only)
+1.7.0-beta.3         # User says "publish" again → promoted
+1.7.0                # Breaking changes done + stable → full release
 ```
 
 ### GitHub Tag rules
@@ -127,9 +134,10 @@ Keep `mcai-<MC_VERSION>-<MOD_VERSION>.jar`, e.g. `mcai-26.1.2-1.7.0-alpha.1.jar`
 
 ```properties
 minecraft_version=26.1.2
-mod_version=1.7.0-alpha.1   # In development
-# mod_version=1.7.0-beta.1  # When user says "publish"
-# mod_version=1.7.0         # Release
+mod_version=1.7.0-beta.3-alpha.1   # After beta.3 published, local dev build
+# mod_version=1.7.0-beta.3         # When user says "publish" again
+# mod_version=1.7.0-alpha.1        # Early development before first beta
+# mod_version=1.7.0                # Release
 ```
 
 ### Git Commit message format

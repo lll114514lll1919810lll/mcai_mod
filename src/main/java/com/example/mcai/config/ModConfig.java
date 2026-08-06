@@ -287,8 +287,18 @@ public class ModConfig {
     // ── 非管理员限频 ──
     /** 非管理员玩家调用 AI 的冷却时间（秒） */
     private int aiCooldownSeconds = 60;
-    /** 最多同时调用 AI 的非管理员玩家数 */
+    /** 非管理员 AI 并发上限（0 = 不限制） */
     private int aiMaxConcurrent = 3;
+    /** API 连接超时（秒） */
+    private int apiConnectTimeoutSeconds = 10;
+    /** API 单次请求超时（秒） */
+    private int apiRequestTimeoutSeconds = 60;
+    /** Tool-call 循环总超时（秒） */
+    private int apiLoopTimeoutSeconds = 300;
+    /** 单条 Minecraft 命令执行超时（秒） */
+    private int commandExecTimeoutSeconds = 30;
+    /** 命令链最大条数 */
+    private int maxChainCommands = 10;
 
     // ── 人格模式 ──
     /** 当前激活的人格（"default" = 无人格注入） */
@@ -361,6 +371,16 @@ public class ModConfig {
         if (approvalTimeoutMinutes > 60) approvalTimeoutMinutes = 60;
         if (aiCooldownSeconds < 0) aiCooldownSeconds = 0;
         if (aiMaxConcurrent < 1) aiMaxConcurrent = 1;
+        if (apiConnectTimeoutSeconds < 1) apiConnectTimeoutSeconds = 1;
+        if (apiConnectTimeoutSeconds > 120) apiConnectTimeoutSeconds = 120;
+        if (apiRequestTimeoutSeconds < 10) apiRequestTimeoutSeconds = 10;
+        if (apiRequestTimeoutSeconds > 600) apiRequestTimeoutSeconds = 600;
+        if (apiLoopTimeoutSeconds < 60) apiLoopTimeoutSeconds = 60;
+        if (apiLoopTimeoutSeconds > 1800) apiLoopTimeoutSeconds = 1800;
+        if (commandExecTimeoutSeconds < 5) commandExecTimeoutSeconds = 5;
+        if (commandExecTimeoutSeconds > 300) commandExecTimeoutSeconds = 300;
+        if (maxChainCommands < 1) maxChainCommands = 1;
+        if (maxChainCommands > 50) maxChainCommands = 50;
 
         // #8: activePersona
         if (activePersona == null) activePersona = "default";
@@ -530,6 +550,11 @@ public class ModConfig {
 
     public int getAiMaxConcurrent() { return aiMaxConcurrent; }
     public void setAiMaxConcurrent(int aiMaxConcurrent) { this.aiMaxConcurrent = aiMaxConcurrent; }
+    public int getApiConnectTimeoutSeconds() { return apiConnectTimeoutSeconds; }
+    public int getApiRequestTimeoutSeconds() { return apiRequestTimeoutSeconds; }
+    public int getApiLoopTimeoutSeconds() { return apiLoopTimeoutSeconds; }
+    public int getCommandExecTimeoutSeconds() { return commandExecTimeoutSeconds; }
+    public int getMaxChainCommands() { return maxChainCommands; }
 
     public String getActivePersona() { return activePersona; }
     public void setActivePersona(String activePersona) { this.activePersona = activePersona; }

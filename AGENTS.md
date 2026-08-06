@@ -134,7 +134,7 @@ Keep `mcai-<MC_VERSION>-<MOD_VERSION>.jar`, e.g. `mcai-26.1.2-1.7.0-alpha.1.jar`
 
 ```properties
 minecraft_version=26.1.2
-mod_version=1.7.0-beta.3-alpha.1   # After beta.3 published, local dev build
+mod_version=1.7.0-beta.3-alpha.3   # After beta.3 published, local dev build
 # mod_version=1.7.0-beta.3         # When user says "publish" again
 # mod_version=1.7.0-alpha.1        # Early development before first beta
 # mod_version=1.7.0                # Release

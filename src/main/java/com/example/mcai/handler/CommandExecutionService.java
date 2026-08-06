@@ -20,8 +20,13 @@ public class CommandExecutionService {
             "ai", "aiwiki", "aiquery", "aiaccept", "aireject", "aicancel", "aiclear", "aireload", "aitest", "aicheck"
     );
 
-    private static final int MAX_CHAIN_COMMANDS = 10;
     private static final int MAX_CHAIN_INTERVAL = 10;
+
+    // ── 审批按钮主题色（ARGB） ──
+    private static final int COLOR_APPROVE = 0x55FF55;
+    private static final int COLOR_REJECT = 0xFF5555;
+    private static final int COLOR_CANCEL = 0xAAAAAA;
+    private static final int COLOR_HINT = 0x888888;
 
     private final MCAIMod mod;
     private final AtomicLong idGenerator = new AtomicLong(1);
@@ -128,7 +133,7 @@ public class CommandExecutionService {
             }
         });
         try {
-            return future.get(10, TimeUnit.SECONDS);
+            return future.get(mod.getConfig().getCommandExecTimeoutSeconds(), TimeUnit.SECONDS);
         } catch (java.util.concurrent.TimeoutException e) {
             return "Execution timeout";
         } catch (Exception e) {
@@ -301,8 +306,9 @@ public class CommandExecutionService {
         if (commands == null || commands.isEmpty()) {
             return "§c命令链不能为空";
         }
-        if (commands.size() > MAX_CHAIN_COMMANDS) {
-            return "§c命令链最多 " + MAX_CHAIN_COMMANDS + " 条命令";
+        int maxChain = mod.getConfig().getMaxChainCommands();
+        if (commands.size() > maxChain) {
+            return "§c命令链最多 " + maxChain + " 条命令";
         }
         if (intervalSeconds < 0 || intervalSeconds > MAX_CHAIN_INTERVAL) {
             return "§c命令间隔必须在 0-" + MAX_CHAIN_INTERVAL + " 秒之间";
@@ -388,7 +394,7 @@ public class CommandExecutionService {
                 }
             });
             try {
-                String result = future.get(10, TimeUnit.SECONDS);
+                String result = future.get(mod.getConfig().getCommandExecTimeoutSeconds(), TimeUnit.SECONDS);
                 summary.append("  ").append(i + 1).append(". /").append(cmd).append(" → ").append(result).append("\n");
                 if (result.contains("failed") || result.contains("error") || result.contains("Syntax")) {
                     failed++;
@@ -469,7 +475,7 @@ public class CommandExecutionService {
                     }
                 });
                 try {
-                    String result = future.get(10, TimeUnit.SECONDS);
+                    String result = future.get(mod.getConfig().getCommandExecTimeoutSeconds(), TimeUnit.SECONDS);
                     summary.append("  ").append(i + 1).append(". /").append(cmd).append(" → ").append(result).append("\n");
                     if (result.contains("failed") || result.contains("error") || result.contains("Syntax")) {
                         failed++;
@@ -708,7 +714,7 @@ public class CommandExecutionService {
             if (requester != null) {
                 Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", chain.id)
                         .withStyle(style -> style
-                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                 .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + chain.id))
                                 .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_chain")))
                         );
@@ -720,24 +726,24 @@ public class CommandExecutionService {
                 if (isAdminPlayer(p, server)) {
                     Component approveBtn = Component.translatable("mcai.cmd.button.approve")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0x55FF55))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_APPROVE))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aiaccept " + chain.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.approve_chain")))
                             );
                     Component rejectBtn = Component.translatable("mcai.cmd.button.reject")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xFF5555))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_REJECT))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aireject " + chain.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.reject_chain")))
                             );
                     Component cancelBtn = Component.translatable("mcai.cmd.button.cancel")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + chain.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_chain")))
                             );
                     Component hint = Component.translatable("mcai.cmd.hover.timeout")
-                            .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(0x888888)));
+                            .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_HINT)));
 
                     p.sendSystemMessage(Component.empty()
                             .append(approveBtn).append(Component.literal(" "))
@@ -761,7 +767,7 @@ public class CommandExecutionService {
             if (requester != null) {
                 Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", pending.id)
                         .withStyle(style -> style
-                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                 .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + pending.id))
                                 .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_command")))
                         );
@@ -772,24 +778,24 @@ public class CommandExecutionService {
                 if (isAdminPlayer(p, server)) {
                     Component approveBtn = Component.translatable("mcai.cmd.button.approve")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0x55FF55))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_APPROVE))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aiaccept " + pending.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.approve_command")))
                             );
                     Component rejectBtn = Component.translatable("mcai.cmd.button.reject")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xFF5555))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_REJECT))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aireject " + pending.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.reject_command")))
                             );
                     Component cancelBtn = Component.translatable("mcai.cmd.button.cancel")
                             .withStyle(style -> style
-                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(0xAAAAAA))
+                                    .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                     .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + pending.id))
                                     .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Component.translatable("mcai.cmd.hover.cancel_command")))
                             );
                     Component hint = Component.translatable("mcai.cmd.hover.timeout")
-                            .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(0x888888)));
+                            .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_HINT)));
 
                     p.sendSystemMessage(Component.empty()
                             .append(approveBtn).append(Component.literal(" "))

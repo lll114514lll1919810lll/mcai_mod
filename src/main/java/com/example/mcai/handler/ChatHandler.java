@@ -27,7 +27,7 @@ public class ChatHandler {
     private final CommandExecutionService cmdExec;
     private volatile ToolDispatcher toolDispatcher;
 
-    private volatile ExecutorService aiExecutor = newExecutor();
+    private volatile ThreadPoolExecutor aiExecutor = newExecutor();
     private final Map<UUID, List<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
     private final ConcurrentMap<UUID, Long> lastAICallTime = new ConcurrentHashMap<>();
     private final AtomicInteger concurrentNonAdminCalls = new AtomicInteger(0);
@@ -49,15 +49,20 @@ public class ChatHandler {
     public boolean isChatEnabled() { return chatEnabled; }
     public void setChatEnabled(boolean enabled) { this.chatEnabled = enabled; }
 
-    private static ExecutorService newExecutor() {
+    private static ThreadPoolExecutor newExecutor() {
         return new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
                 r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
                 (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
     }
 
+    /** AI 任务队列是否已满（任务数 >= 活跃线程 + 排队数） */
+    public boolean isAiBusy() {
+        return aiExecutor.getQueue().remainingCapacity() == 0;
+    }
+
     /** 销毁所有 AI 工作线程并重建线程池 */
     public int killAIThreads() {
-        ExecutorService old = aiExecutor;
+        ThreadPoolExecutor old = aiExecutor;
         aiExecutor = newExecutor();
         int terminated = old.shutdownNow().size();
         concurrentNonAdminCalls.set(0);
@@ -179,6 +184,12 @@ public class ChatHandler {
         var dbg = mod.getDebugLogger();
         if (dbg.isEnabled()) dbg.logQuery(pname, query);
 
+        // 线程池队列已满（活跃 + 排队已达上限）→ 直接友好拒绝，避免静默丢弃
+        if (isAiBusy()) {
+            player.sendSystemMessage(Component.translatable("mcai.chat.concurrent_limit"));
+            return;
+        }
+
         // 非管理员限频检查
         boolean isAdmin = CommandExecutionService.isAdmin(player, server);
         if (!isAdmin) {
@@ -254,6 +265,10 @@ public class ChatHandler {
 
     public void handleConsoleAIQuery(CommandSourceStack src, String query) {
         MinecraftServer server = mod.getServer(); if (server == null) return;
+        if (isAiBusy()) {
+            src.sendFailure(Component.translatable("mcai.chat.concurrent_limit"));
+            return;
+        }
         aiExecutor.execute(() -> {
             try {
                 String playerList = server.getPlayerList().getPlayers().stream().map(p -> p.getScoreboardName()).collect(Collectors.joining(", "));

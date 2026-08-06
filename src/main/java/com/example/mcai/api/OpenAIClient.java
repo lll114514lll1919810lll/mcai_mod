@@ -42,7 +42,7 @@ public class OpenAIClient {
         this.resolvedApiKey = apiKey;
         this.resolvedModel = model;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
+                .connectTimeout(Duration.ofSeconds(config.getApiConnectTimeoutSeconds()))
                 .build();
         this.toolDefinitions = buildToolDefinitions();
     }
@@ -123,7 +123,7 @@ public class OpenAIClient {
                                    Function<List<ToolCall>, List<String>> toolExecutor) {
         int maxTurns = config.getMaxToolCalls();
         long startTime = System.currentTimeMillis();
-        long totalTimeoutMs = 5 * 60 * 1000L; // 5 minutes total timeout
+        long totalTimeoutMs = config.getApiLoopTimeoutSeconds() * 1000L;
 
         for (int turn = 0; turn < maxTurns; turn++) {
             if (System.currentTimeMillis() - startTime > totalTimeoutMs) {
@@ -276,7 +276,7 @@ public class OpenAIClient {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(resolvedEndpoint.replaceAll("/+$", "") + "/chat/completions"))
                 .header("Content-Type", "application/json")
-                .timeout(Duration.ofSeconds(60))
+                .timeout(Duration.ofSeconds(config.getApiRequestTimeoutSeconds()))
                 .POST(HttpRequest.BodyPublishers.ofString(bodyJson));
         if (!resolvedApiKey.isEmpty()) builder.header("Authorization", "Bearer " + resolvedApiKey);
 

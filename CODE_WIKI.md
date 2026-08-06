@@ -297,7 +297,7 @@ AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调�
 
 | 方法 | 用途 |
 |---|---|
-| `chat(messages, toolExecutor)` | 完整的多轮工具调用循环，最多 `maxToolCalls` 轮，5 分钟总超时 |
+| `chat(messages, toolExecutor)` | 完整的多轮工具调用循环，最多 `maxToolCalls` 轮，总超时 `apiLoopTimeoutSeconds`（默认 300 秒） |
 | `chatSimpleFull(messages)` | 无工具的单轮调用，用于行为审查 |
 | `buildToolDefinitions()` | 构建 AI 可用的工具定义 JSON（10 个工具） |
 | `addThinkingParams(body, level)` | 根据模型类型（DeepSeek 风格 / agnes 风格）注入思考参数 |
@@ -319,13 +319,13 @@ AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调�
 | `get_player_inventory` | 无 | 玩家物品栏 |
 
 **`chat()` 方法超时保护**：
-- 总时长 5 分钟超时后，强制追加一条 user 消息让 AI 收敛："本轮工具调用次数已用完。请基于已有信息给出最终回答"
+- 总时长 `apiLoopTimeoutSeconds`（默认 300 秒）超时后，强制追加一条 user 消息让 AI 收敛："本轮工具调用次数已用完。请基于已有信息给出最终回答"
 - 最终调用不带 tools 定义
 - `reasoning_content` 在每轮循环中自动捕获并传递
 
 **sendAndParseMessage() 内部方法**：
-- HTTP 连接超时 10 秒
-- 单次请求超时 60 秒
+- HTTP 连接超时 `apiConnectTimeoutSeconds`（默认 10 秒）
+- 单次请求超时 `apiRequestTimeoutSeconds`（默认 60 秒）
 - 支持 DeepSeek 兼容模式（Bearer token 认证）
 - 错误处理：JSON error message 优先返回，否则返回 HTTP 状态码
 
@@ -355,7 +355,7 @@ ApiResult.err(message) // 失败
 | 字段 | 类型 | 说明 |
 |---|---|---|
 | `toolDispatcher` | `volatile ToolDispatcher` | **volatile** —— 退出再进世界后引用需要更新 |
-| `aiExecutor` | `ExecutorService` | 4~8 线程的线程池，队列容量 32 |
+| `aiExecutor` | `ThreadPoolExecutor` | 4~8 线程的线程池，队列容量 32 |
 | `history` | `ConcurrentHashMap<UUID, LinkedList<ChatMessage>>` | 每玩家的对话历史 |
 | `lastAICallTime` | `ConcurrentMap<UUID, Long>` | 冷却时间戳 |
 | `concurrentNonAdminCalls` | `AtomicInteger` | 非管理员并发计数器 |
@@ -365,8 +365,10 @@ ApiResult.err(message) // 失败
 ```java
 new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
     r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
-    (r, executor) -> LOGGER.warn("AI executor queue full, task rejected"));
+    (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
 ```
+
+**队列满处理（拒绝策略）**：`isAiBusy()`（队列剩余容量为 0）在提交任务前预检，队列满时直接回复 `mcai.chat.concurrent_limit`（"AI 正在处理其他请求，请稍后再试"）而不是静默丢弃任务。玩家与控制台入口（handleAIQuery / handleConsoleAIQuery）均已覆盖。
 
 **killAIThreads()**：销毁所有 AI 工作线程并重建线程池，同时重置并发计数器。被 `/aikill` 命令调用。
 
@@ -449,8 +451,8 @@ return "[PLAYER:" + playerName + "] " + clean;
 **FORBIDDEN_COMMANDS**：AI 禁止调用 MCAI 内部命令（`ai`, `aiwiki`, `aiquery`, `aiaccept`, `aireject`, `aicancel`, `aiclear`, `aireload`, `aitest`, `aicheck`）。
 
 **常量**：
-- `MAX_CHAIN_COMMANDS = 10` — 命令链最大命令数
-- `MAX_CHAIN_INTERVAL = 10` — 命令链最大间隔秒数
+- 命令链最大命令数 → `ModConfig.getMaxChainCommands()`（默认 10，范围 1-50）
+- 命令链最大间隔秒数 10 → `MAX_CHAIN_INTERVAL` 常量
 
 **PendingCommand 内部类**：
 - `id` — 全局唯一
@@ -474,7 +476,7 @@ return "[PLAYER:" + playerName + "] " + clean;
    └─ No → server.execute() 在主线程执行
             executeAsOp(OWNER 权限, 玩家上下文)
             广播执行结果
-            future.get(10秒) 等待结果
+            future.get(commandExecTimeoutSeconds, 默认30秒) 等待结果
 ```
 
 **approveCommand/admin, id**：执行时使用**请求者的上下文**（requesterLevel, requesterPos, requesterRot），而非管理员的位置。
@@ -979,6 +981,11 @@ AI 审查解析后的违规记录：`(playerName, description, severity, suggest
 | `safeCommands` | locate, help, list... | 免审批的安全命令（只读） |
 | `aiCooldownSeconds` | 60 | 非管理员冷却时间（秒） |
 | `aiMaxConcurrent` | 3 | 非管理员最大并发数 |
+| `apiConnectTimeoutSeconds` | 10 | API 连接超时（秒） |
+| `apiRequestTimeoutSeconds` | 60 | API 单次请求超时（秒） |
+| `apiLoopTimeoutSeconds` | 300 | Tool-call 循环总超时（秒） |
+| `commandExecTimeoutSeconds` | 30 | 单条 Minecraft 命令执行超时（秒） |
+| `maxChainCommands` | 10 | 命令链最大条数 |
 
 ##### 审查系统
 | 字段 | 默认值 | 说明 |
@@ -1647,7 +1654,7 @@ MCAIMod (单例服务定位器)
 
 ```bash
 # 1. 将 JAR 放入 mods/ 目录
-cp build/libs/mcai-26.1.2-1.7.0-beta.3-alpha.2.jar minecraft_server/mods/
+cp build/libs/mcai-26.1.2-1.7.0-beta.3-alpha.3.jar minecraft_server/mods/
 
 # 2. 首次启动后配置文件自动生成
 #    config/mcai/config.json       —— 主配置
@@ -1728,6 +1735,11 @@ config/mcai/
 | `safeCommands` | locate, help, list, data get... | 免审批安全命令 |
 | `aiCooldownSeconds` | 60 | 非管理员冷却（秒） |
 | `aiMaxConcurrent` | 3 | 非管理员最大并发数 |
+| `apiConnectTimeoutSeconds` | 10 | API 连接超时（秒） |
+| `apiRequestTimeoutSeconds` | 60 | API 单次请求超时（秒） |
+| `apiLoopTimeoutSeconds` | 300 | Tool-call 循环总超时（秒） |
+| `commandExecTimeoutSeconds` | 30 | 单条命令执行超时（秒） |
+| `maxChainCommands` | 10 | 命令链最大条数 |
 
 **审查系统**
 

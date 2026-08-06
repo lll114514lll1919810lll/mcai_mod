@@ -545,16 +545,18 @@ public class CommandRegistry {
                 });
     }
 
-    /** 解析人格显示名称（i18n key → 翻译组件，普通字符串 → 字面组件） */
-    private static Component resolvePersonaName(PersonaManager.PersonaRecord rec) {
+    /** 解析人格显示名称（i18n key → 翻译组件；普通人格 → 按生效语言取本地化名称） */
+    private Component resolvePersonaName(PersonaManager.PersonaRecord rec) {
         if (rec.i18n) return Component.translatable(rec.name);
-        return Component.literal(rec.name);
+        String lang = chatHandler.getMod().getPersonaManager().resolveEffectiveLanguage();
+        return Component.literal(rec.localizedName(lang));
     }
 
-    /** 解析人格简介（i18n key → 翻译组件，普通字符串 → 字面组件） */
-    private static Component resolvePersonaSummary(PersonaManager.PersonaRecord rec) {
+    /** 解析人格简介（i18n key → 翻译组件；普通人格 → 按生效语言取本地化简介） */
+    private Component resolvePersonaSummary(PersonaManager.PersonaRecord rec) {
         if (rec.i18n) return Component.translatable(rec.summary);
-        return Component.literal(rec.summary);
+        String lang = chatHandler.getMod().getPersonaManager().resolveEffectiveLanguage();
+        return Component.literal(rec.localizedSummary(lang));
     }
 
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {

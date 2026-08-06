@@ -237,9 +237,16 @@
 
 <pre><code>{
   <span class="json-key">"id"</span>: <span class="json-string">"scholar"</span>,
-  <span class="json-key">"name"</span>: <span class="json-string">"学者"</span>,
-  <span class="json-key">"summary"</span>: <span class="json-string">"博学多才的老教授，喜欢引经据典"</span>,
-  <span class="json-key">"content"</span>: <span class="json-string">"你现在进入学者模式。你是一位博学多才的老教授...\n\n说话规则：\n- 经常引用古籍和典故\n- 用\"老夫\"自称..."</span>
+  <span class="json-key">"name"</span>: <span class="json-string">"Scholar"</span>,
+  <span class="json-key">"summary"</span>: <span class="json-string">"An erudite old professor who loves citing classics"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"You are now in scholar mode. You are an erudite old professor...\n\nSpeaking rules:\n- Frequently cite ancient texts and allusions\n- Refer to yourself as \"the old man\"..."</span>,
+  <span class="json-key">"translations"</span>: {
+    <span class="json-key">"zh_cn"</span>: {
+      <span class="json-key">"name"</span>: <span class="json-string">"学者"</span>,
+      <span class="json-key">"summary"</span>: <span class="json-string">"博学多才的老教授，喜欢引经据典"</span>,
+      <span class="json-key">"content"</span>: <span class="json-string">"你现在进入学者模式。你是一位博学多才的老教授..."</span>
+    }
+  }
 }</code></pre>
 
 <h3>字段总览</h3>
@@ -264,19 +271,25 @@
       <td><span class="field-name">name</span></td>
       <td><span class="field-type">string</span></td>
       <td><span class="tag tag-required">必填</span></td>
-      <td>人格显示名称，在列表和切换提示中展示</td>
+      <td>人格显示名称（默认语言），在列表和切换提示中展示</td>
     </tr>
     <tr>
       <td><span class="field-name">summary</span></td>
       <td><span class="field-type">string</span></td>
       <td><span class="tag tag-optional">可选</span></td>
-      <td>人格简介，在 <code>/aipersona list</code> 中显示</td>
+      <td>人格简介（默认语言），在 <code>/aipersona list</code> 中显示</td>
     </tr>
     <tr>
       <td><span class="field-name">content</span></td>
       <td><span class="field-type">string</span></td>
       <td><span class="tag tag-required">必填</span></td>
-      <td>人格提示词正文，将注入到 AI 系统消息中</td>
+      <td>人格提示词正文（默认语言），将注入到 AI 系统消息中</td>
+    </tr>
+    <tr>
+      <td><span class="field-name">translations</span></td>
+      <td><span class="field-type">object</span></td>
+      <td><span class="tag tag-optional">可选</span></td>
+      <td>多语言翻译表，语言代码 → 翻译条目（见下节）</td>
     </tr>
   </tbody>
 </table>
@@ -325,9 +338,62 @@
   <p>JSON 字符串中，换行必须写为 <code>\n</code>，双引号必须写为 <code>\"</code>，反斜杠必须写为 <code>\\</code>。建议使用支持 JSON 语法高亮的编辑器（如 VS Code）来编写。</p>
 </div>
 
+<h3><code>translations</code> — 多语言翻译表</h3>
+
+<p>顶层字段（<code>name</code>、<code>summary</code>、<code>content</code>）视为<strong>默认语言</strong>（推荐使用英文，保证全球服务器开箱即用）。如需支持其他语言，可添加可选的 <code>translations</code> 字段，它是一个以语言代码为键的对象：</p>
+
+<pre><code>"translations": {
+  "zh_cn": {
+    "name": "学者",
+    "summary": "博学多才的老教授，喜欢引经据典",
+    "content": "你现在进入学者模式。你是一位博学多才的老教授..."
+  },
+  "ja_jp": {
+    "name": "学者",
+    "content": "あなたは学者モードです..."
+  }
+}</code></pre>
+
+<p>规则：</p>
+
+<ul>
+  <li><strong>语言代码</strong>使用 Minecraft 标准语言代码（如 <code>en_us</code>、<code>zh_cn</code>、<code>ja_jp</code>、<code>de_de</code>），不区分大小写，读取时自动转小写</li>
+  <li><strong>每个语言条目可部分覆盖</strong>——只需提供有差异的字段，缺失的字段自动回退到顶层默认值</li>
+  <li><strong>兼容旧文件</strong>——没有 <code>translations</code> 字段的老文件照常工作，行为与之前完全一致</li>
+  <li><strong>加载时校验</strong>——至少提供 <code>name</code>、<code>summary</code>、<code>content</code> 中的一个字段才算有效条目，空条目会被忽略</li>
+</ul>
+
+<p>生效语言的优先级如下（无需任何配置）：</p>
+
+<ol>
+  <li>显式配置 <code>personaLanguage</code> 非空 → 使用配置值</li>
+  <li>纯客户端环境（单人世界/集成服务器）→ <strong>自动跟随游戏语言</strong>，中文客户端显示中文、英文客户端显示英文</li>
+  <li>专用服务器 / 无法获取 → 使用文件顶层默认语言</li>
+</ol>
+
+<p>如需强制指定语言（例如专用服务器想让所有玩家看到中文人格），可在 <code>config/mcai/config.json</code> 中配置：</p>
+
+<pre><code>{
+  "activePersona": "scholar",
+  "personaLanguage": "zh_cn"   // 留空 = 自动跟随（客户端环境）或使用文件默认语言
+}</code></pre>
+
+<ul>
+  <li>配置的语言在 <code>translations</code> 中存在 → 使用对应翻译</li>
+  <li>配置的语言不存在或该字段未翻译 → 回退到顶层默认值</li>
+  <li>修改配置后执行 <code>/aireload</code> 生效</li>
+</ul>
+
+<div class="callout tip">
+  <div class="callout-title">内置人格</div>
+  <p>模组内置的 8 个人格以英文为默认语言（顶层字段），并附带 <code>zh_cn</code> 翻译。中文客户端开箱即用显示中文人格，无需任何配置；专用服务器如需中文可在配置中设置 <code>personaLanguage: "zh_cn"</code>。</p>
+</div>
+
 <h2 id="builtin">内置人格参考</h2>
 
-<p>模组内置了四个人格文件，首次启动时自动释放到 <code>config/mcai/personas/</code> 目录。这些文件可以作为编写自定义人格的参考模板。</p>
+<p>模组内置了 8 个人格文件（4 个通用人格 + 4 个游戏主题人格），首次启动时自动释放到 <code>config/mcai/personas/</code> 目录。这些文件可以作为编写自定义人格的参考模板。</p>
+
+<h4>通用人格</h4>
 
 <table>
   <thead>
@@ -357,6 +423,40 @@
       <td><code>gentle</code></td>
       <td>温柔</td>
       <td>轻声细语，充满关怀；语气词"呢""哦"，附带鼓励</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4>游戏主题人格</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>名称</th>
+      <th>风格特点</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>villager</code></td>
+      <td>村民</td>
+      <td>哼哼~ 满脑子绿宝石交易，憨厚朴实带点小精明</td>
+    </tr>
+    <tr>
+      <td><code>piglin</code></td>
+      <td>猪灵</td>
+      <td>黄金狂热，粗犷豪爽，提到金子就热情帮忙</td>
+    </tr>
+    <tr>
+      <td><code>ender_dragon</code></td>
+      <td>末影龙</td>
+      <td>俯瞰众生的王者，史诗感与虚空意象</td>
+    </tr>
+    <tr>
+      <td><code>creeper</code></td>
+      <td>苦力怕</td>
+      <td>胆小结巴，怕自己爆炸，可爱可怜惹人保护</td>
     </tr>
   </tbody>
 </table>

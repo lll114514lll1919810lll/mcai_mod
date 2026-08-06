@@ -293,6 +293,8 @@ public class ModConfig {
     // ── 人格模式 ──
     /** 当前激活的人格（"default" = 无人格注入） */
     private String activePersona = "default";
+    /** 人格显示与注入使用的语言（如 "zh_cn"、"en_us"；空 = 使用人格文件顶层默认语言） */
+    private String personaLanguage = "";
 
     public static ModConfig load() {
         ModConfig config;
@@ -362,6 +364,8 @@ public class ModConfig {
 
         // #8: activePersona
         if (activePersona == null) activePersona = "default";
+        // #9: personaLanguage（null → 空字符串 = 使用文件默认语言）
+        if (personaLanguage == null) personaLanguage = "";
 
         // #4: list defaults
         if (requireApprovalCommands == null || requireApprovalCommands.isEmpty()) {
@@ -529,6 +533,9 @@ public class ModConfig {
 
     public String getActivePersona() { return activePersona; }
     public void setActivePersona(String activePersona) { this.activePersona = activePersona; }
+
+    public String getPersonaLanguage() { return personaLanguage; }
+    public void setPersonaLanguage(String personaLanguage) { this.personaLanguage = personaLanguage != null ? personaLanguage : ""; }
 
     // ── 审查系统模型 effective getters（未配置时跟随聊天系统） ──
     public String getReviewApiEndpoint() {

@@ -91,6 +91,12 @@ public class MCAIMod implements ModInitializer {
 
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             this.server = s;
+            // 重新初始化搜索路由和工具分发器（退出世界时线程池已被关闭）
+            if (searchRouter != null) searchRouter.shutdown();
+            searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
+            toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
+            chatHandler.setToolDispatcher(toolDispatcher);
+            LOGGER.debug("SearchRouter and ToolDispatcher reinitialized for new world");
             if (s.isDedicatedServer()) {
                 chatReviewSystem = new ChatReviewSystem(this, behaviorTracker);
                 if (commandDispatcher != null) {
@@ -106,6 +112,7 @@ public class MCAIMod implements ModInitializer {
         ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
             if (chatReviewSystem != null) chatReviewSystem.stop();
             if (behaviorTracker != null) behaviorTracker.saveImmediate();
+            debugLogger.stop();
             if (watcherScheduler != null) watcherScheduler.shutdownNow();
             if (configWatcher != null) try { configWatcher.close(); } catch (Exception ignored) {}
             if (searchRouter != null) searchRouter.shutdown();

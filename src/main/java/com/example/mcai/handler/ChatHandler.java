@@ -24,7 +24,7 @@ public class ChatHandler {
     private final ThinkingAnimation animation;
     private final PlayerContextBuilder contextBuilder;
     private final CommandExecutionService cmdExec;
-    private final ToolDispatcher toolDispatcher;
+    private volatile ToolDispatcher toolDispatcher;
 
     private volatile ExecutorService aiExecutor = newExecutor();
     private final Map<UUID, LinkedList<OpenAIClient.ChatMessage>> history = new ConcurrentHashMap<>();
@@ -42,6 +42,7 @@ public class ChatHandler {
     public ChatLog getChatLog() { return chatLog; }
     public MinecraftServer getServer() { return mod.getServer(); }
     public MCAIMod getMod() { return mod; }
+    public void setToolDispatcher(ToolDispatcher td) { this.toolDispatcher = td; }
     public com.example.mcai.behavior.PlayerBehaviorTracker getBehaviorTracker() { return mod.getBehaviorTracker(); }
     public com.example.mcai.config.ModConfig getConfig() { return mod.getConfig(); }
     public boolean isChatEnabled() { return chatEnabled; }

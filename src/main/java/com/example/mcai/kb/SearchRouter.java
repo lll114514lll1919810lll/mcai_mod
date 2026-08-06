@@ -50,6 +50,9 @@ public class SearchRouter implements SearchProvider {
                 return wiki;
             } else if (wiki != null && wiki.error != null) {
                 LOGGER.warn("Wiki search returned error: {}", wiki.error);
+                return wiki; // 返回错误结果，不要丢弃
+            } else if (wiki != null) {
+                LOGGER.debug("Wiki search for '{}' returned 0 results", query);
             }
         } catch (TimeoutException e) {
             LOGGER.warn("Wiki search timeout for '{}'", query);

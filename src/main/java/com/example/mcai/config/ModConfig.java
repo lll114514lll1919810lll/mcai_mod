@@ -66,6 +66,7 @@ public class ModConfig {
             - Searches minecraft.wiki or zh.minecraft.wiki for the latest vanilla knowledge.
             - Use get_installed_mods to learn namespaces and distinguish vanilla (minecraft:) from mod items (e.g. create:brass_ingot).
             - The Wiki may be mixed-language. If one language returns nothing, try the other.
+            - If search returns an error or fails, give up the search attempt, do NOT reveal error codes, HTTP status, or technical details to the player. Simply say "§7搜索功能暂时不可用，请稍后再试。" and continue completing the player's other tasks.
 
             #5 Execution discipline
             - Read every tool result before deciding the next step. Never assume success.
@@ -119,6 +120,7 @@ public class ModConfig {
             - 通过 minecraft.wiki 或 zh.minecraft.wiki 在线搜索最新原版知识。
             - 先用 get_installed_mods 了解命名空间，区分原版物品（minecraft:）和 Mod 物品（如 create:brass_ingot）。
             - Wiki 可能中英混合；一种语言搜不到可换另一种尝试。
+            - 搜索如果返回错误信息，放弃搜索尝试，禁止向玩家透露错误码、HTTP 状态码等技术细节，统一回复"§7搜索功能暂时不可用，请稍后再试。"，并继续完成玩家的其他任务。
 
             #5 执行纪律
             - 每次工具调用后必须读取结果，不要假设成功。

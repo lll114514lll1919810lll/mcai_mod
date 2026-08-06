@@ -59,6 +59,7 @@ public class WikiSearchProvider implements SearchProvider {
         try {
             List<SearchResult.Item> found = fullTextSearch(query, maxResults);
             if (found.isEmpty()) {
+                LOGGER.debug("Wiki search for '{}' returned 0 results", query);
                 return SearchResult.empty(name(), false);
             }
             // 获取前几个条目的摘要， enrich 结果
@@ -104,6 +105,7 @@ public class WikiSearchProvider implements SearchProvider {
                 .GET()
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        LOGGER.debug("Wiki API response: status={}, body_length={}", response.statusCode(), response.body().length());
         if (response.statusCode() != 200) {
             throw new IOException("HTTP " + response.statusCode());
         }

@@ -285,7 +285,13 @@ public class ToolDispatcher {
 
     /** Format search results for AI consumption. */
     public static String formatSearchResult(SearchResult result) {
-        if (result == null || result.isEmpty()) {
+        if (result == null) {
+            return "搜索服务未就绪。";
+        }
+        if (result.error != null) {
+            return "[" + result.provider + "] 搜索失败: " + result.error;
+        }
+        if (result.isEmpty()) {
             return "未找到相关条目。";
         }
         StringBuilder sb = new StringBuilder();

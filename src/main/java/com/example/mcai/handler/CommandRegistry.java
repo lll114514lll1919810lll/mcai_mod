@@ -439,8 +439,30 @@ public class CommandRegistry {
                         final int idx = i;
                         final Component displayName = resolvePersonaName(rec);
                         final Component summary = resolvePersonaSummary(rec);
-                        final Component suffix = isActive ? Component.translatable("mcai.cmd.persona.active_marker") : Component.literal("");
-                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.list_item", idx, displayName, summary, suffix), false);
+                        String setCmd = "/aipersona set " + idx;
+                        String viewCmd = "/aipersona view " + idx;
+
+                        MutableComponent line = Component.literal("§7  ")
+                                .append(Component.literal("§7[").withStyle(s -> s
+                                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(setCmd))
+                                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                                                Component.translatable("mcai.cmd.persona.hover.set", idx)))))
+                                .append(Component.literal("§e" + idx).withStyle(s -> s
+                                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(setCmd))
+                                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                                                Component.translatable("mcai.cmd.persona.hover.set", idx)))))
+                                .append(Component.literal("§7] "))
+                                .append(displayName.copy().withStyle(s -> s
+                                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(setCmd))
+                                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                                                Component.translatable("mcai.cmd.persona.hover.set", idx)))))
+                                .append(Component.literal("§8 - §7"))
+                                .append(summary.copy().withStyle(s -> s
+                                        .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand(viewCmd))
+                                        .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(
+                                                Component.translatable("mcai.cmd.persona.hover.view", idx)))))
+                                .append(isActive ? Component.translatable("mcai.cmd.persona.active_marker") : Component.literal(""));
+                        ctx.getSource().sendSuccess(() -> line, false);
                     }
                     return 1;
                 }))

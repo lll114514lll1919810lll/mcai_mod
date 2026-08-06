@@ -230,6 +230,8 @@
   "mcai.cmd.persona.view_default": "§7[AI] Default persona has no extra personality (uses original system prompt)",
   "mcai.cmd.persona.view_header": "§e==== §e[§e%d§e] §f%s §8- §7%s§e ====",
   "mcai.cmd.persona.reloaded": "§a[AI] Persona list refreshed: %d files, %d loaded, %d failed",
+  "mcai.cmd.persona.hover.set": "§aClick to select §7[§e%d§7]",
+  "mcai.cmd.persona.hover.view": "§bClick to view details §7[§e%d§7]",
   "mcai.persona.default.name": "Default",
   "mcai.persona.default.summary": "No extra persona settings",
   "mcai.config.active_persona": "Active Persona"

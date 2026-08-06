@@ -567,7 +567,7 @@ switch (tc.name) {
 | `/aidebug [start/stop/show/list/clear]` | 管理员/控制台 | AI 交互调试 |
 | `/aiscore` | 所有人 | 查看自己的行为分及阈值说明 |
 | `/aitest <子命令>` | OP | 测试命令（score/penalty/reset/set/review/chatlog） |
-| `/aipersona [list/set/view/reload/current]` | 管理员/控制台 | 人格管理 |
+| `/aipersona [list/set/view/reload/current]` | 管理员/控制台 | 人格管理（list 支持点击选择和 hover 预览） |
 
 **审批 ID 自动补全**：`pendingIdSuggestions` 为 `/aiaccept` `/aireject` `/aicancel` 提供 Tab 补全，显示命令名/命令链信息（管理员看全部，普通玩家只看自己的）。
 

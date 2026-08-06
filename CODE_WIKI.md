@@ -401,7 +401,7 @@ new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32
 
 ##### `handleConsoleAIQuery(src, query)` — 控制台调用链路
 
-类似但使用 `toolDispatcher.dispatchConsole()`（直接 OP 执行命令），玩家上下文替换为服务器概况。
+类似但使用 `toolDispatcher.dispatchConsole()`（统一走 executeCommand/submitChain，player=null 无需审批），玩家上下文替换为服务器概况。
 
 ##### `handleResponse(player, response)` — 响应安全处理
 
@@ -519,7 +519,7 @@ new CommandSourceStack(
 | 方法 | 调用者 | 命令执行方式 |
 |---|---|---|
 | `dispatch(toolCalls, player)` | 玩家触发的 AI 对话 | 走审批流程（cmdExec.executeCommand） |
-| `dispatchConsole(toolCalls)` | 控制台触发的 AI 对话 | 直接 OP 执行（cmdExec.executeAsOp） |
+| `dispatchConsole(toolCalls)` | 控制台触发的 AI 对话 | 统一走 cmdExec.executeCommand / submitChain（player=null，跳过审批，全服广播+写入 chatLog） |
 
 **工具分发 switch-case**：
 
@@ -858,7 +858,7 @@ if (now - last >= intervalMs) {
 **审批机制**：
 - `addItem()` —— 创建审批条目，`scheduler.schedule()` 超时自动批准（调用 `onApproved` Consumer）
 - `tryApprove(id)` / `tryReject(id)` —— 管理员手动批准/拒绝
-- `tryResolve(item, approved)` —— synchronized(item) 确保每条目只 resolve 一次
+- `tryResolve(item, approved)` —— synchronized(item) 确保每条目只 resolve 一次；resolve 成功后立即 `items.remove(item.id)`（防止已解决条目残留导致内存泄漏）
 - resolve 后取消对应的 timeout ScheduledFuture
 
 **与 CommandExecutionService 审批的区别**：

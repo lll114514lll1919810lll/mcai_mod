@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 public class KnowledgeBase implements SearchProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-KB");
     private static final Gson GSON = new GsonBuilder().create();
-    private static final String BUNDLED_PATH = "assets/mcai/kb/zh_wiki.json";
     private static final int MAX_ENTRIES = 50000;
     private static final long MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50MB per file
 
@@ -75,7 +74,6 @@ public class KnowledgeBase implements SearchProvider {
     public void load(Path externalDir) {
         List<Entry> all = new ArrayList<>();
         var seen = new HashSet<String>();
-        int loaded = 0;
 
         if (externalDir != null) {
             try {
@@ -84,26 +82,6 @@ public class KnowledgeBase implements SearchProvider {
             } catch (Exception e) {
                 LOGGER.warn("Failed to setup external KB directory", e);
             }
-        }
-
-        try (InputStream is = getClass().getClassLoader().getResourceAsStream(BUNDLED_PATH)) {
-            if (is != null) {
-                try (Reader r = new InputStreamReader(is)) {
-                    List<Entry> list = GSON.fromJson(r, new TypeToken<List<Entry>>() {}.getType());
-                    if (list != null) {
-                        for (Entry e : list) {
-                            if (e.title() != null && seen.add(e.title().toLowerCase(Locale.ROOT))) {
-                                all.add(e);
-                            }
-                        }
-                        loaded = list.size();
-                    }
-                }
-            } else {
-                LOGGER.warn("Bundled KB not found: {}", BUNDLED_PATH);
-            }
-        } catch (Exception e) {
-            LOGGER.error("Failed to load bundled KB", e);
         }
 
         if (externalDir != null && Files.isDirectory(externalDir)) {
@@ -150,7 +128,7 @@ public class KnowledgeBase implements SearchProvider {
         }
 
         entries = all;
-        LOGGER.info("KB loaded: {} entries ({} bundled + external)", entries.size(), loaded);
+        LOGGER.info("KB loaded: {} entries (external only)", entries.size());
     }
 
     private void exportExampleIfNeeded(Path externalDir) {

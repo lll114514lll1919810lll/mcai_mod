@@ -43,4 +43,6 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
+    // 排除所有知识库文件（KB 文件由管理员手动部署到 config/mcai/kb/）
+    exclude("assets/mcai/kb/**")
 }

@@ -117,7 +117,7 @@ public class ChatHandler {
         if (!mod.getConfig().isEnableChatInterception()) return;
         try {
             ServerMessageEvents.CHAT_MESSAGE.register((message, sender, params) -> {
-                if (sender != null) { String text = message.decoratedContent() != null ? message.decoratedContent().getString() : ""; chatLog.add(sender.getScoreboardName(), text); }
+                if (sender != null) { String text = message.decoratedContent() != null ? message.decoratedContent().getString() : (message.signedContent() != null ? message.signedContent() : ""); chatLog.add(sender.getScoreboardName(), text); }
             });
             ServerMessageEvents.ALLOW_CHAT_MESSAGE.register((message, sender, params) -> {
                 if (sender == null) return true;

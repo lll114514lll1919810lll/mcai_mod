@@ -46,6 +46,7 @@ public class MCAIMod implements ModInitializer {
     private WatchService configWatcher;
     private ScheduledExecutorService watcherScheduler;
     private final AIDebugLogger debugLogger = new AIDebugLogger();
+    private volatile PersonaManager personaManager;
 
     @Override
     public void onInitialize() {
@@ -58,6 +59,7 @@ public class MCAIMod implements ModInitializer {
         aiClient = new OpenAIClient(config);
         reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
 
+        personaManager = new PersonaManager();
         chatLog = new ChatLog();
         animation = new ThinkingAnimation();
         contextBuilder = new PlayerContextBuilder();
@@ -84,6 +86,7 @@ public class MCAIMod implements ModInitializer {
             dispatcher.register(cmdReg.createDebugCommand());
             dispatcher.register(cmdReg.createScoreCommand());
             dispatcher.register(cmdReg.createTestCommand());
+            dispatcher.register(cmdReg.createPersonaCommand());
         });
 
         ServerPlayConnectionEvents.DISCONNECT.register((handler, srv) ->
@@ -91,6 +94,8 @@ public class MCAIMod implements ModInitializer {
 
         ServerLifecycleEvents.SERVER_STARTED.register(s -> {
             this.server = s;
+            // 清空聊天记录（旧世界消息不应泄漏到新世界）
+            chatLog.clear();
             // 重新初始化搜索路由和工具分发器（退出世界时线程池已被关闭）
             if (searchRouter != null) searchRouter.shutdown();
             searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
@@ -221,6 +226,7 @@ public class MCAIMod implements ModInitializer {
     public ChatReviewSystem getChatReviewSystem() { return chatReviewSystem; }
     public PlayerBehaviorTracker getBehaviorTracker() { return behaviorTracker; }
     public AIDebugLogger getDebugLogger() { return debugLogger; }
+    public PersonaManager getPersonaManager() { return personaManager; }
 
     public void reloadConfig() {
         config = ModConfig.load();
@@ -234,9 +240,20 @@ public class MCAIMod implements ModInitializer {
         }
         searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
         toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
+        chatHandler.setToolDispatcher(toolDispatcher);
         if (chatReviewSystem != null) {
             chatReviewSystem.reloadConfig(config);
         }
-        LOGGER.info("MCAI config reloaded (online wiki mode)");
+        if (personaManager != null) {
+            personaManager.refreshPersonaList();
+            // 校验当前激活人格是否仍有效（文件可能被删除）
+            String active = config.getActivePersona();
+            if (!personaManager.isValidPersona(active)) {
+                LOGGER.warn("Active persona '{}' no longer exists, resetting to default", active);
+                config.setActivePersona("default");
+                config.save();
+            }
+        }
+        LOGGER.info("MCAI config reloaded (online wiki mode, personas refreshed)");
     }
 }

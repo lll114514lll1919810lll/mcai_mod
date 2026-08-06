@@ -290,6 +290,10 @@ public class ModConfig {
     /** 最多同时调用 AI 的非管理员玩家数 */
     private int aiMaxConcurrent = 3;
 
+    // ── 人格模式 ──
+    /** 当前激活的人格（"default" = 无人格注入） */
+    private String activePersona = "default";
+
     public static ModConfig load() {
         ModConfig config;
         if (Files.exists(CONFIG_PATH)) {
@@ -355,6 +359,9 @@ public class ModConfig {
         if (approvalTimeoutMinutes > 60) approvalTimeoutMinutes = 60;
         if (aiCooldownSeconds < 0) aiCooldownSeconds = 0;
         if (aiMaxConcurrent < 1) aiMaxConcurrent = 1;
+
+        // #8: activePersona
+        if (activePersona == null) activePersona = "default";
 
         // #4: list defaults
         if (requireApprovalCommands == null || requireApprovalCommands.isEmpty()) {
@@ -519,6 +526,9 @@ public class ModConfig {
 
     public int getAiMaxConcurrent() { return aiMaxConcurrent; }
     public void setAiMaxConcurrent(int aiMaxConcurrent) { this.aiMaxConcurrent = aiMaxConcurrent; }
+
+    public String getActivePersona() { return activePersona; }
+    public void setActivePersona(String activePersona) { this.activePersona = activePersona; }
 
     // ── 审查系统模型 effective getters（未配置时跟随聊天系统） ──
     public String getReviewApiEndpoint() {

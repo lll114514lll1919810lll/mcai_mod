@@ -159,6 +159,21 @@ release:  Release commit
 - Pre-release (alpha/beta): must check `Set as a pre-release`, note known issues in release notes
 - After pre-release stabilizes, promote to release (remove suffix), create new Tag and Release
 
+### Build Artifacts Directory
+
+Two directories store build outputs, with different naming conventions:
+
+| Directory | Purpose | Subdirectory naming | Example |
+|---|---|---|---|
+| `builds/` | Local development builds (alpha/beta) | `<MOD_VERSION>` (no `v` prefix) | `builds/alpha/1.7.0-alpha.3/` |
+| `releases/` | Published releases (mirror GitHub tags) | `<MC_VERSION>/v<MOD_VERSION>/` | `releases/26.1.2/v1.6.1/` |
+
+**Rules**:
+- `builds/` subdirectories use plain version strings: `1.7.0-alpha.3`, `1.7.0-beta.1` — no `v` prefix
+- `releases/` subdirectories use `v` prefix to match GitHub tag convention: `v1.6.1`, `v1.7.0-beta.1`
+- JAR files inside always follow `mcai-<MC_VERSION>-<MOD_VERSION>.jar` naming (no `v` prefix in filename)
+- `-sources.jar` files are optional and may be omitted for alpha builds
+
 ## Mojang 26.3 API Gotchas
 
 - `ResourceLocation`/`Identifier` class location changed — not at `net.minecraft.util` or `net.minecraft.resources`

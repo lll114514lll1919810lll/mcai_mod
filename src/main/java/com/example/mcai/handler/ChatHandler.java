@@ -212,6 +212,15 @@ public class ChatHandler {
                 String userContent = context + "\n\n" + sanitizeForPrompt(pname, query);
                 List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
                 messages.add(new OpenAIClient.ChatMessage("system", mod.getConfig().getSystemPrompt()));
+                // 注入人格提示（非 default 时）
+                String activePersona = mod.getConfig().getActivePersona();
+                String personaContent = mod.getPersonaManager() != null
+                    ? mod.getPersonaManager().getPersonaContent(activePersona)
+                    : null;
+                if (personaContent != null) {
+                    messages.add(new OpenAIClient.ChatMessage("system", "[PERSONA MODE]\n" + personaContent));
+                    if (dbg.isEnabled()) dbg.logInfo("Persona injected for " + pname + ": " + activePersona + " (" + personaContent.length() + " chars)");
+                }
                 String recentChat = chatLog.peek();
                 if (!recentChat.isEmpty()) messages.add(new OpenAIClient.ChatMessage("system", "最近的聊天记录（了解当前氛围）:\n" + sanitizeChatLogForPrompt(recentChat)));
                 String penaltySummary = mod.getChatReviewSystem() != null ? mod.getChatReviewSystem().getPenaltyHistory().getSummary() : "";
@@ -250,6 +259,15 @@ public class ChatHandler {
                 String context = String.format("版本: %s | 在线(%d/%d): [%s]\n说话者: 控制台", server.getServerModName(), server.getPlayerCount(), server.getMaxPlayers(), playerList.isEmpty() ? "无" : playerList);
                 List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
                 messages.add(new OpenAIClient.ChatMessage("system", mod.getConfig().getSystemPrompt()));
+                // 注入人格提示（非 default 时）
+                String activePersona = mod.getConfig().getActivePersona();
+                String personaContent = mod.getPersonaManager() != null
+                    ? mod.getPersonaManager().getPersonaContent(activePersona)
+                    : null;
+                if (personaContent != null) {
+                    messages.add(new OpenAIClient.ChatMessage("system", "[PERSONA MODE]\n" + personaContent));
+                    MCAIMod.LOGGER.info("Persona injected (console): {}", activePersona);
+                }
                 String recentChat = chatLog.peek();
                 if (!recentChat.isEmpty()) messages.add(new OpenAIClient.ChatMessage("system", "最近的聊天记录（了解当前氛围）:\n" + sanitizeChatLogForPrompt(recentChat)));
                 messages.add(new OpenAIClient.ChatMessage("user", context + "\n\n控制台 说: " + query));

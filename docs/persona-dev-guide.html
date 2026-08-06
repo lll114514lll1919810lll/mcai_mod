@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCAI 人格系统开发指南</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-dim: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --yellow: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --code-bg: #1c2128;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  h1 {
+    font-size: 2em;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 0.95em;
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 {
+    font-size: 1.4em;
+    margin: 48px 0 16px;
+    color: var(--accent);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 1.15em;
+    margin: 32px 0 12px;
+    color: var(--purple);
+  }
+  h4 {
+    font-size: 1em;
+    margin: 24px 0 8px;
+    color: var(--green);
+  }
+  p { margin: 12px 0; }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: "Cascadia Code", "Fira Code", monospace;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-size: 0.88em;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+  }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .tag-required { background: #1a3a2a; color: var(--green); }
+  .tag-optional { background: #2a2a1a; color: var(--yellow); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.92em;
+  }
+  th, td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    text-align: left;
+  }
+  th {
+    background: var(--surface);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: rgba(88,166,255,0.06);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 20px 0;
+  }
+  .callout.warn {
+    border-left-color: var(--yellow);
+    background: rgba(210,153,34,0.06);
+  }
+  .callout.danger {
+    border-left-color: var(--red);
+    background: rgba(248,81,73,0.06);
+  }
+  .callout.tip {
+    border-left-color: var(--green);
+    background: rgba(63,185,80,0.06);
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  ul, ol { margin: 12px 0; padding-left: 28px; }
+  li { margin: 6px 0; }
+  .field-name { color: var(--green); font-weight: 600; }
+  .field-type { color: var(--purple); }
+  .json-key { color: var(--accent); }
+  .json-string { color: var(--green); }
+  .json-number { color: var(--yellow); }
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 24px 0 40px;
+  }
+  .toc-title {
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .toc ol {
+    padding-left: 20px;
+    margin: 0;
+  }
+  .toc li { margin: 4px 0; }
+  .toc a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .toc a:hover { text-decoration: underline; }
+  .cmd {
+    color: var(--green);
+    font-weight: 600;
+  }
+  .version-badge {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 0.82em;
+    color: var(--text-dim);
+    margin-top: 8px;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>MCAI 人格系统开发指南</h1>
+<p class="subtitle">为 Minecraft 服务器 AI 助手创建自定义人格模组</p>
+<span class="version-badge">MCAI v1.7.0+ / MC 26.1.2</span>
+
+<div class="toc">
+  <div class="toc-title">目录</div>
+  <ol>
+    <li><a href="#intro">模组与人格系统简介</a></li>
+    <li><a href="#quickstart">快速上手</a></li>
+    <li><a href="#format">人格文件格式规范</a></li>
+    <li><a href="#fields">字段详解</a></li>
+    <li><a href="#builtin">内置人格参考</a></li>
+    <li><a href="#guide">人格内容编写指南</a></li>
+    <li><a href="#commands">管理命令</a></li>
+    <li><a href="#advanced">高级技巧</a></li>
+    <li><a href="#troubleshoot">常见问题排查</a></li>
+  </ol>
+</div>
+
+<h2 id="intro">模组与人格系统简介</h2>
+
+<p><strong>MCAI</strong> 是一个 Minecraft Fabric 模组，将 DeepSeek 等 AI 模型集成到游戏中，提供聊天对话、命令执行、知识库搜索和玩家行为审查功能。人格系统是其中的一个可选模块，允许服务器管理员为 AI 注入不同的"性格"，使 AI 的回复风格更加多样化和有趣。</p>
+
+<p>人格系统的工作方式是在 AI 的系统提示词之后、玩家对话之前，插入一段人格描述文本。AI 模型会根据这段描述调整自己的回复风格，同时仍然保持回答问题的实用性。</p>
+
+<div class="callout">
+  <div class="callout-title">人格注入位置</div>
+  <p>消息顺序：<code>系统提示词</code> → <code>[PERSONA MODE] 人格内容</code> → <code>玩家上下文 + 提问</code></p>
+  <p>只有当激活的人格不是 <code>default</code> 时，才会注入人格提示。</p>
+</div>
+
+<h2 id="quickstart">快速上手</h2>
+
+<ol>
+  <li>找到人格文件目录：<code>config/mcai/personas/</code>（首次启动模组时自动创建，并释放内置人格文件）</li>
+  <li>在该目录下创建一个 <code>.json</code> 文件，按照下方的格式规范编写</li>
+  <li>在游戏中执行 <code>/aipersona reload</code> 刷新人格列表</li>
+  <li>执行 <code>/aipersona set &lt;序号&gt;</code> 切换人格</li>
+  <li>向 AI 发送消息，体验新人格效果</li>
+</ol>
+
+<div class="callout tip">
+  <div class="callout-title">提示</div>
+  <p>人格文件修改后无需重启服务器，执行 <code>/aireload</code> 或 <code>/aipersona reload</code> 即可热加载。</p>
+</div>
+
+<h2 id="format">人格文件格式规范</h2>
+
+<p>每个人格是一个独立的 JSON 文件，存放在 <code>config/mcai/personas/</code> 目录下。文件名可以任意，但扩展名必须为 <code>.json</code>。</p>
+
+<h3>完整示例</h3>
+
+<pre><code>{
+  <span class="json-key">"id"</span>: <span class="json-string">"scholar"</span>,
+  <span class="json-key">"name"</span>: <span class="json-string">"学者"</span>,
+  <span class="json-key">"summary"</span>: <span class="json-string">"博学多才的老教授，喜欢引经据典"</span>,
+  <span class="json-key">"content"</span>: <span class="json-string">"你现在进入学者模式。你是一位博学多才的老教授...\n\n说话规则：\n- 经常引用古籍和典故\n- 用\"老夫\"自称..."</span>
+}</code></pre>
+
+<h3>字段总览</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>类型</th>
+      <th>必填</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="field-name">id</span></td>
+      <td><span class="field-type">string</span></td>
+      <td><span class="tag tag-required">必填</span></td>
+      <td>人格唯一标识符，用于内部引用和配置存储</td>
+    </tr>
+    <tr>
+      <td><span class="field-name">name</span></td>
+      <td><span class="field-type">string</span></td>
+      <td><span class="tag tag-required">必填</span></td>
+      <td>人格显示名称，在列表和切换提示中展示</td>
+    </tr>
+    <tr>
+      <td><span class="field-name">summary</span></td>
+      <td><span class="field-type">string</span></td>
+      <td><span class="tag tag-optional">可选</span></td>
+      <td>人格简介，在 <code>/aipersona list</code> 中显示</td>
+    </tr>
+    <tr>
+      <td><span class="field-name">content</span></td>
+      <td><span class="field-type">string</span></td>
+      <td><span class="tag tag-required">必填</span></td>
+      <td>人格提示词正文，将注入到 AI 系统消息中</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="fields">字段详解</h2>
+
+<h3><code>id</code> — 唯一标识符</h3>
+
+<p>人格的内部标识，必须满足以下规则：</p>
+
+<ul>
+  <li>由小写字母、数字和下划线组成（推荐格式：<code>snake_case</code>）</li>
+  <li>不能包含 <code>/</code>、<code>\</code>、<code>..</code> 等路径穿越字符</li>
+  <li>在所有人格文件中必须唯一，重复的 <code>id</code> 会导致后加载的文件被跳过</li>
+  <li>不能为 <code>default</code>（该 ID 被内置默认人格占用）</li>
+  <li>长度建议不超过 32 个字符</li>
+</ul>
+
+<div class="callout danger">
+  <div class="callout-title">安全限制</div>
+  <p><code>id</code> 字段包含路径穿越字符（<code>/</code>、<code>\</code>、<code>..</code>）时，该人格文件会被直接跳过，不会加载。</p>
+</div>
+
+<h3><code>name</code> — 显示名称</h3>
+
+<p>人格的中文或英文显示名，用于 <code>/aipersona list</code>、<code>/aipersona current</code>、<code>/aipersona set</code> 等命令的输出。建议使用简洁的 2-6 个字符。</p>
+
+<h3><code>summary</code> — 简介</h3>
+
+<p>一句话描述人格特点，在列表视图中与名称并列显示。建议控制在 20 字以内，让玩家快速了解人格风格。此字段为空或缺失时，列表中将显示空白。</p>
+
+<h3><code>content</code> — 人格提示词正文</h3>
+
+<p>这是人格系统的核心字段。内容将作为额外的系统消息注入到 AI 对话中，指导 AI 的回复风格。编写时需要注意：</p>
+
+<ul>
+  <li>使用 <code>\n</code> 表示换行（JSON 字符串中的转义换行符）</li>
+  <li>内容会直接发送给 AI 模型，因此需要清晰、具体地描述期望的行为</li>
+  <li>建议包含"说话规则"部分，用列表形式列出具体的语言习惯</li>
+  <li>必须强调"保持回答的实用性"，防止 AI 因角色扮演而拒绝执行任务</li>
+  <li>长度建议控制在 200-500 字之间，过长会占用过多上下文窗口</li>
+</ul>
+
+<div class="callout warn">
+  <div class="callout-title">JSON 转义注意</div>
+  <p>JSON 字符串中，换行必须写为 <code>\n</code>，双引号必须写为 <code>\"</code>，反斜杠必须写为 <code>\\</code>。建议使用支持 JSON 语法高亮的编辑器（如 VS Code）来编写。</p>
+</div>
+
+<h2 id="builtin">内置人格参考</h2>
+
+<p>模组内置了四个人格文件，首次启动时自动释放到 <code>config/mcai/personas/</code> 目录。这些文件可以作为编写自定义人格的参考模板。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>名称</th>
+      <th>风格特点</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>tsundere</code></td>
+      <td>傲娇</td>
+      <td>表面高冷毒舌，实际关心对方；常用"才不是为了你呢"等句式</td>
+    </tr>
+    <tr>
+      <td><code>pirate</code></td>
+      <td>海盗船长</td>
+      <td>航海风味，豪迈奔放；称呼"水手"，句尾加"哟吼吼"</td>
+    </tr>
+    <tr>
+      <td><code>chuuni</code></td>
+      <td>中二病</td>
+      <td>幻想色彩，戏剧性十足；自称"吾"，常提"封印""黑暗力量"</td>
+    </tr>
+    <tr>
+      <td><code>gentle</code></td>
+      <td>温柔</td>
+      <td>轻声细语，充满关怀；语气词"呢""哦"，附带鼓励</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="guide">人格内容编写指南</h2>
+
+<h3>推荐结构</h3>
+
+<p>一个高质量的人格提示词通常包含以下部分：</p>
+
+<ol>
+  <li><strong>模式声明</strong> — 一句话告诉 AI 进入了什么模式</li>
+  <li><strong>角色定位</strong> — 描述 AI 扮演的角色身份和背景</li>
+  <li><strong>说话规则</strong> — 用列表形式列出具体的语言习惯和句式</li>
+  <li><strong>实用性保证</strong> — 强调不能因角色扮演拒绝回答问题或执行任务</li>
+  <li><strong>语气定调</strong> — 描述整体的情感色彩和氛围</li>
+</ol>
+
+<h3>示例模板</h3>
+
+<pre><code>你现在进入{人格名称}模式。{角色定位描述}。
+
+说话规则：
+- {具体语言习惯1}
+- {具体语言习惯2}
+- {具体语言习惯3}
+- {特定场景下的反应方式}
+- 保持回答的实用性，不要因为角色扮演而拒绝回答或执行任务
+- {语气和氛围描述}</code></pre>
+
+<h3>编写建议</h3>
+
+<ul>
+  <li><strong>具体优于抽象</strong> — "常用句式：'哼，别误会了'"比"说话要高冷"更有效</li>
+  <li><strong>给出示例</strong> — 提供 2-3 个具体的对话示例，帮助 AI 理解期望的回复风格</li>
+  <li><strong>设定边界</strong> — 明确说明哪些行为是不允许的（如拒绝回答问题）</li>
+  <li><strong>控制长度</strong> — 过长的提示词会挤占对话上下文空间，建议不超过 500 字</li>
+  <li><strong>避免矛盾</strong> — 规则之间不要相互冲突，如"要幽默"和"要严肃"同时出现</li>
+  <li><strong>考虑实用性</strong> — 人格是增添趣味的，不应影响 AI 完成实际任务的能力</li>
+</ul>
+
+<div class="callout tip">
+  <div class="callout-title">测试技巧</div>
+  <p>创建人格后，用几个不同类型的问题测试效果：简单问答、命令请求、闲聊。确保人格在各种场景下都能正常工作。</p>
+</div>
+
+<h2 id="commands">管理命令</h2>
+
+<p>所有命令需要管理员权限或控制台执行。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>命令</th>
+      <th>说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="cmd">/aipersona list</span></td>
+      <td>列出所有可用人格，标注当前激活的人格</td>
+    </tr>
+    <tr>
+      <td><span class="cmd">/aipersona set &lt;序号&gt;</span></td>
+      <td>切换到指定序号的人格（序号从 0 开始）</td>
+    </tr>
+    <tr>
+      <td><span class="cmd">/aipersona current</span></td>
+      <td>查看当前激活的人格</td>
+    </tr>
+    <tr>
+      <td><span class="cmd">/aipersona view &lt;序号&gt;</span></td>
+      <td>查看指定人格的完整提示词内容</td>
+    </tr>
+    <tr>
+      <td><span class="cmd">/aipersona reload</span></td>
+      <td>重新扫描人格目录，加载新增/修改的文件</td>
+    </tr>
+    <tr>
+      <td><span class="cmd">/aireload</span></td>
+      <td>完整重载模组配置（包含人格列表刷新）</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">/aipersona reload 输出说明</div>
+  <p>刷新后会显示统计信息：<code>共 X 个文件，成功加载 Y 个，失败 Z 个</code>。如果发现重复 ID 或加载失败的文件，会以警告形式列出具体文件名和原因。</p>
+</div>
+
+<h2 id="advanced">高级技巧</h2>
+
+<h3>人格与系统提示词的协作</h3>
+
+<p>人格提示词注入在系统提示词之后。如果人格规则与系统提示词中的指令冲突，后注入的人格提示词优先级更高。因此可以在人格中覆盖某些系统行为，但不应覆盖安全相关的指令。</p>
+
+<h3>多语言人格</h3>
+
+<p><code>content</code> 字段可以使用任何语言编写。如果服务器主要使用英文交流，建议用英文编写人格提示词，这样 AI 的回复风格会更自然地匹配目标语言。</p>
+
+<h3>人格文件命名建议</h3>
+
+<p>虽然文件名不影响功能（以 <code>id</code> 字段为准），但建议保持文件名与 <code>id</code> 一致，例如 <code>id</code> 为 <code>scholar</code> 的人格文件命名为 <code>scholar.json</code>，便于管理。</p>
+
+<h3>删除人格文件</h3>
+
+<p>直接删除 <code>config/mcai/personas/</code> 下的 JSON 文件，然后执行 <code>/aireload</code>。如果删除的是当前激活的人格，系统会自动回退到 <code>default</code>（无额外人格设定），并在日志中记录警告。</p>
+
+<h2 id="troubleshoot">常见问题排查</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>现象</th>
+      <th>可能原因</th>
+      <th>解决方法</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>新人格文件刷新后不出现</td>
+      <td>JSON 格式错误或缺少必填字段</td>
+      <td>执行 <code>/aipersona reload</code> 查看失败文件列表；检查 JSON 语法和必填字段</td>
+    </tr>
+    <tr>
+      <td>人格切换后 AI 风格没变化</td>
+      <td>人格 <code>content</code> 描述不够具体</td>
+      <td>增加具体的说话规则和示例句式；确保包含模式声明</td>
+    </tr>
+    <tr>
+      <td>AI 拒绝回答问题</td>
+      <td>人格提示词过度强调角色扮演</td>
+      <td>在 <code>content</code> 中加入"保持回答的实用性，不要因为角色扮演而拒绝回答或执行任务"</td>
+    </tr>
+    <tr>
+      <td>重复 ID 警告</td>
+      <td>多个人格文件使用了相同的 <code>id</code></td>
+      <td>修改其中一个文件的 <code>id</code> 使其唯一</td>
+    </tr>
+    <tr>
+      <td>切换人格后回复异常</td>
+      <td>人格提示词与系统提示词冲突</td>
+      <td>检查 <code>content</code> 是否与系统提示词中的指令矛盾</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout warn">
+  <div class="callout-title">日志排查</div>
+  <p>开启调试日志（<code>/aidebug start</code>）后执行 <code>/aireload</code>，可以在日志中看到每个人格文件的加载详情，包括成功加载的 <code>id</code> 和名称、跳过的重复项、以及解析失败的具体原因。</p>
+</div>
+
+<hr>
+<p style="color: var(--text-dim); font-size: 0.85em; text-align: center;">MCAI Persona Development Guide — v1.7.0-alpha.3</p>
+
+</body>
+</html>

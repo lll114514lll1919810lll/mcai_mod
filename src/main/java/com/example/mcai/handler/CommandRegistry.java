@@ -425,6 +425,138 @@ public class CommandRegistry {
         if (s == null) return "";
         return s.length() > maxLen ? s.substring(0, maxLen) + "..." : s;
     }
+    public LiteralArgumentBuilder<CommandSourceStack> createPersonaCommand() {
+        var personaMgr = chatHandler.getMod().getPersonaManager();
+        return Commands.literal("aipersona").requires(CommandExecutionService::isAdminOrConsole)
+                // /aipersona list
+                .then(Commands.literal("list").executes(ctx -> {
+                    var personas = personaMgr.getAvailablePersonas();
+                    String active = chatHandler.getConfig().getActivePersona();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.list_header", personas.size()), false);
+                    for (int i = 0; i < personas.size(); i++) {
+                        var rec = personas.get(i);
+                        boolean isActive = rec.id.equals(active);
+                        final int idx = i;
+                        final Component displayName = resolvePersonaName(rec);
+                        final Component summary = resolvePersonaSummary(rec);
+                        final Component suffix = isActive ? Component.translatable("mcai.cmd.persona.active_marker") : Component.literal("");
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.list_item", idx, displayName, summary, suffix), false);
+                    }
+                    return 1;
+                }))
+                // /aipersona set <index>
+                .then(Commands.literal("set").then(
+                        Commands.argument("index", IntegerArgumentType.integer(0))
+                                .suggests((ctx, builder) -> {
+                                    var personas = personaMgr.getAvailablePersonas();
+                                    for (int i = 0; i < personas.size(); i++) {
+                                        builder.suggest(String.valueOf(i), resolvePersonaName(personas.get(i)));
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    int index = IntegerArgumentType.getInteger(ctx, "index");
+                                    var personas = personaMgr.getAvailablePersonas();
+                                    if (index < 0 || index >= personas.size()) {
+                                        ctx.getSource().sendFailure(Component.translatable("mcai.cmd.persona.invalid_index", index));
+                                        return 0;
+                                    }
+                                    var record = personas.get(index);
+                                    chatHandler.getConfig().setActivePersona(record.id);
+                                    chatHandler.getConfig().save();
+                                    var dbg = chatHandler.getMod().getDebugLogger();
+                                    if (dbg.isEnabled()) dbg.logInfo("Persona switched to: " + record.id + " (" + record.name + ") index=" + index);
+                                    final Component personaDisplayName = resolvePersonaName(record);
+                                    final int personaIdx = index;
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.set_done", personaIdx, personaDisplayName), true);
+                                    return 1;
+                                })
+                ))
+                // /aipersona current
+                .then(Commands.literal("current").executes(ctx -> {
+                    String active = chatHandler.getConfig().getActivePersona();
+                    var record = personaMgr.getPersona(active);
+                    if (record == null) record = PersonaManager.DEFAULT_PERSONA;
+                    var personas = personaMgr.getAvailablePersonas();
+                    int idx = 0;
+                    for (int i = 0; i < personas.size(); i++) {
+                        if (personas.get(i).id.equals(active)) { idx = i; break; }
+                    }
+                    final int finalIdx = idx;
+                    final Component displayName = resolvePersonaName(record);
+                    final Component summary = resolvePersonaSummary(record);
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.current", finalIdx, displayName, summary), false);
+                    return 1;
+                }))
+                // /aipersona view <index>
+                .then(Commands.literal("view").then(
+                        Commands.argument("index", IntegerArgumentType.integer(0))
+                                .suggests((ctx, builder) -> {
+                                    var personas = personaMgr.getAvailablePersonas();
+                                    for (int i = 0; i < personas.size(); i++) {
+                                        builder.suggest(String.valueOf(i), resolvePersonaName(personas.get(i)));
+                                    }
+                                    return builder.buildFuture();
+                                })
+                                .executes(ctx -> {
+                                    int index = IntegerArgumentType.getInteger(ctx, "index");
+                                    var personas = personaMgr.getAvailablePersonas();
+                                    if (index < 0 || index >= personas.size()) {
+                                        ctx.getSource().sendFailure(Component.translatable("mcai.cmd.persona.invalid_index", index));
+                                        return 0;
+                                    }
+                                    var record = personas.get(index);
+                                    if ("default".equals(record.id)) {
+                                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.view_default"), false);
+                                        return 1;
+                                    }
+                                    final int personaIdx = index;
+                                    final Component displayName = resolvePersonaName(record);
+                                    final Component summary = resolvePersonaSummary(record);
+                                    final String personaContent = record.content;
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.view_header", personaIdx, displayName, summary), false);
+                                    ctx.getSource().sendSuccess(() -> Component.literal("§7" + personaContent), false);
+                                    return 1;
+                                })
+                ))
+                // /aipersona reload
+                .then(Commands.literal("reload").executes(ctx -> {
+                    personaMgr.refreshPersonaList();
+                    var dbg = chatHandler.getMod().getDebugLogger();
+                    if (dbg.isEnabled()) dbg.logInfo("Persona list reloaded, count=" + personaMgr.getAvailablePersonas().size());
+                    int total = personaMgr.getLastTotalFiles();
+                    int loaded = personaMgr.getLastLoadedCount();
+                    int failed = personaMgr.getLastFailedCount();
+                    var dupes = personaMgr.getLastDuplicateIds();
+                    var fails = personaMgr.getLastFailedFiles();
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.reloaded", total, loaded, failed), true);
+                    if (!dupes.isEmpty()) {
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.duplicate_warn", String.join(", ", dupes)), false);
+                    }
+                    if (!fails.isEmpty()) {
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.failed_warn", String.join(", ", fails)), false);
+                    }
+                    return 1;
+                }))
+                // /aipersona (no args)
+                .executes(ctx -> {
+                    ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.persona.usage"), false);
+                    return 0;
+                });
+    }
+
+    /** 解析人格显示名称（i18n key → 翻译组件，普通字符串 → 字面组件） */
+    private static Component resolvePersonaName(PersonaManager.PersonaRecord rec) {
+        if (rec.i18n) return Component.translatable(rec.name);
+        return Component.literal(rec.name);
+    }
+
+    /** 解析人格简介（i18n key → 翻译组件，普通字符串 → 字面组件） */
+    private static Component resolvePersonaSummary(PersonaManager.PersonaRecord rec) {
+        if (rec.i18n) return Component.translatable(rec.summary);
+        return Component.literal(rec.summary);
+    }
+
     public LiteralArgumentBuilder<CommandSourceStack> createTestCommand() {
         var ps = playerNameSuggestions(); var bt = chatHandler.getMod().getBehaviorTracker();
         var crs = chatHandler.getMod().getChatReviewSystem(); var cl = chatHandler.getChatLog();

@@ -215,5 +215,22 @@
   "mcai.config.tip.compatibility_mode": "开启后只发送 model/messages/tools，适配本地 LM Studio 等兼容端",
 
   "mcai.review.retry_failed": "§c审查AI重试失败: %s",
-  "mcai.review.invalid_json": "§c审查AI无法返回有效JSON，跳过本轮审查"
+  "mcai.review.invalid_json": "§c审查AI无法返回有效JSON，跳过本轮审查",
+
+  "mcai.cmd.persona.usage": "§e用法: /aipersona <list|set|current|view|reload>",
+  "mcai.cmd.persona.list_header": "§e==== 可用人格 §e(§e%d§e)§e ====",
+  "mcai.cmd.persona.list_item": "§7  §7[§e%d§7] §f%s §8- §7%s%s",
+  "mcai.cmd.persona.active_marker": " §a[当前]",
+  "mcai.cmd.persona.duplicate_warn": "§e[警告] 发现重复 ID，已跳过: §7%s",
+  "mcai.cmd.persona.failed_warn": "§c[警告] 以下文件加载失败: §7%s",
+  "mcai.cmd.persona.set_done": "§a[AI] 已切换人格为: §a[§e%d§a] §f%s",
+  "mcai.cmd.persona.current": "§e[AI] 当前人格: §e[§e%d§e] §f%s §8- §7%s",
+  "mcai.cmd.persona.not_found": "§c[AI] 未找到人格: %s",
+  "mcai.cmd.persona.invalid_index": "§c[AI] 无效的序号: %d",
+  "mcai.cmd.persona.view_default": "§7[AI] 默认人格无额外人格设定（使用原始系统提示词）",
+  "mcai.cmd.persona.view_header": "§e==== §e[§e%d§e] §f%s §8- §7%s§e ====",
+  "mcai.cmd.persona.reloaded": "§a[AI] 人格列表已刷新，共 %d 个文件，成功加载 %d 个，失败 %d 个",
+  "mcai.persona.default.name": "默认",
+  "mcai.persona.default.summary": "无额外人格设定",
+  "mcai.config.active_persona": "当前人格"
 }

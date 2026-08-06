@@ -215,5 +215,22 @@
   "mcai.config.tip.compatibility_mode": "When enabled, only send model/messages/tools for local LM Studio compatibility",
 
   "mcai.review.retry_failed": "§cReview AI retry failed: %s",
-  "mcai.review.invalid_json": "§cReview AI could not return valid JSON, skipping this cycle"
+  "mcai.review.invalid_json": "§cReview AI could not return valid JSON, skipping this cycle",
+
+  "mcai.cmd.persona.usage": "§eUsage: /aipersona <list|set|current|view|reload>",
+  "mcai.cmd.persona.list_header": "§e==== Available Personas §e(§e%d§e)§e ====",
+  "mcai.cmd.persona.list_item": "§7  §7[§e%d§7] §f%s §8- §7%s%s",
+  "mcai.cmd.persona.active_marker": " §a[Active]",
+  "mcai.cmd.persona.duplicate_warn": "§e[Warning] Duplicate IDs skipped: §7%s",
+  "mcai.cmd.persona.failed_warn": "§c[Warning] Failed to load: §7%s",
+  "mcai.cmd.persona.set_done": "§a[AI] Persona switched to: §a[§e%d§a] §f%s",
+  "mcai.cmd.persona.current": "§e[AI] Current persona: §e[§e%d§e] §f%s §8- §7%s",
+  "mcai.cmd.persona.not_found": "§c[AI] Persona not found: %s",
+  "mcai.cmd.persona.invalid_index": "§c[AI] Invalid index: %d",
+  "mcai.cmd.persona.view_default": "§7[AI] Default persona has no extra personality (uses original system prompt)",
+  "mcai.cmd.persona.view_header": "§e==== §e[§e%d§e] §f%s §8- §7%s§e ====",
+  "mcai.cmd.persona.reloaded": "§a[AI] Persona list refreshed: %d files, %d loaded, %d failed",
+  "mcai.persona.default.name": "Default",
+  "mcai.persona.default.summary": "No extra persona settings",
+  "mcai.config.active_persona": "Active Persona"
 }

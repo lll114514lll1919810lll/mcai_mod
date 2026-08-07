@@ -48,9 +48,8 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 - **Player Cancel**: Players can use `/aicancel` to cancel their own pending commands; AI receives cancellation notice and won't retry the same command
 
 ### Game Knowledge Base
-- Built-in Chinese Minecraft Wiki entries
-- AI searches minecraft.wiki / zh.minecraft.wiki online first (language via `wikiLanguage`), falls back to local KB on failure or timeout
-- Custom KB: drop JSON files into `config/mcai/kb/` and they auto-load
+- AI searches minecraft.wiki / zh.minecraft.wiki online for up-to-date game knowledge (language via `wikiLanguage`)
+- Supports Chinese and English search, returns summaries and full page links
 
 ---
 
@@ -89,6 +88,7 @@ The mod works in **single-player** too (no dedicated server required):
 |---------|-------------|
 | `!ai <msg>` `/ai <msg>` | Chat with AI |
 | `/aiscore` | Check behavior score |
+| `/aicancel [id/all]` | Cancel your own pending commands |
 
 ### Admin Commands
 | Command | Description |
@@ -99,7 +99,7 @@ The mod works in **single-player** too (no dedicated server required):
 | `/aiclear` | Clear AI chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/airesetprompts` | Reset prompt files to current built-in defaults |
-| `/aikb <keyword>` | Search knowledge base |
+| `/aikb <keyword>` | Search Wiki knowledge base |
 | `/aicontrol [chat/review] [on/off]` | Toggle AI chat/review |
 | `/aikill` | Destroy all AI threads |
 | `/aidebug start/stop/show/list/clear` | Debug logging |
@@ -113,6 +113,16 @@ The mod works in **single-player** too (no dedicated server required):
 | `/aireview reject <id>` | Reject kick |
 | `/aireview last` | View last review result |
 | `/aireview last reasoning` | View AI reasoning |
+
+### Test Commands (OP only)
+| Command | Description |
+|---------|-------------|
+| `/aitest score <player>` | Check player behavior score |
+| `/aitest set <player> <score>` | Set player behavior score |
+| `/aitest penalty <player> <points>` | Simulate penalty |
+| `/aitest reset <player>` | Reset player behavior score |
+| `/aitest review` | Trigger manual review |
+| `/aitest chatlog` | View chat log |
 
 ---
 
@@ -164,16 +174,9 @@ Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first
 ---
 
 
-### Importing Knowledge Bases
+### Knowledge Base
 
-Place .json files in config/mcai/kb/ to extend AI knowledge:
-
-1. Download from [kb/](kb/README.md) directory
-2. Put them in config/mcai/kb/ (auto-created on first start)
-3. Auto-reloads (or run /aireload manually)
-
-See [kb/README.md](kb/README.md) for available files and licenses.
-DIY scraper: [tools/wiki_to_kb.py](tools/wiki_to_kb.py).
+AI knowledge search is done via online Wiki — no manual data import needed. The `kb/` directory still contains legacy knowledge base files, but the current version does not automatically load local KB.
 
 ## Build
 

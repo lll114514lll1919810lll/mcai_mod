@@ -52,9 +52,8 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 - **玩家取消**：玩家可用 `/aicancel` 主动取消自己发起的待审批命令，AI 会收到取消通知并不再尝试相同命令
 
 ### 游戏知识库
-- 内置中文 Minecraft Wiki 核心条目
-- AI 优先在线搜索 minecraft.wiki / zh.minecraft.wiki（`wikiLanguage` 控制语言），失败或超时自动回退本地知识库
-- 自定义知识库：将 JSON 文件放入 `config/mcai/kb/` 即可自动加载
+- AI 通过在线搜索 minecraft.wiki / zh.minecraft.wiki 获取最新游戏知识（`wikiLanguage` 控制语言）
+- 支持中英文搜索，返回摘要和完整页面链接
 
 ---
 
@@ -112,6 +111,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 |------|------|
 | `!ai <消息>` `/ai <消息>` | 和 AI 聊天 |
 | `/aiscore` | 查看行为分 |
+| `/aicancel [id/all]` | 取消自己的待审批命令 |
 
 ### 管理员命令
 | 命令 | 说明 |
@@ -119,11 +119,10 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aiaccept <id>` | 批准待审批操作（支持单条命令和命令链） |
 | `/aireject <id>` | 拒绝待审批操作（支持单条命令和命令链） |
 | `/aiquery` | 查看待审批列表（显示全局唯一 id） |
-| `/aicancel [id/all]` | 取消待审批命令（玩家可用，管理员也可用） |
 | `/aiclear` | 清除 AI 对话历史 |
 | `/aireload` | 手动重载配置（配置文件修改后自动重载） |
 | `/airesetprompts` | 重置提示词文件为当前内置默认 |
-| `/aikb <关键词>` | 搜索知识库 |
+| `/aikb <关键词>` | 搜索 Wiki 知识库 |
 | `/aicontrol [chat/review] [on/off]` | 开关 AI 聊天/审查 |
 | `/aikill` | 销毁所有 AI 线程 |
 | `/aidebug start/stop/show/list/clear` | 调试日志 |
@@ -137,6 +136,16 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aireview reject <id>` | 拒绝踢出 |
 | `/aireview last` | 查看上次审查结果 |
 | `/aireview last reasoning` | 查看 AI 推理过程 |
+
+### 测试命令（OP 专用）
+| 命令 | 说明 |
+|------|------|
+| `/aitest score <玩家>` | 查看玩家行为分 |
+| `/aitest set <玩家> <分数>` | 设置玩家行为分 |
+| `/aitest penalty <玩家> <分数>` | 模拟扣分 |
+| `/aitest reset <玩家>` | 重置玩家行为分 |
+| `/aitest review` | 手动触发审查 |
+| `/aitest chatlog` | 查看聊天日志 |
 
 ---
 
@@ -188,16 +197,9 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 ---
 
 
-### 知识库导入
+### 知识库说明
 
-知识库文件放置在 config/mcai/kb/ 下即可：
-
-1. 从 [kb/](kb/README.md) 目录下载 .json 文件
-2. 放入 config/mcai/kb/（首次启动自动创建）
-3. 自动热重载生效（或手动 /aireload）
-
-可用文件及许可证见 [kb/README.md](kb/README.md)。
-自爬工具：[tools/wiki_to_kb.py](tools/wiki_to_kb.py)。
+AI 知识搜索通过在线 Wiki 实现，无需手动导入数据。如需离线使用，`kb/` 目录下仍保留历史知识库文件，但当前版本不再自动加载本地知识库。
 
 ## 构建
 

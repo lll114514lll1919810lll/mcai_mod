@@ -48,7 +48,11 @@ src/main/java/com/example/mcai/
 │   └── config/
 │       └── MCAIConfigScreen.java — Client-side config GUI
 └── kb/
-    └── KnowledgeBase.java    — Bigram CJK search over JSON wiki dumps
+    ├── SearchProvider.java   — Search provider interface
+    ├── SearchResult.java     — Unified search result format
+    ├── SearchRouter.java     — Async search router with timeout
+    ├── WikiSearchProvider.java — Online Wiki search via MediaWiki API
+    └── KnowledgeBase.java    — Local JSON KB (deprecated, kept for compatibility)
 ```
 
 ## Key Conventions

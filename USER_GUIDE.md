@@ -192,9 +192,9 @@
 
 ---
 
-## 在线 Wiki 搜索
+## Wiki 知识搜索
 
-AI 默认启用在线 Wiki 搜索，优先查询 minecraft.wiki / zh.minecraft.wiki 上的最新原版内容，失败或超时时自动回退到本地知识库。
+AI 通过在线搜索 minecraft.wiki / zh.minecraft.wiki 获取最新游戏知识。
 
 在 `config/mcai/config.json` 中配置语言：
 

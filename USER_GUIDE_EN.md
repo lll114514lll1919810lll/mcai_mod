@@ -188,9 +188,9 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 
 ---
 
-## Online Wiki Search
+## Wiki Knowledge Search
 
-AI enables online Wiki search by default, querying minecraft.wiki / zh.minecraft.wiki first and falling back to the local knowledge base on failure or timeout.
+AI searches minecraft.wiki / zh.minecraft.wiki online for up-to-date game knowledge.
 
 Edit `config/mcai/config.json` to set the language:
 

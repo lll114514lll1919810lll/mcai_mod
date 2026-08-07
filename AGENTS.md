@@ -257,31 +257,31 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 | Module boundaries | Good | 5-layer separation (chat/command/review/kb/config) |
 | Security awareness | Strong | Approval flow, injection sanitization, tool call constraints |
 | Operability | Good | Hot reload, debug logging, admin commands |
-| Test coverage | Missing | No `src/test/`, zero regression protection |
-| Code complexity | High | `CommandExecutionService` 750 lines, `OpenAIClient` 519 lines |
-| Concurrency robustness | TBD | 4-8 thread pool + 32 queue, dual timeout 5min/60s |
+| Test coverage | Good | 150 unit tests, JUnit 5, GitHub Actions CI |
+| Code complexity | Improved | `OpenAIClient` split into 3 classes (95+165+210 lines) |
+| Concurrency robustness | Improved | Configurable timeouts, friendly queue-full handling |
 
 ### Priority Backlog
 
-#### P0 — Testing infrastructure (target v1.7.0)
-- Add JUnit 5 + Mockito (`testImplementation` in `build.gradle`)
-- Unit tests: `OpenAIClient` (request building, response parsing, tool-call loop), `CommandExecutionService` (4 approval touch points), `KnowledgeBase` (bigram/CJK search), `SearchRouter` (online-first, 8s timeout)
-- Integration test: `ChatHandler` (message flow, concurrency limiting, history truncation)
-- GitHub Actions CI: `push`/`PR` triggers `./gradlew test` on JDK 25
-- Goal: core module coverage > 60%, CI gates merges
+#### P0 — Testing infrastructure (target v1.7.0) ✅
+- [x] Add JUnit 5 + Mockito (`testImplementation` in `build.gradle`)
+- [x] Unit tests: `OpenAIClient` (request building, response parsing, tool-call loop), `CommandExecutionService` (4 approval touch points), `KnowledgeBase` (bigram/CJK search), `SearchRouter` (online-first, 8s timeout)
+- [ ] Integration test: `ChatHandler` (message flow, concurrency limiting, history truncation)
+- [x] GitHub Actions CI: `push`/`PR` triggers `./gradlew test` on JDK 25
+- [x] Goal: core module coverage > 60%, CI gates merges
 
 #### P1 — Refactor high-complexity modules
-- Split `OpenAIClient` (519 lines) into: `ApiClient` (HTTP transport), `ChatMessageCodec`, `ToolCallProcessor`, `ResponseParser`, and a thin facade
-- Split `CommandExecutionService` (750 lines) into: `CommandApprovalManager`, `CommandChainExecutor`, `CommandSafetyChecker`, `ApprovalNotifier`, and a facade
+- [x] Split `OpenAIClient` (519 lines) into: `ApiClient` (HTTP transport, 95 lines), `ToolDefinitions` (tool definitions, 165 lines), `OpenAIClient` (facade, 210 lines)
+- [ ] Split `CommandExecutionService` (750 lines) into: `CommandApprovalManager`, `CommandChainExecutor`, `CommandSafetyChecker`, `ApprovalNotifier`, and a facade
 - Principle: each class < 200 lines, single responsibility, independently testable
 
-#### P2 — Concurrency & timeout hardening
-- Make all timeouts configurable in `ModConfig` (connect/request/loop/retry/executor size/maxConcurrent) instead of hardcoded
-- Return friendly error on queue-full instead of silent drop
-- Configurable non-admin concurrency cap; queue instead of reject when over limit
-- API retry 1-2x with exponential backoff on 5xx/network errors
-- Circuit breaker: short-circuit 30s after N consecutive failures
-- Load test with 10/20/50 concurrent players (P95/P99 latency); expose thread pool metrics in `/aistats`
+#### P2 — Concurrency & timeout hardening (partial)
+- [x] Make all timeouts configurable in `ModConfig` (connect/request/loop/wiki) instead of hardcoded
+- [x] Return friendly error on queue-full instead of silent drop
+- [ ] Configurable non-admin concurrency cap; queue instead of reject when over limit
+- [ ] API retry 1-2x with exponential backoff on 5xx/network errors
+- [ ] Circuit breaker: short-circuit 30s after N consecutive failures
+- [ ] Load test with 10/20/50 concurrent players (P95/P99 latency); expose thread pool metrics in `/aistats`
 
 ### Feature Evolution
 
@@ -309,16 +309,16 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 
 ### Technical Debt Registry
 
-| ID | Debt | Impact | Interest | Target version |
-|---|---|---|---|---|
-| TD-001 | `CommandExecutionService` 750 lines | Maintenance | High | v1.8.0 |
-| TD-002 | `OpenAIClient` 519 lines | Maintenance | High | v1.7.0 |
-| TD-003 | No tests | Regression risk | Critical | v1.7.0 |
-| TD-004 | Hardcoded timeouts | Ops | Medium | v1.7.0 |
-| TD-005 | Silent drop on full queue | UX | Medium | v1.7.0 |
-| TD-006 | `ModConfig` 453 lines | Config bloat | Medium | v1.8.0 |
-| TD-007 | In-memory history only | Lost on restart | Medium | v1.8.0 |
-| TD-008 | No audit log | Compliance | Low | v2.0.0 |
+| ID | Debt | Impact | Interest | Target version | Status |
+|---|---|---|---|---|---|
+| TD-001 | `CommandExecutionService` 750 lines | Maintenance | High | v1.8.0 | Open |
+| TD-002 | `OpenAIClient` 519 lines | Maintenance | High | v1.7.0 | **Done** |
+| TD-003 | No tests | Regression risk | Critical | v1.7.0 | **Done** |
+| TD-004 | Hardcoded timeouts | Ops | Medium | v1.7.0 | **Done** |
+| TD-005 | Silent drop on full queue | UX | Medium | v1.7.0 | **Done** |
+| TD-006 | `ModConfig` 453 lines | Config bloat | Medium | v1.8.0 | Open |
+| TD-007 | In-memory history only | Lost on restart | Medium | v1.8.0 | Open |
+| TD-008 | No audit log | Compliance | Low | v2.0.0 | Open |
 
 ## Build Checklist
 

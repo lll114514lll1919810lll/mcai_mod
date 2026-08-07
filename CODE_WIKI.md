@@ -1,4 +1,4 @@
-﻿# MCAI Code Wiki
+# MCAI Code Wiki
 
 > Minecraft Fabric Mod —— 将 AI 助手深度集成到 Minecraft 服务器中，实现智能对话、命令执行、知识库搜索与自动行为审查。
 
@@ -54,8 +54,10 @@ mc/
 ├── src/main/java/com/example/mcai/
 │   ├── MCAIMod.java                  # Mod 主入口
 │   ├── api/                          # AI API 客户端层
-│   │   ├── OpenAIClient.java
-│   │   └── ApiResult.java
+│   │   ├── ApiClient.java            # HTTP 传输层
+│   │   ├── ToolDefinitions.java      # 工具定义构建
+│   │   ├── OpenAIClient.java         # 门面类（业务逻辑）
+│   │   └── ApiResult.java            # 结果封装 record
 │   ├── handler/                      # 核心处理层（Orchestrator）
 │   │   ├── ChatHandler.java
 │   │   ├── ChatLog.java
@@ -275,11 +277,33 @@ PendingCommand  server.execute() 直接执行
 
 ### 3.2 API 模块：api/
 
-#### 3.2.1 OpenAIClient.java
+#### 3.2.1 ApiClient.java（HTTP 传输层）
+
+**文件**: [ApiClient.java](./src/main/java/com/example/mcai/api/ApiClient.java)
+
+HTTP 传输层，负责发送 API 请求和解析响应。约 95 行。
+
+| 方法 | 用途 |
+|---|---|
+| `sendAndParseMessage(bodyJson)` | 发送 POST 请求，根据配置选择流式/非流式模式 |
+| `sendAndParseMessageSync(bodyJson)` | 非流式请求，等待完整响应 |
+| `sendAndParseMessageStream(bodyJson)` | 流式请求（SSE），逐行解析 delta |
+
+#### 3.2.2 ToolDefinitions.java（工具定义构建）
+
+**文件**: [ToolDefinitions.java](./src/main/java/com/example/mcai/api/ToolDefinitions.java)
+
+AI 工具定义构建器，负责构建 OpenAI 兼容的 tools JSON 数组。约 165 行。
+
+| 方法 | 用途 |
+|---|---|
+| `buildAll()` | 构建所有 10 个工具定义 |
+
+#### 3.2.3 OpenAIClient.java（门面类）
 
 **文件**: [OpenAIClient.java](./src/main/java/com/example/mcai/api/OpenAIClient.java)
 
-AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调用（Function Calling）与思考模式（Reasoning）。
+AI API 客户端门面类，组合 ApiClient 和 ToolDefinitions，提供 chat/chatSimpleFull 方法。约 210 行。
 
 **两种构造方式**：
 - `OpenAIClient(ModConfig config)` — 使用主聊天系统配置
@@ -299,9 +323,6 @@ AI API 客户端，封装 OpenAI 兼容协议的 HTTP 调用，支持工具调�
 |---|---|
 | `chat(messages, toolExecutor)` | 完整的多轮工具调用循环，最多 `maxToolCalls` 轮，总超时 `apiLoopTimeoutSeconds`（默认 300 秒） |
 | `chatSimpleFull(messages)` | 无工具的单轮调用，用于行为审查 |
-| `buildToolDefinitions()` | 构建 AI 可用的工具定义 JSON（10 个工具） |
-| `addThinkingParams(body, level)` | 根据模型类型（DeepSeek 风格 / agnes 风格）注入思考参数 |
-| `buildBaseRequestBody()` | 构建请求体，兼容模式只传 model/messages |
 
 **工具定义清单**（AI 可调用的 10 个工具）：
 
@@ -1104,12 +1125,12 @@ public class SearchResult {
 
 **文件**: [SearchRouter.java](./src/main/java/com/example/mcai/kb/SearchRouter.java)
 
-**职责**：搜索路由器，异步调用 WikiSearchProvider，带超时保护。约 89 行。
+**职责**：搜索路由器，异步调用 WikiSearchProvider，带超时保护。约 90 行。
 
 ```
 search(query, maxResults)
   → executor.submit(wikiProvider.search)
-  → future.get(8秒超时)  // WIKI_TIMEOUT_MS = 8000
+  → future.get(requestTimeoutMs)  // 从 ModConfig.wikiRequestTimeoutSeconds 获取
   → 返回 Wiki 结果（错误不丢弃）或空结果
 ```
 
@@ -1117,7 +1138,7 @@ search(query, maxResults)
 
 **⚠️ 重要**：线程池在 `SERVER_STOPPING` 时 `shutdownNow()`，进入新世界时必须重建。`MCAIMod.reloadConfig()` 和 `SERVER_STARTED` 事件中都执行了重建。
 
-**read(title)**：单条目读取，同样走线程池 + 8 秒超时。
+**read(title)**：单条目读取，同样走线程池 + 可配置超时。
 
 #### 3.6.4 WikiSearchProvider.java
 
@@ -1135,7 +1156,7 @@ search(query, maxResults)
 
 **HTTP User-Agent**：`MCAI-Minecraft-Mod/1.5.1 (https://github.com/lll114514lll1919810lll/mcai_mod)`
 
-**HTTP 超时**：连接 5 秒，请求 8 秒。
+**HTTP 超时**：连接 `wikiConnectTimeoutSeconds`（默认 5 秒），请求 `wikiRequestTimeoutSeconds`（默认 8 秒）。
 
 **文本清洗**：
 ```java

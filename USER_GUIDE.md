@@ -173,6 +173,8 @@
 | `apiRequestTimeoutSeconds` | 60 | API 单次请求超时（秒） |
 | `apiLoopTimeoutSeconds` | 300 | 工具调用循环总超时（秒） |
 | `commandExecTimeoutSeconds` | 30 | 单条命令执行超时（秒） |
+| `wikiConnectTimeoutSeconds` | 5 | Wiki 搜索连接超时（秒） |
+| `wikiRequestTimeoutSeconds` | 8 | Wiki 搜索请求超时（秒） |
 | `maxChainCommands` | 10 | 命令链最大条数 |
 | `contextMaxChars` | 20000 | AI 上下文最大字符数 |
 | `maxToolCalls` | 15 | 单轮对话最大工具调用次数 |

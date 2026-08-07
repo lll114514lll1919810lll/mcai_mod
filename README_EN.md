@@ -154,6 +154,8 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `apiRequestTimeoutSeconds` | 60 | API per-request timeout (seconds) |
 | `apiLoopTimeoutSeconds` | 300 | Tool-call loop total timeout (seconds) |
 | `commandExecTimeoutSeconds` | 30 | Per-command execution timeout (seconds) |
+| `wikiConnectTimeoutSeconds` | 5 | Wiki search connect timeout (seconds) |
+| `wikiRequestTimeoutSeconds` | 8 | Wiki search request timeout (seconds) |
 | `maxChainCommands` | 10 | Max commands per chain |
 | `contextMaxChars` | 20000 | Max context chars for AI (auto-truncated) |
 | `maxToolCalls` | 15 | Max tool calls per conversation turn |

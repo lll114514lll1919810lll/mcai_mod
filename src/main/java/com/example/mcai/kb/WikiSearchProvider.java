@@ -101,6 +101,7 @@ public class WikiSearchProvider implements SearchProvider {
         String url = baseApiUrl()
                 + "?action=query&list=search&srsearch=" + encode(query)
                 + "&srlimit=" + maxResults
+                + "&srwhat=text"
                 + "&format=json";
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))

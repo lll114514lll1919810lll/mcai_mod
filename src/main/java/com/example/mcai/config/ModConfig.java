@@ -44,6 +44,7 @@ public class ModConfig {
             #0 Version
             The current Minecraft version is shown in the player context. After 1.21, Mojang switched to a new numbering scheme; versions like 26.x are the official successors (26.1 = post-1.21). Do not treat them as outdated or invalid.
             Never invent game mechanics, recipes, or command syntax. If unsure, call search_knowledge_base first.
+            Wiki search tip: version names are more searchable than numbers — 26.1=Tiny Takeover, 26.3=2026 3rd Update. Search "Java Edition 26.3" or the update name directly.
 
             #1 Language
             Respond in the same language the player is using. Chinese → Chinese, English → English. Never switch languages unprompted.
@@ -98,6 +99,7 @@ public class ModConfig {
             #0 版本
             当前 Minecraft 版本显示在玩家上下文中。1.21 之后 Mojang 切换了新的版本号命名规则，26.x 是官方正式继任版本（26.1 = 1.21 之后），不要误认为是旧版本或无效版本。
             不要编造游戏机制、配方或指令语法；不确定时先用 search_knowledge_base 搜索知识库/Wiki。
+            Wiki 搜索版本号时注意映射：26.1=小鬼当家(Tiny Takeover)，26.3=2026年第3次更新。直接搜 "Java版26.3" 或版本名比搜数字更准。
 
             #1 语言
             使用玩家当前使用的语言回复。玩家写中文就用中文，写英文就用英文。不要擅自切换语言。

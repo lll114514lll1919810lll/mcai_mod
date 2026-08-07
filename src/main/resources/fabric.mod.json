@@ -2,10 +2,16 @@
   "schemaVersion": 1,
   "id": "mcai",
   "version": "${version}",
-  "name": "MCAI",
-  "description": "AI assistant mod for Minecraft server",
-  "authors": [],
-  "contact": {},
+  "name": "MCAI - Minecraft AI 助手",
+  "description": "AI 自动管理 Minecraft 服务器：智能对话、指令执行、行为审查、知识库搜索。支持 DeepSeek 等 OpenAI 兼容 API。",
+  "authors": [
+    "MCAI Team"
+  ],
+  "contact": {
+    "homepage": "https://github.com/lll114514lll1919810lll/mcai_mod",
+    "sources": "https://github.com/lll114514lll1919810lll/mcai_mod",
+    "issues": "https://github.com/lll114514lll1919810lll/mcai_mod/issues"
+  },
   "license": "MIT",
   "icon": "assets/mcai/icon.png",
   "environment": "*",
@@ -23,5 +29,7 @@
     "java": ">=25",
     "fabric-api": "*"
   },
-  "suggests": {}
+  "suggests": {
+    "modmenu": "*"
+  }
 }

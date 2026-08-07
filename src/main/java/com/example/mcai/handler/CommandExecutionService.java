@@ -189,7 +189,7 @@ public class CommandExecutionService {
             result = executeAsOp(pending.command, server, pending.requesterLevel,
                     pending.requesterPos, pending.requesterRot);
         }
-        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.approved", id, pending.command));
+        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.approved", String.valueOf(id), pending.command));
         if (!pending.future.isDone()) {
             pending.future.complete(result);
         }
@@ -201,7 +201,7 @@ public class CommandExecutionService {
         if (pending == null) {
             return 0;
         }
-        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.rejected", id, pending.command));
+        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.rejected", String.valueOf(id), pending.command));
         if (!pending.future.isDone()) {
             pending.future.complete("[Approval rejected] Admin rejected: /" + pending.command);
         }
@@ -440,7 +440,7 @@ public class CommandExecutionService {
         }
         final ServerPlayer requester = requesterFound;
 
-        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.chain_approved", id, chain.commands.size()));
+        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.chain_approved", String.valueOf(id), chain.commands.size()));
 
         // Execute chain in a separate thread
         chain.executing = true;
@@ -511,7 +511,7 @@ public class CommandExecutionService {
         Set<Long> set = pendingByPlayer.get(chain.requesterId);
         if (set != null) set.remove(id);
 
-        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.chain_rejected", id));
+        admin.sendSystemMessage(Component.translatable("mcai.cmd.exec.chain_rejected", String.valueOf(id)));
         if (!chain.future.isDone()) {
             chain.future.complete("[审批拒绝] 管理员拒绝了此命令链");
         }
@@ -689,7 +689,7 @@ public class CommandExecutionService {
     private void notifyAdminsPendingChain(PendingChain chain, MinecraftServer server) {
         server.execute(() -> {
             // Build chain display using i18n
-            Component requestMsg = Component.translatable("mcai.cmd.chain.request", chain.requesterName, chain.id);
+            Component requestMsg = Component.translatable("mcai.cmd.chain.request", chain.requesterName, String.valueOf(chain.id));
             Component infoMsg = Component.translatable("mcai.cmd.chain.request_info", chain.commands.size());
             
             StringBuilder fullMsg = new StringBuilder();
@@ -712,7 +712,7 @@ public class CommandExecutionService {
             // Send clickable cancel hint to the requester
             ServerPlayer requester = server.getPlayerList().getPlayer(chain.requesterId);
             if (requester != null) {
-                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", chain.id)
+                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", String.valueOf(chain.id), String.valueOf(chain.id))
                         .withStyle(style -> style
                                 .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                 .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + chain.id))
@@ -765,7 +765,7 @@ public class CommandExecutionService {
             // Send clickable cancel hint to the requester
             ServerPlayer requester = server.getPlayerList().getPlayer(pending.requesterId);
             if (requester != null) {
-                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", pending.id)
+                Component cancelHint = Component.translatable("mcai.cmd.exec.cancel_hint", String.valueOf(pending.id), String.valueOf(pending.id))
                         .withStyle(style -> style
                                 .withColor(net.minecraft.network.chat.TextColor.fromRgb(COLOR_CANCEL))
                                 .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/aicancel " + pending.id))

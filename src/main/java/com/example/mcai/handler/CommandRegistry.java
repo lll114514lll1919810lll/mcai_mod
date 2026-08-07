@@ -101,7 +101,7 @@ public class CommandRegistry {
                 if (!cmds.isEmpty()) {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.single_header"), false);
                     for (var pending : cmds) {
-                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", pending.id, pending.command), false);
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line", String.valueOf(pending.id), pending.command), false);
                     }
                 }
                 // Show chains
@@ -133,7 +133,7 @@ public class CommandRegistry {
                 if (!all.isEmpty()) {
                     ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.single_header"), false);
                     for (var pending : all) {
-                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", pending.id, pending.requesterName, pending.command), false);
+                        ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.query.line_all", String.valueOf(pending.id), pending.requesterName, pending.command), false);
                     }
                 }
                 // Show chains

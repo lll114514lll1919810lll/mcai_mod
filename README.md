@@ -155,7 +155,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| `apiEndpoint` | `https://api.deepseek.com` | API 地址 |
+| `apiEndpoint` | `https://api.deepseek.com` | API 地址（不含 `/chat/completions`，不同服务商格式不同） |
 | `apiKey` | `""` | API 密钥 |
 | `model` | `deepseek-v4-flash` | 模型名称 |
 | `triggerPrefix` | `!ai` | 聊天触发前缀 |

@@ -132,7 +132,7 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `apiEndpoint` | `https://api.deepseek.com` | API endpoint |
+| `apiEndpoint` | `https://api.deepseek.com` | API endpoint (without `/chat/completions`, format varies by provider) |
 | `apiKey` | `""` | API key |
 | `model` | `deepseek-v4-flash` | Model name |
 | `triggerPrefix` | `!ai` | Chat trigger prefix |

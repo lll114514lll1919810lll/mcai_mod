@@ -210,8 +210,13 @@ public class ApiClient {
             message.add("tool_calls", toolCallsArray);
         }
 
+        // 思考模型有时只返回 reasoning_content 而无 content，将推理内容作为回复
         if (!message.has("content") && !message.has("tool_calls")) {
-            return ApiResult.err("empty stream response");
+            if (reasoningContent != null && !reasoningContent.isEmpty()) {
+                message.addProperty("content", reasoningContent);
+            } else {
+                return ApiResult.err("empty stream response");
+            }
         }
 
         return ApiResult.ok(message);

@@ -178,7 +178,14 @@ public class OpenAIClient {
             }
 
             String content = extractContent(msg);
-            if (content.isEmpty()) return ApiResult.err("empty response content");
+            // 思考模型有时只返回 reasoning_content 而无 content，将推理内容作为回复
+            if (content.isEmpty()) {
+                if (reasoningContent != null && !reasoningContent.isEmpty()) {
+                    content = reasoningContent;
+                } else {
+                    return ApiResult.err("empty response content");
+                }
+            }
             if (dbg != null && dbg.isEnabled()) dbg.logAIResponse(content);
             return ApiResult.ok(content);
         }
@@ -197,7 +204,14 @@ public class OpenAIClient {
 
         String reasoningContent = extractReasoningContent(msg);
         String content = extractContent(msg);
-        if (content.isEmpty()) return ApiResult.err("empty response content");
+        // 思考模型有时只返回 reasoning_content 而无 content，将推理内容作为回复
+        if (content.isEmpty()) {
+            if (reasoningContent != null && !reasoningContent.isEmpty()) {
+                content = reasoningContent;
+            } else {
+                return ApiResult.err("empty response content");
+            }
+        }
 
         return ApiResult.ok(new ChatSimpleResult(content, reasoningContent));
     }

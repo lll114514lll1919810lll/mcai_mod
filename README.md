@@ -212,6 +212,34 @@ cd mcai_mod
 
 ---
 
+## 下载
+
+### 稳定版（推荐）
+
+从 GitHub Releases 下载经过测试的稳定版本：
+
+[![Releases](https://img.shields.io/github/v/release/lll114514lll1919810lll/mcai_mod?label=Latest&logo=github)](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
+
+### 测试版
+
+从 GitHub Releases 下载 Pre-release 版本（功能较新，可能存在 bug）：
+
+[![Pre-release](https://img.shields.io/github/v/release/lll114514lll1919810lll/mcai_mod?include_prereleases&label=Beta&logo=github)](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
+
+### 开发版（Nightly）
+
+从仓库的 `nightly-builds/` 目录下载最新开发构建（未经充分测试，仅供尝鲜）：
+
+```
+nightly-builds/<MC_VERSION>/<MOD_VERSION>/mcai-<MC_VERSION>-<MOD_VERSION>.jar
+```
+
+示例：`nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+
+> ⚠️ 开发版可能包含未完成的功能和 bug，仅建议开发者或愿意反馈问题的用户使用。
+
+---
+
 ## 链接
 
 - [服主使用手册](USER_GUIDE.md)

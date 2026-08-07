@@ -173,7 +173,7 @@ Two directories store build outputs:
 
 | Directory | Purpose | Structure | Example |
 |---|---|---|---|
-| `alpha-builds/` | Local development builds (not published) | `alpha-builds/<MC_VERSION>/<MOD_VERSION>/` | `alpha-builds/26.1.2/1.7.0-beta.3-alpha.1/` |
+| `nightly-builds/` | Local development builds (not published) | `nightly-builds/<MC_VERSION>/<MOD_VERSION>/` | `nightly-builds/26.1.2/1.7.0-beta.3-alpha.1/` |
 | `releases/` | Published releases (mirror GitHub tags) | `releases/<MC_VERSION>/<MOD_VERSION>/` | `releases/26.1.2/1.6.1/` |
 
 **Rules**:
@@ -359,7 +359,7 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 - Duplicate persona IDs are handled by alphabetical file order: first encountered file is kept, subsequent duplicates are skipped and logged as warnings
 - Persona list refresh includes detailed logging: total files, loaded count, failed count, and lists available persona IDs
 - Version numbering must follow strict channel progression: after beta.N is published, local development builds must use beta.N-alpha.M suffix (increment M) and cannot revert to standalone alpha.N
-- Build artifacts must be organized in a two-level directory structure: `alpha-builds/<MC_VERSION>/<MOD_VERSION>/` for local development builds and `releases/<MC_VERSION>/<MOD_VERSION>/` for published versions; no channel subdirectories or 'v' prefixes
+- Build artifacts must be organized in a two-level directory structure: `nightly-builds/<MC_VERSION>/<MOD_VERSION>/` for local development builds and `releases/<MC_VERSION>/<MOD_VERSION>/` for published versions; no channel subdirectories or 'v' prefixes
 
 ## Lessons Learned
 - Using list indices for approval IDs caused number drift and potential approval of wrong commands

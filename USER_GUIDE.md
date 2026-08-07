@@ -11,6 +11,16 @@
 - JDK 25
 - 一个 **DeepSeek API Key**（[platform.deepseek.com](https://platform.deepseek.com)）
 
+### 下载 JAR
+
+| 渠道 | 说明 | 下载方式 |
+|------|------|----------|
+| **稳定版**（推荐） | 经过充分测试，适合生产环境 | [GitHub Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) |
+| **测试版** | 功能较新，可能存在 bug | GitHub Releases 中的 Pre-release |
+| **开发版** | 最新功能，未经充分测试 | 仓库 `nightly-builds/` 目录 |
+
+> 开发版路径示例：`nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+
 ### 步骤
 1. 下载 `mcai-<version>.jar` 放入 `mods/` 目录
 2. 启动一次服务器，自动在 `config/mcai/config.json` 生成默认配置

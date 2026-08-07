@@ -11,6 +11,16 @@
 - JDK 25
 - A **DeepSeek API Key** ([platform.deepseek.com](https://platform.deepseek.com))
 
+### Download JAR
+
+| Channel | Description | How to Download |
+|---------|-------------|-----------------|
+| **Stable** (Recommended) | Thoroughly tested, suitable for production | [GitHub Releases](https://github.com/lll114514lll1919810lll/mcai_mod/releases) |
+| **Beta** | Newer features, may have bugs | Pre-release on GitHub Releases |
+| **Nightly** | Latest features, not fully tested | `nightly-builds/` directory in repository |
+
+> Nightly path example: `nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+
 ### Steps
 1. Download `mcai-<version>.jar` and place in `mods/`
 2. Start server once to auto-generate config

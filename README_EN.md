@@ -188,6 +188,34 @@ Requires JDK 25.
 
 ---
 
+## Download
+
+### Stable (Recommended)
+
+Download tested stable releases from GitHub Releases:
+
+[![Releases](https://img.shields.io/github/v/release/lll114514lll1919810lll/mcai_mod?label=Latest&logo=github)](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
+
+### Beta
+
+Download Pre-release versions from GitHub Releases (newer features, may have bugs):
+
+[![Pre-release](https://img.shields.io/github/v/release/lll114514lll1919810lll/mcai_mod?include_prereleases&label=Beta&logo=github)](https://github.com/lll114514lll1919810lll/mcai_mod/releases)
+
+### Nightly (Development)
+
+Download the latest development builds from the `nightly-builds/` directory in the repository (not fully tested, for early adopters):
+
+```
+nightly-builds/<MC_VERSION>/<MOD_VERSION>/mcai-<MC_VERSION>-<MOD_VERSION>.jar
+```
+
+Example: `nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+
+> ⚠️ Nightly builds may contain unfinished features and bugs. Only recommended for developers or users willing to report issues.
+
+---
+
 ## Links
 
 - [用户手册 / User Guide (中文)](USER_GUIDE.md)

@@ -52,7 +52,7 @@ src/main/java/com/example/mcai/
     ├── SearchResult.java     — Unified search result format
     ├── SearchRouter.java     — Async search router with timeout
     ├── WikiSearchProvider.java — Online Wiki search via MediaWiki API
-    └── KnowledgeBase.java    — Local JSON KB (deprecated, kept for compatibility)
+    └── KnowledgeBase.java    — (deprecated, kept for compatibility)
 ```
 
 ## Key Conventions
@@ -60,7 +60,6 @@ src/main/java/com/example/mcai/
 - **Mojang mappings only** — never use Yarn mappings (class/method names differ)
 - **i18n mandatory** — all user-facing strings use `Component.translatable("mcai.xxx")`, never hardcoded text. Language files: `src/main/resources/assets/mcai/lang/{en_us,zh_cn}.json`
 - **Documentation is bilingual, not mixed** — separate files: `README.md` (Chinese) + `README_EN.md` (English), same pattern for `USER_GUIDE`
-- **Knowledge base files** (`kb/*.json`) are NOT bundled in the JAR — they live in `kb/` with license files and are deployed separately by server admins to `config/mcai/kb/`
 - **Config lives at runtime** in `config/mcai/` — never commit files from that directory
 
 ## Versioning
@@ -289,7 +288,7 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 |---|---|
 | Context management | History persistence per UUID (JSON), AI-summary compression past `contextMaxChars`, optional shared global channel, `/aicontext` usage visualization |
 | Review system | Per-player behavior profiles (violation-type distribution), `/aiappeal` appeal workflow, review whitelist, `/aireview export` (CSV/JSON), adaptive review interval based on chat volume |
-| Knowledge base | Multiple `kb/*.json` sources with priority, hot reload on `kb/` changes, optional embedding vector search, `/aikb list/reload/stats`, scheduled wiki sync |
+| Knowledge base | Online Wiki search, `/aikb list/reload/stats`, scheduled wiki sync |
 | Multi-model | Task-based model routing (chat/review/summary), endpoint health checks with failover, local Ollama/llama.cpp support, token cost tracking per model |
 
 ### Quality & Security

@@ -98,9 +98,6 @@ mc/
 │   │   ├── personas/                 # 通用人格（tsundere, pirate, chuuni, gentle）
 │   │   └── mc_personas/              # 游戏角色人格（villager, piglin, ender_dragon, creeper）
 │   └── fabric.mod.json
-├── kb/                               # 知识库数据（不打入 JAR）
-│   ├── zh_wiki.json
-│   ├── biomesoplenty.json
 │   ├── create_mod.json
 │   └── LICENSE*.txt
 ├── tools/
@@ -1691,11 +1688,7 @@ cp build/libs/mcai-26.1.2-1.7.0-beta.3.jar minecraft_server/mods/
 #    "apiKey": "sk-xxx",
 #    "model": "deepseek-v4-flash"
 
-# 4. 可选：部署知识库（不打入 JAR）
-#    cp kb/*.json minecraft_server/config/mcai/kb/
-#    （当前 Wiki 在线搜索已弃用本地知识库，保留兼容）
-
-# 5. 启动服务器
+# 4. 启动服务器
 java -Xmx4G -jar server.jar
 
 # 6. 可选：服务器安装资源包强制翻译
@@ -1943,7 +1936,6 @@ needsApproval(command):
 
 | 路径 | 说明 | 部署方式 |
 |---|---|---|
-| `kb/*.json` | 知识库数据（biomesoplenty, create_mod, zh_wiki） | 管理员手动复制到 `config/mcai/kb/` |
 | `mcai-lang-pack/` | 服务器强制资源包（客户端未装 Mod 时的翻译回退） | 设为 `server.properties` 的 `resource-pack` |
 
 ---

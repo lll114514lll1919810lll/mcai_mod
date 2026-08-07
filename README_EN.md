@@ -179,7 +179,7 @@ Prompt files `system_prompt.txt` / `review_prompt.txt` are auto-created on first
 
 ### Knowledge Base
 
-AI knowledge search is done via online Wiki — no manual data import needed. The `kb/` directory still contains legacy knowledge base files, but the current version does not automatically load local KB.
+AI knowledge search is done via online Wiki — no manual data import needed.
 
 ## Build
 

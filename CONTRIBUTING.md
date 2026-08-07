@@ -54,7 +54,9 @@ src/main/java/com/example/mcai/
 │   ├── AdminApprovalQueue.java - 踢出审批队列
 │   └── PlayerViolation.java  - 违规记录
 ├── kb/
-│   └── KnowledgeBase.java    - Bigram CJK 知识库搜索
+│   ├── SearchRouter.java     - 搜索路由器（Wiki 优先）
+│   ├── WikiSearchProvider.java - Wiki 在线搜索
+│   └── KnowledgeBase.java    - (deprecated)
 └── client/
     ├── ModMenuIntegration.java - Mod Menu 集成
     └── config/

@@ -160,7 +160,7 @@ public class ApiClient {
                 }
 
                 // 处理 tool_calls
-                if (delta.has("tool_calls")) {
+                if (delta.has("tool_calls") && !delta.get("tool_calls").isJsonNull()) {
                     JsonArray toolCalls = delta.getAsJsonArray("tool_calls");
                     for (var tcEl : toolCalls) {
                         JsonObject tc = tcEl.getAsJsonObject();

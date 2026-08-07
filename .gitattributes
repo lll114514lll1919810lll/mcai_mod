@@ -1,0 +1,2 @@
+# Set the line ending for gradlew to LF (required for Linux CI)
+gradlew text eol=lf

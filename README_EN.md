@@ -143,6 +143,7 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `aiCooldownSeconds` | `60` | Non-admin AI cooldown (seconds) |
 | `aiMaxConcurrent` | `3` | Max concurrent non-admin AI calls |
 | `compatibilityMode` | `false` | Compatibility mode: send only basic fields for local APIs like LM Studio |
+| `enableStream` | `false` | Streaming output (SSE), some APIs only support streaming mode |
 | `reviewIntervalMinutes` | `30` | Review interval (min) |
 | `yellowCardThreshold` | `-30` | Yellow card threshold |
 | `redCardThreshold` | `-60` | Red card threshold |

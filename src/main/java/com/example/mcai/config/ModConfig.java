@@ -249,6 +249,8 @@ public class ModConfig {
     private int thinkingLevel = 1;
     /** 本地/兼容 API 兼容模式：只发送最基础字段，避免不支持的参数导致 400 */
     private boolean compatibilityMode = false;
+    /** 启用流式输出（SSE），部分 API 仅支持流式模式 */
+    private boolean enableStream = false;
     private boolean enableChatInterception = true;
     private boolean enableCommandExecution = true;
     private int contextMaxChars = 20000;
@@ -508,6 +510,8 @@ public class ModConfig {
     public double getTemperature() { return temperature; }
     public int getThinkingLevel() { return thinkingLevel; }
     public boolean isCompatibilityMode() { return compatibilityMode; }
+    public boolean isEnableStream() { return enableStream; }
+    public void setEnableStream(boolean enableStream) { this.enableStream = enableStream; }
     public boolean isEnableChatInterception() { return enableChatInterception; }
 
     public boolean isEnableCommandExecution() { return enableCommandExecution; }

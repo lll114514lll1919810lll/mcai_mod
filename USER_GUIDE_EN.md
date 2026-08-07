@@ -185,6 +185,7 @@ File: `config/mcai/config.json`. Auto-reloads on change (or use `/aireload`).
 | `reviewApiKey` | `""` | Review system API key, empty=follow chat config |
 | `reviewModel` | `""` | Review system model, empty=follow chat config |
 | `compatibilityMode` | `false` | Compatibility mode: send only basic fields for local APIs like LM Studio |
+| `enableStream` | `false` | Streaming output (SSE), some APIs only support streaming mode |
 
 ---
 

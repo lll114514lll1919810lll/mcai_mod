@@ -189,6 +189,7 @@
 | `reviewApiKey` | `""` | 审查系统独立 API 密钥，空=跟随聊天系统 |
 | `reviewModel` | `""` | 审查系统独立模型，空=跟随聊天系统 |
 | `compatibilityMode` | `false` | 兼容模式，开启后只发送基础字段，适配 LM Studio 等本地 API |
+| `enableStream` | `false` | 流式输出（SSE），部分 API 仅支持流式模式 |
 
 ---
 

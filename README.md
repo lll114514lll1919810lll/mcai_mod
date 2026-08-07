@@ -166,6 +166,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `aiCooldownSeconds` | `60` | 非管理员 AI 调用冷却（秒） |
 | `aiMaxConcurrent` | `3` | 最大并发非管理员 AI 调用 |
 | `compatibilityMode` | `false` | 兼容模式，开启后只发送基础字段，适配 LM Studio 等本地 API |
+| `enableStream` | `false` | 流式输出（SSE），部分 API 仅支持流式模式 |
 | `reviewIntervalMinutes` | `30` | 审查间隔（分钟） |
 | `yellowCardThreshold` | `-30` | 黄牌阈值 |
 | `redCardThreshold` | `-60` | 红牌阈值 |

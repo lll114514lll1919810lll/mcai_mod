@@ -52,7 +52,10 @@ public class ChatHandler {
     private static ThreadPoolExecutor newExecutor() {
         return new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
                 r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
-                (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
+                (r, executor) -> {
+                    MCAIMod.LOGGER.warn("AI executor queue full, task rejected");
+                    throw new RejectedExecutionException("AI executor queue full");
+                });
     }
 
     /** AI 任务队列是否已满（任务数 >= 活跃线程 + 排队数） */
@@ -269,30 +272,34 @@ public class ChatHandler {
             src.sendFailure(Component.translatable("mcai.chat.concurrent_limit"));
             return;
         }
-        aiExecutor.execute(() -> {
-            try {
-                String playerList = server.getPlayerList().getPlayers().stream().map(p -> p.getScoreboardName()).collect(Collectors.joining(", "));
-                String context = String.format("版本: %s | 在线(%d/%d): [%s]\n说话者: 控制台", server.getServerModName(), server.getPlayerCount(), server.getMaxPlayers(), playerList.isEmpty() ? "无" : playerList);
-                List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
-                messages.add(new OpenAIClient.ChatMessage("system", mod.getConfig().getSystemPrompt()));
-                // 注入人格提示（非 default 时）
-                String activePersona = mod.getConfig().getActivePersona();
-                String personaContent = mod.getPersonaManager() != null
-                    ? mod.getPersonaManager().getPersonaContent(activePersona)
-                    : null;
-                if (personaContent != null) {
-                    messages.add(new OpenAIClient.ChatMessage("system", "[PERSONA MODE]\n" + personaContent));
-                    MCAIMod.LOGGER.info("Persona injected (console): {}", activePersona);
-                }
-                String recentChat = chatLog.peek();
-                if (!recentChat.isEmpty()) messages.add(new OpenAIClient.ChatMessage("system", "最近的聊天记录（了解当前氛围）:\n" + sanitizeChatLogForPrompt(recentChat)));
-                messages.add(new OpenAIClient.ChatMessage("user", context + "\n\n控制台 说: " + query));
-                var result = mod.getAiClient().chat(messages, toolCalls -> toolDispatcher.dispatchConsole(toolCalls));
-                String reply = result.success() ? result.value() : (result.error());
-                src.sendSuccess(() -> Component.translatable("mcai.chat.reply.console", reply), false);
-                chatLog.add("AI → 控制台", reply);
-            } catch (Exception e) { MCAIMod.LOGGER.error("Console AI query failed", e); src.sendFailure(Component.translatable("mcai.chat.error", e.getMessage())); }
-        });
+        try {
+            aiExecutor.execute(() -> {
+                try {
+                    String playerList = server.getPlayerList().getPlayers().stream().map(p -> p.getScoreboardName()).collect(Collectors.joining(", "));
+                    String context = String.format("版本: %s | 在线(%d/%d): [%s]\n说话者: 控制台", server.getServerModName(), server.getPlayerCount(), server.getMaxPlayers(), playerList.isEmpty() ? "无" : playerList);
+                    List<OpenAIClient.ChatMessage> messages = new ArrayList<>();
+                    messages.add(new OpenAIClient.ChatMessage("system", mod.getConfig().getSystemPrompt()));
+                    // 注入人格提示（非 default 时）
+                    String activePersona = mod.getConfig().getActivePersona();
+                    String personaContent = mod.getPersonaManager() != null
+                        ? mod.getPersonaManager().getPersonaContent(activePersona)
+                        : null;
+                    if (personaContent != null) {
+                        messages.add(new OpenAIClient.ChatMessage("system", "[PERSONA MODE]\n" + personaContent));
+                        MCAIMod.LOGGER.info("Persona injected (console): {}", activePersona);
+                    }
+                    String recentChat = chatLog.peek();
+                    if (!recentChat.isEmpty()) messages.add(new OpenAIClient.ChatMessage("system", "最近的聊天记录（了解当前氛围）:\n" + sanitizeChatLogForPrompt(recentChat)));
+                    messages.add(new OpenAIClient.ChatMessage("user", context + "\n\n控制台 说: " + query));
+                    var result = mod.getAiClient().chat(messages, toolCalls -> toolDispatcher.dispatchConsole(toolCalls));
+                    String reply = result.success() ? result.value() : (result.error());
+                    src.sendSuccess(() -> Component.translatable("mcai.chat.reply.console", reply), false);
+                    chatLog.add("AI → 控制台", reply);
+                } catch (Exception e) { MCAIMod.LOGGER.error("Console AI query failed", e); src.sendFailure(Component.translatable("mcai.chat.error", e.getMessage())); }
+            });
+        } catch (RejectedExecutionException e) {
+            src.sendFailure(Component.translatable("mcai.chat.concurrent_limit"));
+        }
     }
 
     private boolean handleResponse(ServerPlayer player, String response) {

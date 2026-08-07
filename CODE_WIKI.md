@@ -365,10 +365,13 @@ ApiResult.err(message) // 失败
 ```java
 new ThreadPoolExecutor(4, 8, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(32),
     r -> { Thread t = new Thread(r, "MCAI-Worker"); t.setDaemon(true); return t; },
-    (r, executor) -> MCAIMod.LOGGER.warn("AI executor queue full, task rejected"));
+    (r, executor) -> {
+        MCAIMod.LOGGER.warn("AI executor queue full, task rejected");
+        throw new RejectedExecutionException("AI executor queue full");
+    });
 ```
 
-**队列满处理（拒绝策略）**：`isAiBusy()`（队列剩余容量为 0）在提交任务前预检，队列满时直接回复 `mcai.chat.concurrent_limit`（"AI 正在处理其他请求，请稍后再试"）而不是静默丢弃任务。玩家与控制台入口（handleAIQuery / handleConsoleAIQuery）均已覆盖。
+**队列满处理（拒绝策略）**：双层保护——① `isAiBusy()`（队列剩余容量为 0）在提交任务前预检，队列满时直接回复 `mcai.chat.concurrent_limit` 避免进入 API 调用；② 自定义 `RejectedExecutionHandler` 抛出 `RejectedExecutionException`，作为 TOCTOU 窗口（预检通过后队列被其他任务填满）的安全网，由 `catch (RejectedExecutionException)` 块回滚并发计数器、冷却时间并通知玩家。玩家与控制台入口（handleAIQuery / handleConsoleAIQuery）均已覆盖。
 
 **killAIThreads()**：销毁所有 AI 工作线程并重建线程池，同时重置并发计数器。被 `/aikill` 命令调用。
 

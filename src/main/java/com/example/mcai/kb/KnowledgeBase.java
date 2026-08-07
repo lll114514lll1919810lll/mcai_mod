@@ -59,7 +59,7 @@ public class KnowledgeBase implements SearchProvider {
 
     @Override
     public SearchResult search(String query, int maxResults) {
-        if (query.isBlank()) return SearchResult.empty(name(), true);
+        if (query == null || query.isBlank()) return SearchResult.empty(name(), true);
         List<SearchResult.Item> items = searchItems(query, maxResults);
         if (items.isEmpty()) return SearchResult.empty(name(), true);
         return new SearchResult(name(), items, true);

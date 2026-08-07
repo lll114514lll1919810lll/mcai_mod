@@ -322,3 +322,52 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 - [ ] `gradle.properties` correct
 - [ ] Run `.\gradlew.bat build`
 - [ ] `build/libs/mcai-<version>.jar` exists
+
+## Hard Constraints
+- All Minecraft commands must be executed through the `execute_minecraft_command` tool, not directly from AI text responses
+- Pending approval commands must use globally unique incrementing IDs instead of list indices
+- Configuration watcher must first shutdown the scheduler before closing the WatchService to prevent loop errors
+- Command chains (via `execute_command_chain` tool) can contain up to 10 commands with 0-10 second execution intervals
+- Players can only cancel their own pending approval commands/chains using `/aicancel`
+- Non-admin players in cooldown period must be directly rejected without message broadcasting
+- Server must use a forced resource pack (`mcai-lang-pack.zip`) for translation when client mod is not installed
+- Client and server should both install the MCAI mod for optimal translation and UI experience
+- Review system can be configured with separate model settings; if not configured, it defaults to the chat system's model configuration
+- `/airesetprompts` command is restricted to admin/console use only
+- AIDebugLogger must be stopped during `SERVER_STOPPING` event to reset enabled flag and close file handles
+- Chat logs must be cleared when entering a new world to prevent cross-world data leakage
+- `/aireload` command must refresh persona list by rescanning `config/mcai/personas/` directory for JSON files
+- If active persona file is deleted or invalid, system must auto-fallback to `default` persona and persist change to `config.json`
+
+# Project Memory
+## Engineering Conventions
+- **CODE_WIKI.md Real-time Synchronization**: After every code modification (adding classes, modifying function signatures, changing behavior/flow, adjusting configuration fields, adding/removing commands, etc.), must synchronously update the corresponding sections in `CODE_WIKI.md` to keep documentation consistent with code; documentation includes sections for architecture, module responsibilities, key classes and functions, dependencies, operation methods, etc.; after modifications, must check and update affected sections
+- Language files must use `%s` format specifier for approval IDs (changed from `%d`)
+- Command execution requires admin approval for dangerous commands, determined by strict whitelist/blacklist checks
+- Search functionality uses a provider-based architecture with `SearchProvider`/`SearchResult` abstractions
+- `/aikb` command returns 7 search results (increased from 5)
+- Approval notifications include clickable buttons for `[批准]`, `[拒绝]`, and `[取消]` actions
+- Minecraft color codes must be re-applied after `%s`/`%d` placeholders to maintain consistent text styling
+- Approval/rejection methods (`approveCommand`/`rejectCommand`/`approveChain`/`rejectChain`) must not send error messages; error handling centralized in `CommandRegistry`
+- `/aikb` command displays "§7[AI] 搜索中..." instead of "§7[AI] 思考中..." during search execution
+- PromptLoader handles system and review prompts, with `reset()` method to force overwrite prompt files
+- ModConfig contains `resetPromptFiles()` method to reset both prompt files and clear cache
+- ReviewEngine uses `ModConfig.getReviewPrompt()` instead of inline `REVIEW_PROMPT` constant
+- Search failure handling: AI must abandon search attempts, not reveal error codes/HTTP status, and respond with "搜索功能暂时不可用，请稍后再试。" before continuing other tasks
+- Persona files must be structured JSON with required fields: `id`, `name`, `content`; `summary` is optional
+- PersonaManager must validate JSON structure, check for duplicate `id`s, and perform path traversal security checks on `id`
+- Duplicate persona IDs are handled by alphabetical file order: first encountered file is kept, subsequent duplicates are skipped and logged as warnings
+- Persona list refresh includes detailed logging: total files, loaded count, failed count, and lists available persona IDs
+- Version numbering must follow strict channel progression: after beta.N is published, local development builds must use beta.N-alpha.M suffix (increment M) and cannot revert to standalone alpha.N
+- Build artifacts must be organized in a two-level directory structure: `alpha-builds/<MC_VERSION>/<MOD_VERSION>/` for local development builds and `releases/<MC_VERSION>/<MOD_VERSION>/` for published versions; no channel subdirectories or 'v' prefixes
+
+## Lessons Learned
+- Using list indices for approval IDs caused number drift and potential approval of wrong commands
+- Closing WatchService before scheduler shutdown led to repeated `ClosedWatchServiceException` on server stop
+- Synchronous Wiki API calls in `/aikb` command blocked the server main thread, causing game tick pauses ("回弹")
+- `koa-connect` wrapper caused ctx leaks when migrating Express middleware to Koa
+- `approveCommand` sending immediate error messages led to false "invalid ID" prompts even when `approveChain` succeeded
+- `CommandRegistry` caching old `SearchRouter` references caused `/aikb` failure after `/aireload`; must fetch current `SearchRouter` from `MCAIMod` on each execution
+- Exiting single-player world without `/aidebug stop` caused silent failure on subsequent `/aidebug start` due to unreset `enabled` flag and unclosed file handles
+- `onInitialize()` only runs once; `SearchRouter` (with thread pool) must be reinitialized in `SERVER_STARTED` event to avoid dead thread pool errors when re-entering single-player worlds
+- `ChatHandler` holding a final `ToolDispatcher` reference caused search failures in AI conversations after server restart; `toolDispatcher` must be made volatile with a `setToolDispatcher()` method to update references

@@ -33,11 +33,15 @@ public class WikiSearchProvider implements SearchProvider {
 
     private final String language;
     private final HttpClient httpClient;
+    private final int connectTimeoutSeconds;
+    private final int requestTimeoutSeconds;
 
-    public WikiSearchProvider(String language) {
+    public WikiSearchProvider(String language, int connectTimeoutSeconds, int requestTimeoutSeconds) {
         this.language = language != null ? language : "zh_cn";
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+        this.requestTimeoutSeconds = requestTimeoutSeconds;
         this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(5))
+                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds))
                 .build();
     }
 
@@ -101,7 +105,7 @@ public class WikiSearchProvider implements SearchProvider {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("User-Agent", "MCAI-Minecraft-Mod/1.5.1 (https://github.com/lll114514lll1919810lll/mcai_mod)")
-                .timeout(Duration.ofSeconds(8))
+                .timeout(Duration.ofSeconds(requestTimeoutSeconds))
                 .GET()
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -136,7 +140,7 @@ public class WikiSearchProvider implements SearchProvider {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .header("User-Agent", "MCAI-Minecraft-Mod/1.5.1 (https://github.com/lll114514lll1919810lll/mcai_mod)")
-                .timeout(Duration.ofSeconds(8))
+                .timeout(Duration.ofSeconds(requestTimeoutSeconds))
                 .GET()
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

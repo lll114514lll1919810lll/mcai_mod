@@ -55,7 +55,7 @@ public class MCAIMod implements ModInitializer {
         // 初始化时触发提示词文件自动创建（如不存在则以内置默认内容创建）
         config.getSystemPrompt();
         config.getReviewPrompt();
-        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
+        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage(), config.getWikiConnectTimeoutSeconds(), config.getWikiRequestTimeoutSeconds()));
         aiClient = new OpenAIClient(config);
         reviewClient = new OpenAIClient(config, config.getReviewApiEndpoint(), config.getReviewApiKey(), config.getReviewModel());
 
@@ -98,7 +98,7 @@ public class MCAIMod implements ModInitializer {
             chatLog.clear();
             // 重新初始化搜索路由和工具分发器（退出世界时线程池已被关闭）
             if (searchRouter != null) searchRouter.shutdown();
-            searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
+            searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage(), config.getWikiConnectTimeoutSeconds(), config.getWikiRequestTimeoutSeconds()));
             toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
             chatHandler.setToolDispatcher(toolDispatcher);
             LOGGER.debug("SearchRouter and ToolDispatcher reinitialized for new world");
@@ -238,7 +238,7 @@ public class MCAIMod implements ModInitializer {
         if (searchRouter != null) {
             searchRouter.shutdown();
         }
-        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage()));
+        searchRouter = new SearchRouter(config, new WikiSearchProvider(config.getWikiLanguage(), config.getWikiConnectTimeoutSeconds(), config.getWikiRequestTimeoutSeconds()));
         toolDispatcher = new ToolDispatcher(searchRouter, cmdExec, this);
         chatHandler.setToolDispatcher(toolDispatcher);
         if (chatReviewSystem != null) {

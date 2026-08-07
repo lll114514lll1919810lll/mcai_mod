@@ -299,6 +299,10 @@ public class ModConfig {
     private int apiLoopTimeoutSeconds = 300;
     /** 单条 Minecraft 命令执行超时（秒） */
     private int commandExecTimeoutSeconds = 30;
+    /** Wiki 搜索连接超时（秒） */
+    private int wikiConnectTimeoutSeconds = 5;
+    /** Wiki 搜索请求超时（秒） */
+    private int wikiRequestTimeoutSeconds = 8;
     /** 命令链最大条数 */
     private int maxChainCommands = 10;
 
@@ -381,6 +385,10 @@ public class ModConfig {
         if (apiLoopTimeoutSeconds > 1800) apiLoopTimeoutSeconds = 1800;
         if (commandExecTimeoutSeconds < 5) commandExecTimeoutSeconds = 5;
         if (commandExecTimeoutSeconds > 300) commandExecTimeoutSeconds = 300;
+        if (wikiConnectTimeoutSeconds < 1) wikiConnectTimeoutSeconds = 1;
+        if (wikiConnectTimeoutSeconds > 30) wikiConnectTimeoutSeconds = 30;
+        if (wikiRequestTimeoutSeconds < 3) wikiRequestTimeoutSeconds = 3;
+        if (wikiRequestTimeoutSeconds > 30) wikiRequestTimeoutSeconds = 30;
         if (maxChainCommands < 1) maxChainCommands = 1;
         if (maxChainCommands > 50) maxChainCommands = 50;
 
@@ -558,6 +566,8 @@ public class ModConfig {
     public int getApiRequestTimeoutSeconds() { return apiRequestTimeoutSeconds; }
     public int getApiLoopTimeoutSeconds() { return apiLoopTimeoutSeconds; }
     public int getCommandExecTimeoutSeconds() { return commandExecTimeoutSeconds; }
+    public int getWikiConnectTimeoutSeconds() { return wikiConnectTimeoutSeconds; }
+    public int getWikiRequestTimeoutSeconds() { return wikiRequestTimeoutSeconds; }
     public int getMaxChainCommands() { return maxChainCommands; }
 
     public String getActivePersona() { return activePersona; }

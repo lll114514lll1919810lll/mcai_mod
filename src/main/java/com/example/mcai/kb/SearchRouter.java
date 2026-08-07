@@ -12,15 +12,19 @@ import java.util.concurrent.*;
  */
 public class SearchRouter implements SearchProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger("MCAI-SearchRouter");
-    private static final long WIKI_TIMEOUT_MS = 8000;
 
-    private final ModConfig config;
     private final SearchProvider wikiProvider;
     private final ExecutorService executor;
+    private final long requestTimeoutMs;
 
     public SearchRouter(ModConfig config, SearchProvider wikiProvider) {
-        this.config = config;
+        this(wikiProvider, config.getWikiRequestTimeoutSeconds() * 1000L);
+    }
+
+    /** 测试用构造函数 */
+    public SearchRouter(SearchProvider wikiProvider, long requestTimeoutMs) {
         this.wikiProvider = wikiProvider;
+        this.requestTimeoutMs = requestTimeoutMs;
         this.executor = new ThreadPoolExecutor(1, 4, 60L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(16),
                 r -> { Thread t = new Thread(r, "MCAI-SearchRouter"); t.setDaemon(true); return t; },
@@ -43,7 +47,7 @@ public class SearchRouter implements SearchProvider {
 
         try {
             Future<SearchResult> future = executor.submit(() -> wikiProvider.search(query, maxResults));
-            SearchResult wiki = future.get(WIKI_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            SearchResult wiki = future.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
             if (wiki != null && !wiki.isEmpty()) {
                 LOGGER.debug("Wiki search hit for '{}' with {} results", query, wiki.items.size());
                 return wiki;
@@ -68,7 +72,7 @@ public class SearchRouter implements SearchProvider {
 
         try {
             Future<String> future = executor.submit(() -> wikiProvider.read(title));
-            String wiki = future.get(WIKI_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            String wiki = future.get(requestTimeoutMs, TimeUnit.MILLISECONDS);
             if (wiki != null && !wiki.contains("未找到")) return wiki;
             return wiki != null ? wiki : "未找到条目: " + title;
         } catch (TimeoutException e) {

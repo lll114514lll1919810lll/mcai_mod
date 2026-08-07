@@ -20,9 +20,8 @@ class SearchRouterTest {
     @BeforeEach
     void setUp() {
         stubProvider = new StubSearchProvider();
-        // SearchRouter 需要 ModConfig，但我们只测试不需要 ModConfig 的方法
-        // 对于需要 ModConfig 的方法，我们使用 stub provider 直接测试
-        router = new SearchRouter(null, stubProvider);
+        // 使用测试构造函数，直接传入超时参数
+        router = new SearchRouter(stubProvider, 8000L);
     }
 
     @AfterEach

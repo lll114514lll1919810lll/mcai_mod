@@ -9,12 +9,12 @@ MCAI — Minecraft Fabric mod (MC 26.3-snapshot-5, Java 25, Mojang mappings) tha
 ## Build
 
 ```bash
-.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-1.6.1.jar
+.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-<mod_version>.jar
 ```
 
 Requires **JDK 25** (see `gradle.properties` — `java.toolchain.languageVersion = 25`).
 
-There are no tests — the project has no `src/test/` directory, no test framework configured, and no CI workflows.
+There are **150 unit tests** across 11 test classes (`src/test/`) using JUnit 5 + Mockito, wired into `./gradlew test` and GitHub Actions CI. See the Development Roadmap for the remaining integration-test gap.
 
 ## Architecture
 
@@ -51,8 +51,7 @@ src/main/java/com/example/mcai/
     ├── SearchProvider.java   — Search provider interface
     ├── SearchResult.java     — Unified search result format
     ├── SearchRouter.java     — Async search router with timeout
-    ├── WikiSearchProvider.java — Online Wiki search via MediaWiki API
-    └── KnowledgeBase.java    — (deprecated, kept for compatibility)
+    └── WikiSearchProvider.java — Online Wiki search via MediaWiki API
 ```
 
 ## Key Conventions
@@ -264,7 +263,7 @@ Four touch points: `executeCommand` (put+get), `approveCommand` (complete), `rej
 
 #### P0 — Testing infrastructure (target v1.7.0) ✅
 - [x] Add JUnit 5 + Mockito (`testImplementation` in `build.gradle`)
-- [x] Unit tests: `OpenAIClient` (request building, response parsing, tool-call loop), `CommandExecutionService` (4 approval touch points), `KnowledgeBase` (bigram/CJK search), `SearchRouter` (online-first, 8s timeout)
+- [x] Unit tests: `OpenAIClient` (request building, response parsing, tool-call loop), `CommandExecutionService` (4 approval touch points), `SearchRouter` (online-first, 8s timeout), `KnowledgeBase` (removed — was dead code)
 - [ ] Integration test: `ChatHandler` (message flow, concurrency limiting, history truncation)
 - [x] GitHub Actions CI: `push`/`PR` triggers `./gradlew test` on JDK 25
 - [x] Goal: core module coverage > 60%, CI gates merges

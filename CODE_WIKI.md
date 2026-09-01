@@ -84,8 +84,7 @@ mc/
 │   │   ├── SearchProvider.java       # 抽象接口
 │   │   ├── SearchResult.java
 │   │   ├── SearchRouter.java
-│   │   ├── WikiSearchProvider.java
-│   │   └── KnowledgeBase.java
+│   │   └── WikiSearchProvider.java
 │   └── client/                       # 客户端专用
 │       ├── ModMenuIntegration.java
 │       └── config/
@@ -1165,25 +1164,9 @@ search(query, maxResults)
 
 **fullTextSearch** 中的 score 算法：`1.0 - (items.size() * 0.1)` —— 按排名递减。
 
-#### 3.6.5 KnowledgeBase.java
+#### 3.6.5 KnowledgeBase —— 已移除
 
-**文件**: [KnowledgeBase.java](./src/main/java/com/example/mcai/kb/KnowledgeBase.java)
-
-本地 JSON 知识库实现（**已弃用，保留兼容**）。从 `config/mcai/kb/*.json` 加载。
-
-**搜索算法**：加权评分 + CJK Bigram 分词。
-
-**Entry 数据结构**：
-```java
-public record Entry(String title, List<String> keywords, String summary, String content) {}
-```
-
-**加载限制**：
-- 最大条目数：50000
-- 单文件最大：50MB
-- 标题去重（大小写不敏感）
-
-**⚠️ 注意**：当前 SearchRouter 只使用 WikiSearchProvider，KnowledgeBase 未在主流程中使用。保留此实现供未来扩展或离线环境使用。
+本地 JSON 知识库实现（`KnowledgeBase.java`，约 270 行）曾是离线兜底，但 `SearchRouter` 始终只使用 `WikiSearchProvider` 在线搜索，且该实现从未被主流程实例化。在 v1.7.1 中作为死代码删除，其单元测试 `KnowledgeBaseTest` 一并移除。`search_knowledge_base` 工具定义保留，仍由 `SearchRouter` 处理。
 
 ---
 

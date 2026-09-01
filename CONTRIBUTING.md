@@ -55,8 +55,7 @@ src/main/java/com/example/mcai/
 │   └── PlayerViolation.java  - 违规记录
 ├── kb/
 │   ├── SearchRouter.java     - 搜索路由器（Wiki 优先）
-│   ├── WikiSearchProvider.java - Wiki 在线搜索
-│   └── KnowledgeBase.java    - (deprecated)
+│   └── WikiSearchProvider.java - Wiki 在线搜索
 └── client/
     ├── ModMenuIntegration.java - Mod Menu 集成
     └── config/

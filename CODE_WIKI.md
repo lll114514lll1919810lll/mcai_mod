@@ -34,6 +34,11 @@
 | 许可证 | MIT |
 | 目标环境 | 专用服务器 + 客户端（`environment: *`） |
 
+**分支说明**：
+- `main` — 活跃开发分支，跟踪最新 Minecraft 快照（当前 26.3-pre-1）
+- `mc-26.2` — 维护分支，对应 Minecraft 26.2 / 26.1.2 稳定线
+- 新功能统一进 `main`，关键修复可 cherry-pick 到 `mc-26.2`
+
 ### 1.2 核心功能
 
 | 功能 | 说明 | 触发方式 |
@@ -1948,6 +1953,7 @@ mcai.{模块}.{功能}[.{子功能}]
 | 项目 | Mojang (26.2+) | 说明 |
 |---|---|---|
 | 包名 | `CommandSourceStack` | 不是 ServerCommandSource |
+| 命令源构造 | `server.createCommandSourceStack()` + 链式 `with*` | 26.3-pre-1 起构造函数移除 textName/displayName，改用 `withSource()/withPermission()/withPosition()/withRotation()/withLevel()` |
 | 命令注册 | `Commands.literal()` | 不是 `CommandManager.literal()` |
 | 纯文本组件 | `Component.literal()` | 不是 `Text.literal()` |
 | 玩家 | `ServerPlayer` | 不是 ServerPlayerEntity |

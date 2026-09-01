@@ -7,7 +7,7 @@
 ## Installation
 
 ### Requirements
-- Minecraft **Fabric server 26.2**
+- Minecraft **Fabric server 26.3-pre-1**
 - JDK 25
 - A **DeepSeek API Key** ([platform.deepseek.com](https://platform.deepseek.com))
 
@@ -30,7 +30,7 @@
 
 The mod works in **single-player** too - no dedicated server needed:
 
-1. Install **Fabric client** (same version 26.2 as the server)
+1. Install **Fabric client** (same version 26.3-pre-1 as the server)
 2. Place the JAR in `.minecraft/mods/` folder
 3. Launch the game and enter a single-player world
 4. Config auto-generated at `config/mcai/config.json` (game root directory)

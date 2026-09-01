@@ -7,7 +7,7 @@
 ## 安装
 
 ### 前提条件
-- Minecraft **Fabric 服务端 26.2**
+- Minecraft **Fabric 服务端 26.3-pre-1**
 - JDK 25
 - 一个 **DeepSeek API Key**（[platform.deepseek.com](https://platform.deepseek.com)）
 
@@ -30,7 +30,7 @@
 
 模组同样支持**单人游戏**，无需专用服务端：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.2）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.3-pre-1）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人存档
 4. 配置自动生成于 `config/mcai/config.json`（游戏根目录）

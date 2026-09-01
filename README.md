@@ -5,7 +5,7 @@
 # MCAI - Minecraft AI 助手
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Fabric](https://img.shields.io/badge/Fabric-26.2-blue.svg)](https://fabricmc.net/)
+[![Fabric](https://img.shields.io/badge/Fabric-26.3--pre--1-blue.svg)](https://fabricmc.net/)
 [![Java](https://img.shields.io/badge/Java-25-orange.svg)](https://www.oracle.com/java/technologies/downloads/)
 
 </div>
@@ -93,7 +93,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 模组同样支持**单人游戏**（无需专用服务端）：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.2）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.3-pre-1）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人世界
 4. 配置文件和命令与服务端完全一致

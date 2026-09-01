@@ -9,7 +9,7 @@ MCAI — Minecraft Fabric mod (MC 26.3-snapshot-5, Java 25, Mojang mappings) tha
 ## Build
 
 ```bash
-.\gradlew.bat build    # Produces build/libs/mcai-26.1.2-<mod_version>.jar
+.\gradlew.bat build    # Produces build/libs/mcai-26.3-pre-1-<mod_version>.jar
 ```
 
 Requires **JDK 25** (see `gradle.properties` — `java.toolchain.languageVersion = 25`).
@@ -130,12 +130,12 @@ Alpha versions do not create GitHub Tags — they are recorded in Git commit his
 
 ### JAR naming
 
-Keep `mcai-<MC_VERSION>-<MOD_VERSION>.jar`, e.g. `mcai-26.1.2-1.7.0-alpha.1.jar`, `mcai-26.1.2-1.7.0-beta.1.jar`, `mcai-26.1.2-1.7.0.jar`. The filename encodes both MC compatibility and release channel info.
+Keep `mcai-<MC_VERSION>-<MOD_VERSION>.jar`, e.g. `mcai-26.3-pre-1-1.7.1-alpha.1.jar`, `mcai-26.3-pre-1-1.7.1-beta.1.jar`, `mcai-26.3-pre-1-1.7.1.jar`. The filename encodes both MC compatibility and release channel info.
 
 ### gradle.properties config
 
 ```properties
-minecraft_version=26.1.2
+minecraft_version=26.3-pre-1
 mod_version=1.7.0-beta.3   # Released beta (publish state)
 # mod_version=1.7.0-beta.3-alpha.1  # After beta.3 published, local dev build
 # mod_version=1.7.0-alpha.1        # Early development before first beta
@@ -175,8 +175,8 @@ Two directories store build outputs:
 
 | Directory | Purpose | Structure | Example |
 |---|---|---|---|
-| `nightly-builds/` | Local development builds (not published) | `nightly-builds/<MC_VERSION>/<MOD_VERSION>/` | `nightly-builds/26.1.2/1.7.0-beta.3-alpha.1/` |
-| `releases/` | Published releases (mirror GitHub tags) | `releases/<MC_VERSION>/<MOD_VERSION>/` | `releases/26.1.2/1.6.1/` |
+| `nightly-builds/` | Local development builds (not published) | `nightly-builds/<MC_VERSION>/<MOD_VERSION>/` | `nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/` |
+| `releases/` | Published releases (mirror GitHub tags) | `releases/<MC_VERSION>/<MOD_VERSION>/` | `releases/26.3-pre-1/1.7.1/` |
 
 **Rules**:
 - Both directories nest by `<MC_VERSION>` first, then `<MOD_VERSION>` — flat version strings, no `v` prefix

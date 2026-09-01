@@ -215,7 +215,7 @@ Download the latest development builds from the `nightly-builds/` directory in t
 nightly-builds/<MC_VERSION>/<MOD_VERSION>/mcai-<MC_VERSION>-<MOD_VERSION>.jar
 ```
 
-Example: `nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+Example: `nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
 
 > ⚠️ Nightly builds may contain unfinished features and bugs. Only recommended for developers or users willing to report issues.
 

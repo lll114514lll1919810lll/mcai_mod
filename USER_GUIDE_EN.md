@@ -19,7 +19,7 @@
 | **Beta** | Newer features, may have bugs | Pre-release on GitHub Releases |
 | **Nightly** | Latest features, not fully tested | `nightly-builds/` directory in repository |
 
-> Nightly path example: `nightly-builds/26.1.2/1.7.0-beta.4-alpha.1/mcai-26.1.2-1.7.0-beta.4-alpha.1.jar`
+> Nightly path example: `nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
 
 ### Steps
 1. Download `mcai-<version>.jar` and place in `mods/`

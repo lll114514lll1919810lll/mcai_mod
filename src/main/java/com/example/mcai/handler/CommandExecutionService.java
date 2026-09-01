@@ -154,19 +154,26 @@ public class CommandExecutionService {
         command = normalizeCommand(command);
         try {
             StringBuilder out = new StringBuilder();
-            var src = new CommandSourceStack(new CommandSource() {
-                public void sendSystemMessage(Component msg) { out.append(msg.getString()).append("\n"); }
-                public boolean acceptsSuccess() { return true; }
-                public boolean acceptsFailure() { return true; }
-                public boolean alwaysAccepts() { return false; }
-                public boolean shouldInformAdmins() { return false; }
-            }, pos != null ? net.minecraft.world.phys.Vec3.atCenterOf(pos) : server.createCommandSourceStack().getPosition(),
-                    rot != null ? rot : server.createCommandSourceStack().getRotation(),
-                    level != null ? level : server.createCommandSourceStack().getLevel(),
-                    LevelBasedPermissionSet.OWNER,
-                    server.createCommandSourceStack().getTextName(),
-                    server.createCommandSourceStack().getDisplayName(),
-                    server, null);
+            // 26.3-pre-1: CommandSourceStack 构造函数签名变化（不再接受 textName/displayName），
+            // 改用 createCommandSourceStack() + 链式 with* 方法
+            var src = server.createCommandSourceStack()
+                    .withSource(new CommandSource() {
+                        public void sendSystemMessage(Component msg) { out.append(msg.getString()).append("\n"); }
+                        public boolean acceptsSuccess() { return true; }
+                        public boolean acceptsFailure() { return true; }
+                        public boolean alwaysAccepts() { return false; }
+                        public boolean shouldInformAdmins() { return false; }
+                    })
+                    .withPermission(LevelBasedPermissionSet.OWNER);
+            if (pos != null) {
+                src = src.withPosition(net.minecraft.world.phys.Vec3.atCenterOf(pos));
+            }
+            if (rot != null) {
+                src = src.withRotation(rot);
+            }
+            if (level != null) {
+                src = src.withLevel(level);
+            }
             server.getCommands().getDispatcher().execute(command, src);
             String result = out.toString().trim();
             return result.isEmpty() ? "Command executed" : result;

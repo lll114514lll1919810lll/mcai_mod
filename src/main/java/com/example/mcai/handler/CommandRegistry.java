@@ -213,13 +213,6 @@ public class CommandRegistry {
                     return cmdExec.cancelLatestByPlayer(player);
                 });
     }
-    public LiteralArgumentBuilder<CommandSourceStack> createClearCommand() {
-        return Commands.literal("aiclear").requires(CommandExecutionService::isAdminOrConsole).executes(ctx -> {
-            ServerPlayer player = ctx.getSource().getPlayer(); if (player == null) return 0;
-            chatHandler.clearHistory(player.getUUID()); cmdExec.cleanupPlayer(player.getUUID());
-            ctx.getSource().sendSuccess(() -> Component.translatable("mcai.cmd.clear.done"), false); return 1;
-        });
-    }
     public LiteralArgumentBuilder<CommandSourceStack> createScoreCommand() {
         return Commands.literal("aiscore").executes(ctx -> {
             ServerPlayer player = ctx.getSource().getPlayer();

@@ -468,7 +468,7 @@ return "[PLAYER:" + playerName + "] " + clean;
 | `pendingByPlayer` | `ConcurrentMap<UUID, Set<Long>>` — 玩家 → 待审批 ID 集合 |
 | `idGenerator` | `AtomicLong` — 全局唯一递增 ID（从 1 开始） |
 
-**FORBIDDEN_COMMANDS**：AI 禁止调用 MCAI 内部命令（`ai`, `aiwiki`, `aiquery`, `aiaccept`, `aireject`, `aicancel`, `aiclear`, `aireload`, `aitest`, `aicheck`）。
+**FORBIDDEN_COMMANDS**：AI 禁止调用 MCAI 内部命令（`ai`, `aiwiki`, `aiquery`, `aiaccept`, `aireject`, `aicancel`, `aireload`, `aitest`, `aicheck`）。
 
 **常量**：
 - 命令链最大命令数 → `ModConfig.getMaxChainCommands()`（默认 10，范围 1-50）
@@ -581,7 +581,6 @@ switch (tc.name) {
 | `/aiaccept <id>` | 管理员（仅玩家） | 批准命令/命令链（先尝试单命令，再尝试链） |
 | `/aireject <id>` | 管理员（仅玩家） | 拒绝命令/命令链（先尝试单命令，再尝试链） |
 | `/aicancel [id/all]` | 所有人 | 取消自己的待审批命令（支持三种模式） |
-| `/aiclear` | 管理员/控制台 | 清除自己的对话历史 + 取消所有待审批 |
 | `/aireload` | 管理员/控制台 | 热重载配置（等同于 `chatHandler.reloadAll()`） |
 | `/airesetprompts` | 管理员/控制台 | 重置 system/review prompt 为默认 + 自动 reload |
 | `/aikill` | 管理员/控制台 | 杀掉所有 AI 工作线程并重建 |
@@ -1085,7 +1084,7 @@ reset(fileName, defaultContent)
 
 **文件**: [SearchProvider.java](./src/main/java/com/example/mcai/kb/SearchProvider.java)
 
-搜索提供器抽象接口。所有搜索源（Wiki 在线、本地 JSON）实现此接口。
+搜索提供器抽象接口。当前仅 `WikiSearchProvider` 一个实现在线搜索 Minecraft Wiki。
 
 ```java
 public interface SearchProvider {
@@ -1103,7 +1102,7 @@ public interface SearchProvider {
 统一搜索结果格式：
 ```java
 public class SearchResult {
-    String provider;    // "wiki" 或 "local"
+    String provider;    // "wiki"
     List<Item> items;   // 搜索结果列表
     boolean offline;    // 是否离线搜索
     String error;       // 错误信息（非空表示搜索失败）
@@ -1831,7 +1830,7 @@ AI 通过 `buildToolDefinitions()` 注册 10 个工具：
 ### C.1 FORBIDDEN_COMMANDS（AI 禁止调用）
 
 ```
-ai, aiwiki, aiquery, aiaccept, aireject, aicancel, aiclear, aireload, aitest, aicheck
+ai, aiwiki, aiquery, aiaccept, aireject, aicancel, aireload, aitest, aicheck
 ```
 
 ### C.2 requireApprovalCommands（必须审批）

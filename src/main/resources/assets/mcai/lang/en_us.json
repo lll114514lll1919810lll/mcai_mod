@@ -38,7 +38,6 @@
   "mcai.cmd.accept.invalid": "§cInvalid ID, use /aiquery to view pending commands",
   "mcai.cmd.reject.usage": "§cUsage: /aireject <id>",
   "mcai.cmd.reject.no_console": "§cConsole does not support rejection",
-  "mcai.cmd.clear.done": "§a[AI] Cleared chat history and pending commands",
   "mcai.cmd.score.title": "§e===== Your Behavior Score =====",
   "mcai.cmd.score.value": "§fCurrent score: %s%d",
   "mcai.cmd.score.rules": "§7━━━━ Rules ━━━━\n§7Initial score §f0§7, violations deduct\n§eYellow card threshold: §f%d §7(public warning)\n§cRed card threshold: §f%d §7(kick + admin approval)\n§aAuto recovery per cycle: §f+%d §7(cap at 0)\n§7━━━━━━━━━━━━━━",

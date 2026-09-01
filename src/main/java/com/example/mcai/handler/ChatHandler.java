@@ -307,9 +307,9 @@ public class ChatHandler {
         MinecraftServer server = mod.getServer();
         String pname = player.getScoreboardName();
 
-        // 安全策略：AI 不允许直接在聊天文本中输出以 / 开头的命令来执行。
-        // 所有命令执行必须通过 execute_minecraft_command 工具走审批流程。
-        if (response.startsWith("/") && mod.getConfig().isEnableCommandExecution()) {
+        // 安全策略：AI 若把整段回复当成一条纯命令直接输出（无任何说明文字），
+        // 视为试图绕过审批执行，予以拦截。带解释性文字的说明（教玩家怎么用命令）正常放行。
+        if (mod.getConfig().isEnableCommandExecution() && isPureCommand(response)) {
             String cmd = response.lines().findFirst().orElse("").substring(1).trim();
             MCAIMod.LOGGER.warn("AI attempted to output command as text: /{}. Refused; expected tool call.", cmd);
             if (server != null) {
@@ -324,6 +324,27 @@ public class ChatHandler {
             server.getPlayerList().broadcastSystemMessage(Component.translatable("mcai.chat.reply", pname + "§b " + response), false);
         }
         chatLog.add("AI → " + pname, response);
+        return true;
+    }
+
+    /**
+     * 判断整段回复是否为"纯命令"：以 "/" 开头、单行，且不包含任何解释性文字。
+     * 只有此类回复才视为试图绕过审批直接执行，予以拦截。
+     * 带说明（如解释命令用法）的回复正常放行。
+     */
+    private boolean isPureCommand(String response) {
+        String trimmed = response.trim();
+        if (!trimmed.startsWith("/")) return false;
+        // 多行说明：命令后跟了额外解释 → 放行
+        long lineCount = trimmed.lines().filter(l -> !l.isBlank()).count();
+        if (lineCount > 1) return false;
+        // 含中文/英文说明文字（命令名以外的自然语言）→ 放行
+        String cmd = trimmed.substring(1).trim();
+        if (cmd.isEmpty()) return false;
+        // 命令规范：第一个空格前是命令名，后面是参数；若参数部分出现与命令无关的自然语言，判为说明
+        // 简单启发式：纯命令通常不含中文汉字及常见说明句式
+        if (cmd.matches(".*[\\u4e00-\\u9fff].*")) return false;
+        if (cmd.matches(".*(请|可以|用|用于|用来|需要|来|执行|把|给|这个|这样|不过|但是|因为|所以).*")) return false;
         return true;
     }
 

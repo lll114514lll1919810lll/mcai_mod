@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class CommandExecutionService {
     private static final java.util.Set<String> FORBIDDEN_COMMANDS = java.util.Set.of(
-            "ai", "aiwiki", "aiquery", "aiaccept", "aireject", "aicancel", "aiclear", "aireload", "aitest", "aicheck"
+            "ai", "aiwiki", "aiquery", "aiaccept", "aireject", "aicancel", "aireload", "aitest", "aicheck"
     );
 
     private static final int MAX_CHAIN_INTERVAL = 10;

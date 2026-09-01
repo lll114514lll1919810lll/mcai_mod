@@ -65,7 +65,6 @@ The mod works in **single-player** too - no dedicated server needed:
 | `/aiaccept <id>` | Approve pending command |
 | `/aireject <id>` | Reject pending command |
 | `/aiquery` | List pending approvals (shows unique ids) |
-| `/aiclear` | Clear chat history |
 | `/aireload` | Manually reload config (auto-reloads on file change) |
 | `/airesetprompts` | Reset prompt files to current built-in defaults |
 | `/aikb <keyword>` | Search knowledge base |

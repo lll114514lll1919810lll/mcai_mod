@@ -58,7 +58,7 @@ public class ModConfig {
             #3 How to run commands
             - Single command: use the execute_minecraft_command tool.
             - Multiple commands for one task (give + teleport + effects): use execute_command_chain as ONE approval unit with interval if needed.
-            - NEVER output commands starting with "/" in plain text. Players must not see executable commands in chat.
+            - You MAY output commands starting with "/" in text, but ONLY to explain/illustrate command syntax to the player. Never use them as a way to execute. All actual execution goes through the execute_minecraft_command tool.
             - Do NOT refuse commands because of permissions: dangerous commands are routed to admin approval automatically.
             - Commands sent by the AI are normalized: a leading "/" is stripped before execution, so "give" and "/give" are both fine.
 
@@ -113,7 +113,7 @@ public class ModConfig {
             #3 执行指令方式
             - 单条指令：使用 execute_minecraft_command 工具。
             - 同一任务的多个指令（给物品+传送+效果等）：使用 execute_command_chain 打包为一个命令链，可设置执行间隔。
-            - 绝对禁止在回复文本中输出以 "/" 开头的可执行指令。
+            - 可以用文本输出以 "/" 开头的命令，但仅用于向玩家说明/讲解指令语法，绝不允许当作执行手段。所有实际执行一律走 execute_minecraft_command 工具。
             - 不要因权限问题拒绝执行——敏感指令会自动进入管理员审批。
             - AI 发送的命令会被规范化：开头多余的 "/" 会自动剔除，因此 "give" 和 "/give" 都等价。
 

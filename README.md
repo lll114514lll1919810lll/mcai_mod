@@ -119,7 +119,6 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 | `/aiaccept <id>` | 批准待审批操作（支持单条命令和命令链） |
 | `/aireject <id>` | 拒绝待审批操作（支持单条命令和命令链） |
 | `/aiquery` | 查看待审批列表（显示全局唯一 id） |
-| `/aiclear` | 清除 AI 对话历史 |
 | `/aireload` | 手动重载配置（配置文件修改后自动重载） |
 | `/airesetprompts` | 重置提示词文件为当前内置默认 |
 | `/aikb <关键词>` | 搜索 Wiki 知识库 |

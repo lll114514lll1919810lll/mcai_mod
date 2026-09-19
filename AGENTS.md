@@ -2,9 +2,13 @@
 
 ## Project
 
-MCAI — Minecraft Fabric mod (MC 26.3-snapshot-5, Java 25, Mojang mappings) that integrates DeepSeek or other AI into the game for chat, command execution, knowledge base search, and automated player behavior review.
+MCAI — Minecraft Fabric mod (MC 26.1.2, Java 25, Mojang mappings) that integrates DeepSeek or other AI into the game for chat, command execution, knowledge base search, and automated player behavior review.
 
-**Branch**: `main` is the active and only branch. Previous multi-version branches (master, mc-1.21.11, mc-26.1.2) were merged into `main` and deleted. Do not recreate them.
+**Branches**:
+- `main` — active development branch, tracks latest Minecraft version (currently 26.3)
+- `mc-26.2` — maintenance branch for Minecraft 26.2 / 26.1.2 stable line (this branch, for MC 26.1.2)
+
+All new features go to `main`; critical bugfixes may be cherry-picked to `mc-26.2`.
 
 ## Build
 

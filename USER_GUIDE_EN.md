@@ -1,4 +1,4 @@
-# MCAI - Server Admin Guide (English)
+﻿# MCAI - Server Admin Guide (English)
 
 > [中文版本](USER_GUIDE.md)
 
@@ -7,7 +7,7 @@
 ## Installation
 
 ### Requirements
-- Minecraft **Fabric server 26.3-pre-1**
+- Minecraft **Fabric server 26.3**
 - JDK 25
 - A **DeepSeek API Key** ([platform.deepseek.com](https://platform.deepseek.com))
 
@@ -19,7 +19,7 @@
 | **Beta** | Newer features, may have bugs | Pre-release on GitHub Releases |
 | **Nightly** | Latest features, not fully tested | `nightly-builds/` directory in repository |
 
-> Nightly path example: `nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
+> Nightly path example: `nightly-builds/26.3/1.7.1/mcai-26.3-1.7.1.jar`
 
 ### Steps
 1. Download `mcai-<version>.jar` and place in `mods/`
@@ -30,7 +30,7 @@
 
 The mod works in **single-player** too - no dedicated server needed:
 
-1. Install **Fabric client** (same version 26.3-pre-1 as the server)
+1. Install **Fabric client** (same version 26.3 as the server)
 2. Place the JAR in `.minecraft/mods/` folder
 3. Launch the game and enter a single-player world
 4. Config auto-generated at `config/mcai/config.json` (game root directory)

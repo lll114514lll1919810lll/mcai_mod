@@ -1,4 +1,4 @@
-# MCAI 服主使用手册
+﻿# MCAI 服主使用手册
 
 > [English version](USER_GUIDE_EN.md)
 
@@ -7,7 +7,7 @@
 ## 安装
 
 ### 前提条件
-- Minecraft **Fabric 服务端 26.3-pre-1**
+- Minecraft **Fabric 服务端 26.3**
 - JDK 25
 - 一个 **DeepSeek API Key**（[platform.deepseek.com](https://platform.deepseek.com)）
 
@@ -19,7 +19,7 @@
 | **测试版** | 功能较新，可能存在 bug | GitHub Releases 中的 Pre-release |
 | **开发版** | 最新功能，未经充分测试 | 仓库 `nightly-builds/` 目录 |
 
-> 开发版路径示例：`nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
+> 开发版路径示例：`nightly-builds/26.3/1.7.1/mcai-26.3-1.7.1.jar`
 
 ### 步骤
 1. 下载 `mcai-<version>.jar` 放入 `mods/` 目录
@@ -30,7 +30,7 @@
 
 模组同样支持**单人游戏**，无需专用服务端：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.3-pre-1）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.3）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人存档
 4. 配置自动生成于 `config/mcai/config.json`（游戏根目录）

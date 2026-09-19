@@ -1,4 +1,4 @@
-# MCAI Code Wiki
+﻿# MCAI Code Wiki
 
 > Minecraft Fabric Mod —— 将 AI 助手深度集成到 Minecraft 服务器中，实现智能对话、命令执行、知识库搜索与自动行为审查。
 
@@ -25,17 +25,17 @@
 |---|---|
 | 项目名称 | MCAI（AI Assistant for Minecraft） |
 | Mod ID | `mcai` |
-| Minecraft 版本 | 26.3-pre-1（快照 26.3） |
+| Minecraft 版本 | 26.3（正式版） |
 | Java 版本 | 25 |
 | 构建系统 | Gradle 9.5.1 + Fabric Loom 1.17.20 |
 | Fabric Loader | 0.19.5 |
-| Fabric API | 0.159.1+26.3 |
+| Fabric API | 0.161.0+26.3 |
 | 映射 | Mojang Mappings |
 | 许可证 | MIT |
 | 目标环境 | 专用服务器 + 客户端（`environment: *`） |
 
 **分支说明**：
-- `main` — 活跃开发分支，跟踪最新 Minecraft 快照（当前 26.3-pre-1）
+- `main` — 活跃开发分支，跟踪最新 Minecraft 版本（当前 26.3）
 - `mc-26.2` — 维护分支，对应 Minecraft 26.2 / 26.1.2 稳定线
 - 新功能统一进 `main`，关键修复可 cherry-pick 到 `mc-26.2`
 
@@ -524,7 +524,7 @@ return "[PLAYER:" + playerName + "] " + clean;
 
 **cleanupPlayer(uuid)**：玩家断开时清理其所有待审批项。执行中命令链会 interrupt 执行线程。
 
-**executeAsOp() 权限注入**（26.3-pre-1 起改用链式 API，`CommandSourceStack` 构造函数签名已移除 textName/displayName 参数）：
+**executeAsOp() 权限注入**（26.3 起改用链式 API，`CommandSourceStack` 构造函数签名已移除 textName/displayName 参数）：
 ```java
 var src = server.createCommandSourceStack()
         .withSource(commandOutput)                 // 收集命令输出
@@ -1626,8 +1626,8 @@ MCAIMod (单例服务定位器)
 | JDK | 25（必须，`java.toolchain.languageVersion = 25`） |
 | Gradle | 9.5.1（内置 wrapper） |
 | Fabric Loader | 0.19.5 |
-| Fabric API | 0.159.1+26.3 |
-| Minecraft | 26.3-pre-1 |
+| Fabric API | 0.161.0+26.3 |
+| Minecraft | 26.3 |
 | 映射 | Mojang Mappings |
 
 ### 7.2 构建命令
@@ -1646,14 +1646,14 @@ MCAIMod (单例服务定位器)
 .\gradlew.bat runClient
 ```
 
-构建产物：`build/libs/mcai-26.3-pre-1-<mod_version>.jar`
+构建产物：`build/libs/mcai-26.3-<mod_version>.jar`
 
 ### 7.3 依赖清单
 
 | 依赖 | 版本 | scope | 说明 |
 |---|---|---|---|
 | Fabric Loader | 0.19.5 | implementation | Fabric Mod 加载器 |
-| Fabric API | 0.159.1+26.3 | implementation | 事件 API（聊天/生命周期/连接） |
+| Fabric API | 0.161.0+26.3 | implementation | 事件 API（聊天/生命周期/连接） |
 | Mod Menu | 20.0.1 | compileOnly | Mod 配置 GUI 入口 |
 | Gson | (Maven Central latest) | transitive | JSON 解析（ToolDispatcher, ModConfig 等） |
 | slf4j | (Fabric API 传递) | transitive | 日志 |
@@ -1663,7 +1663,7 @@ MCAIMod (单例服务定位器)
 
 ```bash
 # 1. 将 JAR 放入 mods/ 目录
-cp build/libs/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar minecraft_server/mods/
+cp build/libs/mcai-26.3-1.7.1.jar minecraft_server/mods/
 
 # 2. 首次启动后配置文件自动生成
 #    config/mcai/config.json       —— 主配置
@@ -1953,7 +1953,7 @@ mcai.{模块}.{功能}[.{子功能}]
 | 项目 | Mojang (26.2+) | 说明 |
 |---|---|---|
 | 包名 | `CommandSourceStack` | 不是 ServerCommandSource |
-| 命令源构造 | `server.createCommandSourceStack()` + 链式 `with*` | 26.3-pre-1 起构造函数移除 textName/displayName，改用 `withSource()/withPermission()/withPosition()/withRotation()/withLevel()` |
+| 命令源构造 | `server.createCommandSourceStack()` + 链式 `with*` | 26.3 起构造函数移除 textName/displayName，改用 `withSource()/withPermission()/withPosition()/withRotation()/withLevel()` |
 | 命令注册 | `Commands.literal()` | 不是 `CommandManager.literal()` |
 | 纯文本组件 | `Component.literal()` | 不是 `Text.literal()` |
 | 玩家 | `ServerPlayer` | 不是 ServerPlayerEntity |
@@ -1966,6 +1966,6 @@ mcai.{模块}.{功能}[.{子功能}]
 
 ---
 
-> **文档版本**: 2026-09-01 —— 同步代码到 `main` 分支 HEAD (1.7.1-beta.1-alpha.2)
+> **文档版本**: 2026-09-19 —— 同步代码到 `main` 分支 HEAD (1.7.1)
 > **维护者**: MCAI 项目团队
-> **对应 Mod 版本**: 1.7.1-beta.1-alpha.2 / Minecraft 26.3-pre-1
+> **对应 Mod 版本**: 1.7.1 / Minecraft 26.3

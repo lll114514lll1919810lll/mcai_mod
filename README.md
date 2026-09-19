@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <img src="src/main/resources/assets/mcai/icon.png" width="128" alt="MCAI Logo">
 
@@ -93,7 +93,7 @@ MCAI 是一个 Minecraft Fabric 模组，让 AI 自动管理你的服务器。�
 
 模组同样支持**单人游戏**（无需专用服务端）：
 
-1. 安装 **Fabric 客户端**（与服务端同一版本 26.3-pre-1）
+1. 安装 **Fabric 客户端**（与服务端同一版本 26.3）
 2. 将 JAR 放入 `.minecraft/mods/` 文件夹
 3. 启动游戏，进入单人世界
 4. 配置文件和命令与服务端完全一致
@@ -238,7 +238,7 @@ cd mcai_mod
 nightly-builds/<MC_VERSION>/<MOD_VERSION>/mcai-<MC_VERSION>-<MOD_VERSION>.jar
 ```
 
-示例：`nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
+示例：`nightly-builds/26.3/1.7.1/mcai-26.3-1.7.1.jar`
 
 > ⚠️ 开发版可能包含未完成的功能和 bug，仅建议开发者或愿意反馈问题的用户使用。
 

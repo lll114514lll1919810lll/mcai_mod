@@ -1,4 +1,4 @@
-# MCAI - Minecraft AI Assistant
+﻿# MCAI - Minecraft AI Assistant
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Fabric](https://img.shields.io/badge/Fabric-26.3--pre--1-blue.svg)](https://fabricmc.net/)
@@ -70,7 +70,7 @@ MCAI is a Fabric mod that lets AI manage your Minecraft server. This entire proj
 
 The mod works in **single-player** too (no dedicated server required):
 
-1. Install **Fabric client** (same version 26.3-pre-1 as the server)
+1. Install **Fabric client** (same version 26.3 as the server)
 2. Place the JAR in `.minecraft/mods/` folder
 3. Launch the game and enter a single-player world
 4. Config and commands are identical to the server setup
@@ -215,7 +215,7 @@ Download the latest development builds from the `nightly-builds/` directory in t
 nightly-builds/<MC_VERSION>/<MOD_VERSION>/mcai-<MC_VERSION>-<MOD_VERSION>.jar
 ```
 
-Example: `nightly-builds/26.3-pre-1/1.7.1-beta.1-alpha.2/mcai-26.3-pre-1-1.7.1-beta.1-alpha.2.jar`
+Example: `nightly-builds/26.3/1.7.1/mcai-26.3-1.7.1.jar`
 
 > ⚠️ Nightly builds may contain unfinished features and bugs. Only recommended for developers or users willing to report issues.
 
